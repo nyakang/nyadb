@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
@@ -62,7 +63,7 @@ func TestImportReceiptArchiveRetainsOriginalRangesAndExportsCapturedPrefix(t *te
 	if e = json.Unmarshal(scanner.Bytes(), &record); e != nil {
 		t.Fatal(e)
 	}
-	if record.SourceIndex != 2 || record.SourceOffset != 150 || record.Receipt != r || scanner.Scan() {
+	if record.SourceIndex != 2 || record.SourceOffset != 150 || !reflect.DeepEqual(record.Receipt, r) || scanner.Scan() {
 		t.Fatal("archive changed original metadata or adopted later receipt")
 	}
 	if e = j.Record(contract.DataImportRowResult{Row: 1, Kind: "insert", Status: "committed"}); e != nil {
@@ -137,5 +138,48 @@ func TestImportReceiptArchiveReaderSurvivesOwnerCloseWithoutKeepingOtherAssets(t
 	}
 	if _, e = os.Stat(j.receipts.Name()); !errors.Is(e, os.ErrNotExist) {
 		t.Fatal("archive snapshot leaked file", e)
+	}
+}
+
+func TestImportResultUsesOnlyValidatedOriginalReceiptAndKeepsDisplayOwnership(t *testing.T) {
+	_, d, _ := completionWizard(t, "import")
+	d.transfer.Generation = 7
+	d.object = contract.ObjectRef{ProfileID: d.profileID, Catalog: d.database, Kind: "table", Name: d.table}
+	r := &contract.DataImportBatchReceipt{Object: d.object, Generation: 7, Sequence: 1, FirstRow: 1, LastRow: 1, State: "committed", CommittedRows: 1, Rows: []contract.DataImportRowResult{{Row: 1, Table: d.table, Kind: "insert", Status: "committed", Outcome: &contract.DataEditOutcome{GeneratedID: 91}}}}
+	d.transfer.Batch = []mysqlDataBatchReceipt{{From: 150, To: 151, Database: d.database, Table: d.table, Result: &contract.DataImportStreamResult{LastReceipt: r}}}
+	row := mysqlDataImportResultRow(d, 150)
+	if row.Row != 151 || row.Outcome == nil || row.Outcome.GeneratedID != 91 {
+		t.Fatal("original source offset changed", row)
+	}
+	row.Outcome.GeneratedID = -1
+	if r.Rows[0].Row != 1 || r.Rows[0].Outcome.GeneratedID != 91 {
+		t.Fatal("display mutated original native receipt")
+	}
+	for _, change := range []func(){func() { r.Generation++ }, func() { r.Object.ProfileID++ }, func() { r.Rows[0].Table = "foreign" }, func() { r.LastRow++ }} {
+		before := contract.CloneDataImportBatchReceipt(*r)
+		change()
+		if row = mysqlDataImportResultRow(d, 150); row.Status == "committed" {
+			t.Fatal("foreign/incomplete original receipt reached result table")
+		}
+		*r = before
+	}
+}
+
+func TestImportResultDiskReadFailureDoesNotInventUnknownWrite(t *testing.T) {
+	_, d, _ := completionWizard(t, "import")
+	j, err := newMySQLDataImportJournal(d.transfer.Assets, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d.transfer.Journal = j
+	if err = j.Record(contract.DataImportRowResult{Row: 1, Status: "committed", Kind: "insert"}); err != nil {
+		t.Fatal(err)
+	}
+	if err = j.index.Close(); err != nil {
+		t.Fatal(err)
+	}
+	row := mysqlDataImportResultRow(d, 0)
+	if row.Status != "unavailable" || row.Error == "" || d.transfer.Uncertain {
+		t.Fatal("result disk read failure invented unknown native write", row)
 	}
 }

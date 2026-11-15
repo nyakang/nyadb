@@ -9,6 +9,7 @@ import (
 )
 
 func executeImportBatch(s *Session, ctx context.Context, t tableSnapshot, r contract.DataImportRequest, b importBatch, sequence int64) (receipt contract.DataImportBatchReceipt, rows []contract.DataImportRowResult, version int64, err error) {
+	defer func() { receipt.Rows = contract.CloneDataImportRows(rows) }()
 	receipt = contract.DataImportBatchReceipt{Object: t.structure.Object, Generation: s.Generation(), Sequence: sequence, State: "not_executed"}
 	if len(b.rows) > 0 {
 		receipt.FirstRow = b.rows[0].number

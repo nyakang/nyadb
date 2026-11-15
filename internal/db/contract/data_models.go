@@ -51,6 +51,9 @@ type DataImportBatchReceipt struct {
 	NativeJSON                  string
 	CommittedRows               int64
 	Changed, Created            bool
+	// Complete native batch projection, independent of the diagnostic sample
+	// and row-record callbacks. Row numbers retain their original source scope.
+	Rows []DataImportRowResult `json:",omitempty"`
 }
 
 func DataImportCommittedRows(r *DataImportStreamResult) int64 {

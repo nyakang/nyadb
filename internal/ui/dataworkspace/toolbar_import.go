@@ -143,20 +143,7 @@ func (s *State) dataImportResultRows(c *ui.Context, t *Document) {
 		count = int(t.transfer.Journal.total)
 	}
 	ui.Table(c, &t.transfer.ResultGrid, columns, count, func(index, _ int) {
-		var row contract.DataImportRowResult
-		if t.transfer.Journal != nil {
-			var err error
-			committed, uncertain := t.transfer.JournalCommitted, t.transfer.JournalUncertain
-			if len(t.transfer.Batch) > 0 {
-				committed, uncertain = mysqlDataBatchRowSettlement(t.transfer.Batch, int64(index), t.transfer.JournalUncertain)
-			}
-			row, err = t.transfer.Journal.Row(int64(index), committed, uncertain)
-			if err != nil {
-				row = contract.DataImportRowResult{Row: index + 1, Status: "uncertain", Error: "result journal unavailable"}
-			}
-		} else {
-			row = t.transfer.RowResults[index]
-		}
+		row := mysqlDataImportResultRow(t, int64(index))
 		status := mysqlDataImportRowStatus(row.Status)
 		label := fmt.Sprintf(locales.Text("第 %d 行 · %s · %s"), row.Row, mysqlDataImportActionLabel(row.Kind), status)
 		if row.Table != "" {
@@ -167,6 +154,44 @@ func (s *State) dataImportResultRows(c *ui.Context, t *Document) {
 		}
 		ui.Text(c, label).FontSize(theme.Font(c, 11)).SingleLine().Tooltip(label)
 	}).Height(150).FillWidth()
+}
+
+// The final native batch owns its complete projection even if row recording
+// stopped after commit or the diagnostic sample filled. It retains original
+// source row numbers; display offsets are applied only to the returned copy.
+func mysqlDataImportResultRow(t *Document, index int64) contract.DataImportRowResult {
+	for _, source := range t.transfer.Batch {
+		if index < source.From || index >= source.To || source.Result == nil || source.Result.LastReceipt == nil {
+			continue
+		}
+		r := source.Result.LastReceipt
+		if r.Rows == nil || r.Object.Namespace() != t.object.Namespace() || r.Object.Name != source.Table || r.Generation != t.transfer.Generation || contract.ValidateDataImportBatchReceipt(*r) != nil {
+			continue
+		}
+		local := index - source.From + 1
+		if local < r.FirstRow || local > r.LastRow {
+			continue
+		}
+		row := contract.CloneDataImportRows(r.Rows[local-r.FirstRow : local-r.FirstRow+1])[0]
+		row.Row += int(source.From)
+		row.Database, row.Table = source.Database, source.Table
+		return row
+	}
+	if t.transfer.Journal == nil {
+		if index >= 0 && index < int64(len(t.transfer.RowResults)) {
+			return t.transfer.RowResults[index]
+		}
+		return contract.DataImportRowResult{Row: int(index + 1), Status: "not_processed"}
+	}
+	committed, uncertain := t.transfer.JournalCommitted, t.transfer.JournalUncertain
+	if len(t.transfer.Batch) > 0 {
+		committed, uncertain = mysqlDataBatchRowSettlement(t.transfer.Batch, index, uncertain)
+	}
+	row, err := t.transfer.Journal.Row(index, committed, uncertain)
+	if err != nil {
+		return contract.DataImportRowResult{Row: int(index + 1), Status: "unavailable", Error: locales.Text("结果记录不可用；请查看完整回执")}
+	}
+	return row
 }
 
 func mysqlDataImportActionLabel(kind string) string {
@@ -194,6 +219,8 @@ func mysqlDataImportRowStatus(status string) string {
 		return locales.Text("已回滚")
 	case "uncertain":
 		return locales.Text("待核验")
+	case "unavailable":
+		return locales.Text("结果记录不可用")
 	default:
 		return locales.Text("未处理")
 	}

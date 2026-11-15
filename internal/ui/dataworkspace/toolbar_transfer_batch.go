@@ -84,6 +84,9 @@ func (s *State) executePreparedSources(services ui.Services, t *Document, import
 				observed := contract.DataImportProgress{}
 				sequence, lastRow := int64(0), int64(0)
 				stream := contract.DataImportStreamRequest{Generation: gen, Request: plan.request, Rows: plan.spool.rows, IgnoreForeignKeys: plan.ignore, ExtendedInsert: plan.extended, StatementMaxBytes: plan.maxBytes, RecordReceipt: func(receipt contract.DataImportBatchReceipt) error {
+					if err := contract.ValidateDataImportBatchReceipt(receipt); err != nil {
+						return err
+					}
 					if receipt.Object.Namespace() != namespace || receipt.Object.Name != plan.table || receipt.Object.Kind != "table" || receipt.Generation != gen || receipt.Sequence != sequence+1 || receipt.FirstRow < 0 || receipt.LastRow < receipt.FirstRow || receipt.LastRow > plan.spool.rows || receipt.FirstRow != 0 && receipt.FirstRow <= lastRow || receipt.FirstRow == 0 && (receipt.LastRow != 0 || sequence != 0) {
 						return errors.New("import receipt does not match its original source, generation or sequence")
 					}

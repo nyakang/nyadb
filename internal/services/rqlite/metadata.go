@@ -45,6 +45,14 @@ func (s *Session) checkObject(o contract.ObjectRef) error {
 	}
 	return nil
 }
+
+func (s *Session) Namespace(name string) contract.NamespaceRef {
+	if !s.Alive() || name != "main" && name != "" {
+		return contract.NamespaceRef{ProfileID: s.ProfileID()}
+	}
+	return contract.NamespaceRef{ProfileID: s.ProfileID(), Catalog: "main"}
+}
+
 func (s *Session) Namespaces(ctx context.Context) ([]contract.Namespace, error) {
 	if !s.Alive() {
 		return nil, contract.ErrRevoked

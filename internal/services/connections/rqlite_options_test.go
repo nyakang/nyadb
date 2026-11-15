@@ -2,6 +2,7 @@ package connections_test
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
@@ -20,8 +21,25 @@ func TestRQLiteOriginalEndpointAndCredential(t *testing.T) {
 		t.Fatalf("endpoint=%q err=%v", c.Endpoint, err)
 	}
 	d, ok := connections.Describe(connections.RQLite)
-	if !ok || d.Dialect != "sqlite" || d.ClientFamily != "rqlite" || d.FormKind != "server" || d.DefaultPort != 4001 || u.Profile.Kind.IsREST() {
+	if !ok || d.Dialect != "sqlite" || d.ClientFamily != "rqlite" || d.FormKind != "rqlite" || d.DefaultPort != 4001 || u.Profile.Kind.IsREST() {
 		t.Fatal("RQLite must retain HTTP transport and SQL presentation")
+	}
+}
+
+func TestRQLitePublicURIPreservesOriginalNativeSettings(t *testing.T) {
+	for _, uri := range []string{"rqlite://reader:original@localhost/proxy?batch_transaction=true", "rqlites://localhost/proxy?consistency=none&freshness_milliseconds=250&freshness_strict=true&read_only=true"} {
+		public, err := connections.ParseURI(uri)
+		if err != nil {
+			t.Fatal(err)
+		}
+		native, err := connections.ParseRQLiteURI(uri)
+		if err != nil || !reflect.DeepEqual(public, native) {
+			t.Fatal("public URI changed original settings", err)
+		}
+	}
+	d, _ := connections.Describe(connections.RQLite)
+	if !d.Capabilities.Import || !d.Capabilities.EditableTables || !d.Capabilities.Count || !d.Capabilities.Keyset || !d.Capabilities.FieldChunks || !d.Capabilities.Analysis || !d.Capabilities.Export || d.Capabilities.Transactions || d.Capabilities.DesignTables || d.Capabilities.Accounts || d.Capabilities.Backup {
+		t.Fatal("public capabilities omit implemented document features or advertise unimplemented operations")
 	}
 }
 

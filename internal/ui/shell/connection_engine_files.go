@@ -5,6 +5,9 @@ import "github.com/nyakang/nyadb/internal/ui/connectioneditor"
 type EngineFile = connectioneditor.EngineFile
 
 const (
+	RQLiteCAFile              = connectioneditor.RQLiteCAFile
+	RQLiteCertificateFile     = connectioneditor.RQLiteCertificateFile
+	RQLiteKeyFile             = connectioneditor.RQLiteKeyFile
 	ConsulCAFile              = connectioneditor.ConsulCAFile
 	ConsulCertificateFile     = connectioneditor.ConsulCertificateFile
 	ConsulKeyFile             = connectioneditor.ConsulKeyFile

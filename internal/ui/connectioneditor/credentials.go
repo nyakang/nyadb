@@ -122,7 +122,7 @@ func (s *State) persistConnectionPasswords(saved, previous connections.Profile) 
 	}
 	changes := make([]change, 0, len(snapshots)+len(previous.Variants))
 	enqueue := func(name string, snap connectionEditorSnapshot) {
-		if snap.savePassword && snap.secret != "" {
+		if snap.savePassword && (snap.secret != "" || saved.Kind == connections.RQLite && saved.RQLiteOptions.Auth == "basic") {
 			changes = append(changes, change{name: name, password: snap.secret, set: true})
 		} else if snap.hadSavedPassword {
 			changes = append(changes, change{name: name})

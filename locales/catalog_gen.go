@@ -43435,3 +43435,343 @@ func ImportAllReceiptsExport() string { return In(i18n.Locale()).ImportAllReceip
 func (msgs Messages) ImportAllReceiptsExport() string {
 	return Catalog.Format(msgs.locale, "importAllReceiptsExport", nil)
 }
+
+// ImportResultUnavailable says "结果记录不可用"
+// in the language the app shows.
+func ImportResultUnavailable() string { return In(i18n.Locale()).ImportResultUnavailable() }
+
+// ImportResultUnavailable says "结果记录不可用"
+// in the language of msgs.
+func (msgs Messages) ImportResultUnavailable() string {
+	return Catalog.Format(msgs.locale, "importResultUnavailable", nil)
+}
+
+// ImportResultUnavailableHint says "结果记录不可用；请查看完整回执"
+// in the language the app shows.
+func ImportResultUnavailableHint() string { return In(i18n.Locale()).ImportResultUnavailableHint() }
+
+// ImportResultUnavailableHint says "结果记录不可用；请查看完整回执"
+// in the language of msgs.
+func (msgs Messages) ImportResultUnavailableHint() string {
+	return Catalog.Format(msgs.locale, "importResultUnavailableHint", nil)
+}
+
+// RqliteServicePathLabel says "服务路径："
+// in the language the app shows.
+func RqliteServicePathLabel() string { return In(i18n.Locale()).RqliteServicePathLabel() }
+
+// RqliteServicePathLabel says "服务路径："
+// in the language of msgs.
+func (msgs Messages) RqliteServicePathLabel() string {
+	return Catalog.Format(msgs.locale, "rqliteServicePathLabel", nil)
+}
+
+// RqliteServicePath says "RQLite 服务路径"
+// in the language the app shows.
+func RqliteServicePath() string { return In(i18n.Locale()).RqliteServicePath() }
+
+// RqliteServicePath says "RQLite 服务路径"
+// in the language of msgs.
+func (msgs Messages) RqliteServicePath() string {
+	return Catalog.Format(msgs.locale, "rqliteServicePath", nil)
+}
+
+// RqliteAuth says "RQLite 认证方式"
+// in the language the app shows.
+func RqliteAuth() string { return In(i18n.Locale()).RqliteAuth() }
+
+// RqliteAuth says "RQLite 认证方式"
+// in the language of msgs.
+func (msgs Messages) RqliteAuth() string {
+	return Catalog.Format(msgs.locale, "rqliteAuth", nil)
+}
+
+// RqliteUsername says "RQLite 用户名"
+// in the language the app shows.
+func RqliteUsername() string { return In(i18n.Locale()).RqliteUsername() }
+
+// RqliteUsername says "RQLite 用户名"
+// in the language of msgs.
+func (msgs Messages) RqliteUsername() string {
+	return Catalog.Format(msgs.locale, "rqliteUsername", nil)
+}
+
+// RqlitePassword says "RQLite 密码"
+// in the language the app shows.
+func RqlitePassword() string { return In(i18n.Locale()).RqlitePassword() }
+
+// RqlitePassword says "RQLite 密码"
+// in the language of msgs.
+func (msgs Messages) RqlitePassword() string {
+	return Catalog.Format(msgs.locale, "rqlitePassword", nil)
+}
+
+// RqliteConsistency says "RQLite 读取一致性"
+// in the language the app shows.
+func RqliteConsistency() string { return In(i18n.Locale()).RqliteConsistency() }
+
+// RqliteConsistency says "RQLite 读取一致性"
+// in the language of msgs.
+func (msgs Messages) RqliteConsistency() string {
+	return Catalog.Format(msgs.locale, "rqliteConsistency", nil)
+}
+
+// RqliteFreshness says "RQLite 新鲜度（毫秒）"
+// in the language the app shows.
+func RqliteFreshness() string { return In(i18n.Locale()).RqliteFreshness() }
+
+// RqliteFreshness says "RQLite 新鲜度（毫秒）"
+// in the language of msgs.
+func (msgs Messages) RqliteFreshness() string {
+	return Catalog.Format(msgs.locale, "rqliteFreshness", nil)
+}
+
+// RqliteConnectTimeout says "RQLite 连接超时（秒）"
+// in the language the app shows.
+func RqliteConnectTimeout() string { return In(i18n.Locale()).RqliteConnectTimeout() }
+
+// RqliteConnectTimeout says "RQLite 连接超时（秒）"
+// in the language of msgs.
+func (msgs Messages) RqliteConnectTimeout() string {
+	return Catalog.Format(msgs.locale, "rqliteConnectTimeout", nil)
+}
+
+// RqliteRequestTimeout says "RQLite 请求超时（秒）"
+// in the language the app shows.
+func RqliteRequestTimeout() string { return In(i18n.Locale()).RqliteRequestTimeout() }
+
+// RqliteRequestTimeout says "RQLite 请求超时（秒）"
+// in the language of msgs.
+func (msgs Messages) RqliteRequestTimeout() string {
+	return Catalog.Format(msgs.locale, "rqliteRequestTimeout", nil)
+}
+
+// RqliteForwardTimeout says "RQLite 转发超时（秒）"
+// in the language the app shows.
+func RqliteForwardTimeout() string { return In(i18n.Locale()).RqliteForwardTimeout() }
+
+// RqliteForwardTimeout says "RQLite 转发超时（秒）"
+// in the language of msgs.
+func (msgs Messages) RqliteForwardTimeout() string {
+	return Catalog.Format(msgs.locale, "rqliteForwardTimeout", nil)
+}
+
+// RqliteDatabaseTimeout says "RQLite 数据库超时（毫秒）"
+// in the language the app shows.
+func RqliteDatabaseTimeout() string { return In(i18n.Locale()).RqliteDatabaseTimeout() }
+
+// RqliteDatabaseTimeout says "RQLite 数据库超时（毫秒）"
+// in the language of msgs.
+func (msgs Messages) RqliteDatabaseTimeout() string {
+	return Catalog.Format(msgs.locale, "rqliteDatabaseTimeout", nil)
+}
+
+// RqliteLinearizableTimeout says "RQLite 线性一致超时（毫秒）"
+// in the language the app shows.
+func RqliteLinearizableTimeout() string { return In(i18n.Locale()).RqliteLinearizableTimeout() }
+
+// RqliteLinearizableTimeout says "RQLite 线性一致超时（毫秒）"
+// in the language of msgs.
+func (msgs Messages) RqliteLinearizableTimeout() string {
+	return Catalog.Format(msgs.locale, "rqliteLinearizableTimeout", nil)
+}
+
+// RqliteMaxRequests says "RQLite 请求并发上限"
+// in the language the app shows.
+func RqliteMaxRequests() string { return In(i18n.Locale()).RqliteMaxRequests() }
+
+// RqliteMaxRequests says "RQLite 请求并发上限"
+// in the language of msgs.
+func (msgs Messages) RqliteMaxRequests() string {
+	return Catalog.Format(msgs.locale, "rqliteMaxRequests", nil)
+}
+
+// RqliteMaxSQL says "RQLite SQL 连接上限"
+// in the language the app shows.
+func RqliteMaxSQL() string { return In(i18n.Locale()).RqliteMaxSQL() }
+
+// RqliteMaxSQL says "RQLite SQL 连接上限"
+// in the language of msgs.
+func (msgs Messages) RqliteMaxSQL() string {
+	return Catalog.Format(msgs.locale, "rqliteMaxSQL", nil)
+}
+
+// RqliteStrictFreshness says "RQLite 严格新鲜度"
+// in the language the app shows.
+func RqliteStrictFreshness() string { return In(i18n.Locale()).RqliteStrictFreshness() }
+
+// RqliteStrictFreshness says "RQLite 严格新鲜度"
+// in the language of msgs.
+func (msgs Messages) RqliteStrictFreshness() string {
+	return Catalog.Format(msgs.locale, "rqliteStrictFreshness", nil)
+}
+
+// RqliteReadOnly says "RQLite 只读保护"
+// in the language the app shows.
+func RqliteReadOnly() string { return In(i18n.Locale()).RqliteReadOnly() }
+
+// RqliteReadOnly says "RQLite 只读保护"
+// in the language of msgs.
+func (msgs Messages) RqliteReadOnly() string {
+	return Catalog.Format(msgs.locale, "rqliteReadOnly", nil)
+}
+
+// RqliteBatchTransaction says "RQLite SQL 批次事务"
+// in the language the app shows.
+func RqliteBatchTransaction() string { return In(i18n.Locale()).RqliteBatchTransaction() }
+
+// RqliteBatchTransaction says "RQLite SQL 批次事务"
+// in the language of msgs.
+func (msgs Messages) RqliteBatchTransaction() string {
+	return Catalog.Format(msgs.locale, "rqliteBatchTransaction", nil)
+}
+
+// RqliteConsistencyHint says "新鲜度仅适用于 none 读取；SQL …"
+// in the language the app shows.
+func RqliteConsistencyHint() string { return In(i18n.Locale()).RqliteConsistencyHint() }
+
+// RqliteConsistencyHint says "新鲜度仅适用于 none 读取；SQL …"
+// in the language of msgs.
+func (msgs Messages) RqliteConsistencyHint() string {
+	return Catalog.Format(msgs.locale, "rqliteConsistencyHint", nil)
+}
+
+// RqliteTLS says "RQLite TLS 模式"
+// in the language the app shows.
+func RqliteTLS() string { return In(i18n.Locale()).RqliteTLS() }
+
+// RqliteTLS says "RQLite TLS 模式"
+// in the language of msgs.
+func (msgs Messages) RqliteTLS() string {
+	return Catalog.Format(msgs.locale, "rqliteTLS", nil)
+}
+
+// RqliteCA says "RQLite CA 证书"
+// in the language the app shows.
+func RqliteCA() string { return In(i18n.Locale()).RqliteCA() }
+
+// RqliteCA says "RQLite CA 证书"
+// in the language of msgs.
+func (msgs Messages) RqliteCA() string {
+	return Catalog.Format(msgs.locale, "rqliteCA", nil)
+}
+
+// RqliteServerName says "RQLite 证书服务器名"
+// in the language the app shows.
+func RqliteServerName() string { return In(i18n.Locale()).RqliteServerName() }
+
+// RqliteServerName says "RQLite 证书服务器名"
+// in the language of msgs.
+func (msgs Messages) RqliteServerName() string {
+	return Catalog.Format(msgs.locale, "rqliteServerName", nil)
+}
+
+// RqliteClientCertificate says "RQLite 客户端证书"
+// in the language the app shows.
+func RqliteClientCertificate() string { return In(i18n.Locale()).RqliteClientCertificate() }
+
+// RqliteClientCertificate says "RQLite 客户端证书"
+// in the language of msgs.
+func (msgs Messages) RqliteClientCertificate() string {
+	return Catalog.Format(msgs.locale, "rqliteClientCertificate", nil)
+}
+
+// RqliteClientKey says "RQLite 客户端私钥"
+// in the language the app shows.
+func RqliteClientKey() string { return In(i18n.Locale()).RqliteClientKey() }
+
+// RqliteClientKey says "RQLite 客户端私钥"
+// in the language of msgs.
+func (msgs Messages) RqliteClientKey() string {
+	return Catalog.Format(msgs.locale, "rqliteClientKey", nil)
+}
+
+// RqliteSelectCA says "选择 RQLite CA 证书"
+// in the language the app shows.
+func RqliteSelectCA() string { return In(i18n.Locale()).RqliteSelectCA() }
+
+// RqliteSelectCA says "选择 RQLite CA 证书"
+// in the language of msgs.
+func (msgs Messages) RqliteSelectCA() string {
+	return Catalog.Format(msgs.locale, "rqliteSelectCA", nil)
+}
+
+// RqliteSelectClientCertificate says "选择 RQLite 客户端证书"
+// in the language the app shows.
+func RqliteSelectClientCertificate() string { return In(i18n.Locale()).RqliteSelectClientCertificate() }
+
+// RqliteSelectClientCertificate says "选择 RQLite 客户端证书"
+// in the language of msgs.
+func (msgs Messages) RqliteSelectClientCertificate() string {
+	return Catalog.Format(msgs.locale, "rqliteSelectClientCertificate", nil)
+}
+
+// RqliteSelectClientKey says "选择 RQLite 客户端私钥"
+// in the language the app shows.
+func RqliteSelectClientKey() string { return In(i18n.Locale()).RqliteSelectClientKey() }
+
+// RqliteSelectClientKey says "选择 RQLite 客户端私钥"
+// in the language of msgs.
+func (msgs Messages) RqliteSelectClientKey() string {
+	return Catalog.Format(msgs.locale, "rqliteSelectClientKey", nil)
+}
+
+// RqliteNumbersInvalid says "请检查 RQLite 数字设置"
+// in the language the app shows.
+func RqliteNumbersInvalid() string { return In(i18n.Locale()).RqliteNumbersInvalid() }
+
+// RqliteNumbersInvalid says "请检查 RQLite 数字设置"
+// in the language of msgs.
+func (msgs Messages) RqliteNumbersInvalid() string {
+	return Catalog.Format(msgs.locale, "rqliteNumbersInvalid", nil)
+}
+
+// RqliteTimeoutsInvalid says "内部超时必须小于请求超时，SQL 连接上限不得超过请求并发上限"
+// in the language the app shows.
+func RqliteTimeoutsInvalid() string { return In(i18n.Locale()).RqliteTimeoutsInvalid() }
+
+// RqliteTimeoutsInvalid says "内部超时必须小于请求超时，SQL 连接上限不得超过请求并发上限"
+// in the language of msgs.
+func (msgs Messages) RqliteTimeoutsInvalid() string {
+	return Catalog.Format(msgs.locale, "rqliteTimeoutsInvalid", nil)
+}
+
+// RqliteFreshnessInvalid says "新鲜度要求 none 读取；严格新鲜度要求正数毫秒值"
+// in the language the app shows.
+func RqliteFreshnessInvalid() string { return In(i18n.Locale()).RqliteFreshnessInvalid() }
+
+// RqliteFreshnessInvalid says "新鲜度要求 none 读取；严格新鲜度要求正数毫秒值"
+// in the language of msgs.
+func (msgs Messages) RqliteFreshnessInvalid() string {
+	return Catalog.Format(msgs.locale, "rqliteFreshnessInvalid", nil)
+}
+
+// RqliteUsernameInvalid says "请输入有效的 RQLite 用户名"
+// in the language the app shows.
+func RqliteUsernameInvalid() string { return In(i18n.Locale()).RqliteUsernameInvalid() }
+
+// RqliteUsernameInvalid says "请输入有效的 RQLite 用户名"
+// in the language of msgs.
+func (msgs Messages) RqliteUsernameInvalid() string {
+	return Catalog.Format(msgs.locale, "rqliteUsernameInvalid", nil)
+}
+
+// RqliteProfileInvalid says "请检查 RQLite 主机、服务路径和 TLS 设置"
+// in the language the app shows.
+func RqliteProfileInvalid() string { return In(i18n.Locale()).RqliteProfileInvalid() }
+
+// RqliteProfileInvalid says "请检查 RQLite 主机、服务路径和 TLS 设置"
+// in the language of msgs.
+func (msgs Messages) RqliteProfileInvalid() string {
+	return Catalog.Format(msgs.locale, "rqliteProfileInvalid", nil)
+}
+
+// RqliteCredentialInvalid says "请检查 RQLite 凭据"
+// in the language the app shows.
+func RqliteCredentialInvalid() string { return In(i18n.Locale()).RqliteCredentialInvalid() }
+
+// RqliteCredentialInvalid says "请检查 RQLite 凭据"
+// in the language of msgs.
+func (msgs Messages) RqliteCredentialInvalid() string {
+	return Catalog.Format(msgs.locale, "rqliteCredentialInvalid", nil)
+}

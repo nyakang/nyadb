@@ -27,6 +27,24 @@ func TestNativeTextParameterPreservesAllOriginalUTF8Bytes(t *testing.T) {
 	}
 }
 
+func TestNamespaceResolvesOnlyOriginalMainCatalog(t *testing.T) {
+	s := mockSession(t, func(http.ResponseWriter, *http.Request) { t.Error("namespace resolution performed I/O") }, nil)
+	for _, name := range []string{"", "main"} {
+		if ref := s.Namespace(name); ref != (contract.NamespaceRef{ProfileID: s.ProfileID(), Catalog: "main"}) {
+			t.Fatal("original fixed catalog lost", ref)
+		}
+	}
+	if ref := s.Namespace("foreign"); ref.Catalog != "" {
+		t.Fatal("foreign namespace fabricated", ref)
+	}
+	if err := s.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if ref := s.Namespace("main"); ref.Catalog != "" {
+		t.Fatal("closed original namespace remained available", ref)
+	}
+}
+
 func TestDataDocumentIndependentReadsAndCloseWaitOriginalAcknowledgement(t *testing.T) {
 	started, ack := make(chan struct{}), make(chan struct{})
 	var once sync.Once

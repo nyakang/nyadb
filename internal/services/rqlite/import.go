@@ -117,6 +117,7 @@ func (d *dataDocument) importStream(ctx context.Context, id int64, db, name stri
 	sequence := int64(0)
 	pending := []importRow{}
 	emit := func(rows []contract.DataImportRowResult) error {
+		var recordErr error
 		for _, row := range rows {
 			out.Progress.Processed++
 			switch row.Status {
@@ -128,18 +129,16 @@ func (d *dataDocument) importStream(ctx context.Context, id int64, db, name stri
 				out.Progress.Failed++
 			}
 			if len(out.Rows) < 1000 {
-				out.Rows = append(out.Rows, row)
+				out.Rows = append(out.Rows, contract.CloneDataImportRows([]contract.DataImportRowResult{row})[0])
 			}
-			if stream.Record != nil {
-				if e := stream.Record(row); e != nil {
-					return e
-				}
+			if stream.Record != nil && recordErr == nil {
+				recordErr = stream.Record(contract.CloneDataImportRows([]contract.DataImportRowResult{row})[0])
 			}
 		}
 		if stream.Progress != nil {
 			stream.Progress(out.Progress)
 		}
-		return nil
+		return recordErr
 	}
 	withheld := func() error {
 		rows := []contract.DataImportRowResult{}
@@ -159,7 +158,8 @@ func (d *dataDocument) importStream(ctx context.Context, id int64, db, name stri
 		}
 		sequence++
 		receipt, rows, version, e := executeImportBatch(d.s, child, t, r, batch, sequence)
-		out.LastReceipt = &receipt
+		owned := contract.CloneDataImportBatchReceipt(receipt)
+		out.LastReceipt = &owned
 		if receipt.State == "committed" {
 			out.CommittedRows += receipt.CommittedRows
 			out.Changed = out.Changed || receipt.Changed
@@ -174,7 +174,7 @@ func (d *dataDocument) importStream(ctx context.Context, id int64, db, name stri
 			d.unknown = &contract.DataEditResult{CommitUncertain: true, Incomplete: true, NativeJSON: receipt.NativeJSON}
 			d.mu.Unlock()
 		}
-		recordErr := stream.RecordReceipt(receipt)
+		recordErr := stream.RecordReceipt(contract.CloneDataImportBatchReceipt(receipt))
 		if recordErr == nil {
 			out.ReceiptsRecorded++
 		}

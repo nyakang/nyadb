@@ -23,6 +23,7 @@ import (
 	oraclesvc "github.com/nyakang/nyadb/internal/services/oracle"
 	"github.com/nyakang/nyadb/internal/services/qdrant"
 	redissvc "github.com/nyakang/nyadb/internal/services/redis"
+	"github.com/nyakang/nyadb/internal/services/rqlite"
 	"github.com/nyakang/nyadb/internal/services/selectdb"
 	"github.com/nyakang/nyadb/internal/services/solr"
 	"github.com/nyakang/nyadb/internal/services/sqlserver"
@@ -31,6 +32,7 @@ import (
 )
 
 func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
+	m.Register(connections.RQLite, ProviderFunc(rqlite.OpenSession))
 	m.Register(connections.H2, ProviderFunc(h2svc.OpenSession))
 	m.Register(connections.SelectDB, ProviderFunc(selectdb.OpenSession))
 	m.Register(connections.Etcd, ProviderFunc(etcd.OpenSession))

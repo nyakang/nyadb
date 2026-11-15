@@ -13,7 +13,7 @@ type Descriptor struct {
 func Describe(kind Kind) (Descriptor, bool) {
 	switch kind {
 	case RQLite:
-		return Descriptor{kind, "RQLite", "rqlite", "server", "sqlite", 4001, contract.Capabilities{Query: true, Metadata: true}}, true
+		return Descriptor{kind, "RQLite", "rqlite", "rqlite", "sqlite", 4001, contract.Capabilities{Query: true, Metadata: true, EditableTables: true, Import: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
 	case H2:
 		return Descriptor{kind, "H2", "h2", "h2", "h2", 9092, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Count: true, FieldChunks: true, Export: true, JSONL: true}}, true
 	case Consul:
@@ -130,7 +130,7 @@ func (d Descriptor) FieldTypes() []string {
 		return []string{"bigint", "int", "smallint", "decimal(10,2)", "varchar(255)", "text", "datetime", "timestamp", "date", "json", "blob", "boolean"}
 	case PostgreSQL, Cloudberry, OpenTenBase, CockroachDB, OpenGauss, GaussDB, Kingbase:
 		return []string{"bigint", "integer", "smallint", "numeric(10,2)", "text", "varchar(255)", "boolean", "timestamp", "timestamptz", "date", "json", "jsonb", "bytea", "uuid"}
-	case SQLite:
+	case SQLite, RQLite:
 		return []string{"INTEGER", "TEXT", "REAL", "BLOB", "NUMERIC"}
 	}
 	return nil

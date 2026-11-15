@@ -2,9 +2,12 @@ package rqlite
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -22,6 +25,92 @@ func nativeImportDocument(t *testing.T, s *Session, name string) *dataDocument {
 	}
 	t.Cleanup(func() { _ = l.Close() })
 	return l.(*dataDocument)
+}
+
+func TestNativeRQLiteImportRowRecordFailureRetainsCompleteAcknowledgedBatch(t *testing.T) {
+	p := nativeFixture(t, "")
+	s := openNative(t, p, "original-fixture-password")
+	nativeExecute(t, lease(t, s, 1), "CREATE TABLE import_record_failure(id INTEGER PRIMARY KEY,v TEXT)")
+	d := nativeImportDocument(t, s, "import_record_failure")
+	path := filepath.Join(t.TempDir(), "read-only-results.jsonl")
+	if err := os.WriteFile(path, nil, 0600); err != nil {
+		t.Fatal(err)
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	edits := make([]contract.DataEdit, 1300)
+	for i := range edits {
+		edits[i] = nativeImportEdit(i+1, "original")
+	}
+	calls := 0
+	out, err := d.importStream(context.Background(), p.ID, "main", d.object.Name, contract.DataImportStreamRequest{
+		Rows: int64(len(edits)),
+		Open: func(context.Context) (contract.DataImportRowSource, error) {
+			return &importMemoryRows{rows: edits}, nil
+		},
+		RecordReceipt: func(contract.DataImportBatchReceipt) error { return nil },
+		Record: func(row contract.DataImportRowResult) error {
+			calls++
+			if row.Row == 1001 {
+				_, e := f.Write([]byte("original row"))
+				return e
+			}
+			return nil
+		},
+	})
+	if err == nil || out.Committed || out.CommitUncertain || out.CommittedRows != 1024 || out.Progress.Processed != 1024 || calls != 1001 || len(out.Rows) != 1000 {
+		t.Fatalf("row-record failure erased acknowledged batch projection: committed=%d processed=%d callbacks=%d sample=%d uncertain=%v err=%v", out.CommittedRows, out.Progress.Processed, calls, len(out.Rows), out.CommitUncertain, err)
+	}
+	encoded, e := json.Marshal(out.LastReceipt)
+	if e != nil {
+		t.Fatal(e)
+	}
+	var projected struct {
+		Rows []contract.DataImportRowResult
+	}
+	if e = json.Unmarshal(encoded, &projected); e != nil {
+		t.Fatal(e)
+	}
+	if len(projected.Rows) != 64 {
+		t.Fatal("last original receipt lost its complete batch after diagnostic sample filled")
+	}
+	for i, row := range projected.Rows {
+		if row.Row != 961+i || row.Status != "committed" || row.Outcome == nil || row.Outcome.GeneratedID != int64(961+i) {
+			t.Fatal("original complete row outcome changed", row.Row)
+		}
+	}
+	if nativeImportRows(t, s, "SELECT count(*) FROM import_record_failure")[0][0].Text != "1024" {
+		t.Fatal("row-record failure sent future rows or replayed original batch")
+	}
+}
+
+func TestNativeRQLiteImportCallbacksCannotMutateOriginalAcknowledgedRows(t *testing.T) {
+	p := nativeFixture(t, "")
+	s := openNative(t, p, "original-fixture-password")
+	nativeExecute(t, lease(t, s, 1), "CREATE TABLE import_owned_receipt(id INTEGER PRIMARY KEY,v TEXT)")
+	d := nativeImportDocument(t, s, "import_owned_receipt")
+	out, e := d.importStream(context.Background(), p.ID, "main", d.object.Name, contract.DataImportStreamRequest{Rows: 1, Open: func(context.Context) (contract.DataImportRowSource, error) {
+		return &importMemoryRows{rows: []contract.DataEdit{nativeImportEdit(1, "owned")}}, nil
+	}, RecordReceipt: func(r contract.DataImportBatchReceipt) error {
+		if len(r.Rows) != 1 || r.Rows[0].Outcome.GeneratedID != 1 {
+			return errors.New("original receipt projection missing")
+		}
+		r.Rows[0].Row = -1
+		r.Rows[0].Outcome.GeneratedID = -99
+		return nil
+	}, Record: func(row contract.DataImportRowResult) error {
+		if row.Row != 1 || row.Outcome.GeneratedID != 1 {
+			return errors.New("receipt callback changed row projection")
+		}
+		row.Outcome.GeneratedID = -42
+		return nil
+	}})
+	if e != nil || !out.Committed || out.Rows[0].Outcome.GeneratedID != 1 || out.LastReceipt.Rows[0].Row != 1 || out.LastReceipt.Rows[0].Outcome.GeneratedID != 1 {
+		t.Fatal("callbacks changed original native outcome", e)
+	}
 }
 
 func TestNativeRQLiteImportUnknownBlocksOriginalWritesAndRecoveryNeverReplays(t *testing.T) {

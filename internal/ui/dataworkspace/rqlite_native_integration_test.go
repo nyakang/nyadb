@@ -32,8 +32,8 @@ import (
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
-// This fixture exercises the unpublished kernel through injected neutral
-// contracts. It is not acceptance of the public chooser/provider/workbench.
+// Standalone fixtures exercise injected neutral contracts. The separate public
+// workbench and published-import cases validate builtin registration and wiring.
 func rqliteGridFixture(t *testing.T) connections.Profile {
 	t.Helper()
 	if os.Getenv("NYADB_RQLITE_GRID_IT") != "1" {

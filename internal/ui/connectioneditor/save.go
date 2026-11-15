@@ -92,6 +92,11 @@ func (s *State) draftProfile() (connections.Profile, error) {
 		return p, fieldError("端口", "常规", "端口必须是 1–65535 之间的数字")
 	}
 	p.Port = uint16(port)
+	if p.Kind == connections.RQLite {
+		if e := s.validateRQLiteDraft(p); e != nil {
+			return p, e
+		}
+	}
 	if p.Kind == connections.Consul {
 		if e := s.validateConsulDraft(p); e != nil {
 			return p, e
@@ -177,6 +182,10 @@ func (s *State) Save() {
 		}
 		if p.Kind == connections.Etcd && before.EtcdOptions.Auth != p.EtcdOptions.Auth && s.connectionPasswordLoadFailed {
 			s.validationError(fieldError("etcd 认证方式", "常规", "更改认证方式前请先解锁凭据存储"))
+			return
+		}
+		if p.Kind == connections.RQLite && before.RQLiteOptions.Auth != p.RQLiteOptions.Auth && s.connectionPasswordLoadFailed {
+			s.validationError(fieldError("RQLite 认证方式", "常规", "更改认证方式前请先解锁凭据存储"))
 			return
 		}
 		if p.Kind == connections.Consul && before.ConsulOptions.Auth != p.ConsulOptions.Auth && s.connectionPasswordLoadFailed {
@@ -285,7 +294,7 @@ func (s *State) Save() {
 			return
 		}
 	}
-	if saved.Kind == connections.H2 || saved.Kind.IsPostgreSQLFamily() || saved.Kind == connections.Consul || saved.Kind == connections.Etcd || saved.Kind == connections.Neo4j || saved.Kind == connections.Qdrant || saved.Kind == connections.Meilisearch || saved.Kind == connections.CouchDB || saved.Kind == connections.Cassandra || saved.Kind == connections.Solr || saved.Kind == connections.Elasticsearch || saved.Kind == connections.Easysearch || saved.Kind == connections.ClickHouse || saved.Kind == connections.Doris || saved.Kind == connections.SelectDB || saved.Kind == connections.StarRocks || saved.Kind == connections.Trino || saved.Kind == connections.SQLServer || saved.Kind == connections.Oracle || saved.Kind == connections.Dameng || saved.Kind == connections.MongoDB || saved.Kind == connections.Redis {
+	if saved.Kind == connections.RQLite || saved.Kind == connections.H2 || saved.Kind.IsPostgreSQLFamily() || saved.Kind == connections.Consul || saved.Kind == connections.Etcd || saved.Kind == connections.Neo4j || saved.Kind == connections.Qdrant || saved.Kind == connections.Meilisearch || saved.Kind == connections.CouchDB || saved.Kind == connections.Cassandra || saved.Kind == connections.Solr || saved.Kind == connections.Elasticsearch || saved.Kind == connections.Easysearch || saved.Kind == connections.ClickHouse || saved.Kind == connections.Doris || saved.Kind == connections.SelectDB || saved.Kind == connections.StarRocks || saved.Kind == connections.Trino || saved.Kind == connections.SQLServer || saved.Kind == connections.Oracle || saved.Kind == connections.Dameng || saved.Kind == connections.MongoDB || saved.Kind == connections.Redis {
 		s.connectionMainConfig = s.currentConnectionSnapshot()
 		if err := s.persistConnectionPasswords(saved, before); err != nil {
 			if p.ID == 0 {

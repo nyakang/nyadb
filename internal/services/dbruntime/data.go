@@ -375,6 +375,9 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 // Only the runtime boundary translates provider generations. Original native
 // response bytes and inclusive source row ranges remain untouched.
 func (s *session) importReceipt(id int64, db, table string, receipt contract.DataImportBatchReceipt) (contract.DataImportBatchReceipt, error) {
+	if err := contract.ValidateDataImportBatchReceipt(receipt); err != nil {
+		return receipt, err
+	}
 	if receipt.Object.ProfileID != id || receipt.Object.Kind != "table" {
 		return receipt, connections.ErrInvalid
 	}
@@ -385,7 +388,7 @@ func (s *session) importReceipt(id int64, db, table string, receipt contract.Dat
 		return receipt, err
 	}
 	receipt.Generation = s.generation
-	return receipt, nil
+	return contract.CloneDataImportBatchReceipt(receipt), nil
 }
 
 type dataDocumentLease struct {

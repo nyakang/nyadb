@@ -42,6 +42,9 @@ const (
 	H2DriverPackageFile
 	H2TLSCAFile
 	H2CustomJARFile
+	RQLiteCAFile
+	RQLiteCertificateFile
+	RQLiteKeyFile
 )
 
 func (s *State) SetEngineFilePicker(pick func(EngineFile, int, uint64)) { s.engineFilePicker = pick }
@@ -50,6 +53,23 @@ func (s *State) EngineFileVersion() uint64 { return s.engineFileVersion }
 
 func (s *State) SelectEngineFile(kind EngineFile, row int, version uint64, path string) {
 	if !s.active || version != s.engineFileVersion || path == "" {
+		return
+	}
+	if kind >= RQLiteCAFile && kind <= RQLiteKeyFile {
+		if s.connectionDraft.Kind != connections.RQLite || s.connectionDraft.TLSMode == "disable" || kind == RQLiteCAFile && s.connectionDraft.TLSMode != "verify-full" {
+			return
+		}
+		o := &s.connectionDraft.RQLiteOptions
+		switch kind {
+		case RQLiteCAFile:
+			o.CAFile = path
+		case RQLiteCertificateFile:
+			o.ClientCertFile = path
+		case RQLiteKeyFile:
+			o.ClientKeyFile = path
+		}
+		s.cancelMySQLConnectionTest()
+		s.connectionError = ""
 		return
 	}
 	if kind == H2MainFile || kind == H2NewFile || kind == H2DriverPackageFile || kind == H2TLSCAFile || kind == H2CustomJARFile {
@@ -287,6 +307,9 @@ func (s *State) initEngineOptionsInputs() {
 }
 
 func (s *State) advanceEngineOptions(p *connections.Profile) error {
+	if p.Kind == connections.RQLite {
+		return s.advanceRQLiteOptions(p)
+	}
 	if p.Kind == connections.H2 {
 		return s.advanceH2Options(p)
 	}
@@ -423,6 +446,8 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 	formWidth := connectionScaledFormWidth(c, width)
 	labelWidth, fieldWidth := connectionFormLabelWidth, formWidth-connectionFormLabelWidth
 	switch s.connectionDraft.Kind {
+	case connections.RQLite:
+		return s.rqliteOptions(c, width, tab)
 	case connections.H2:
 		if tab == "高级" {
 			s.h2Advanced(c, width)
