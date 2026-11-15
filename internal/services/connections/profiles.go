@@ -10,6 +10,7 @@ import (
 type Kind string
 
 const (
+	QuestDB       Kind = "questdb"
 	RQLite        Kind = "rqlite"
 	Consul        Kind = "consul"
 	Etcd          Kind = "etcd"
@@ -102,6 +103,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	QuestDBOptions       QuestDBOptions
 	RQLiteOptions        RQLiteOptions
 	H2Options            H2Options
 	SelectDBOptions      SelectDBOptions

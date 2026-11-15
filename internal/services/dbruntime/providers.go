@@ -22,6 +22,7 @@ import (
 	"github.com/nyakang/nyadb/internal/services/neo4j"
 	oraclesvc "github.com/nyakang/nyadb/internal/services/oracle"
 	"github.com/nyakang/nyadb/internal/services/qdrant"
+	"github.com/nyakang/nyadb/internal/services/questdb"
 	redissvc "github.com/nyakang/nyadb/internal/services/redis"
 	"github.com/nyakang/nyadb/internal/services/rqlite"
 	"github.com/nyakang/nyadb/internal/services/selectdb"
@@ -32,6 +33,7 @@ import (
 )
 
 func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
+	m.Register(connections.QuestDB, ProviderFunc(questdb.OpenSession))
 	m.Register(connections.RQLite, ProviderFunc(rqlite.OpenSession))
 	m.Register(connections.H2, ProviderFunc(h2svc.OpenSession))
 	m.Register(connections.SelectDB, ProviderFunc(selectdb.OpenSession))

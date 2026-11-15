@@ -10,6 +10,8 @@ import (
 // connection chooser. The symbols are an offline fallback, never Navicat assets.
 func profileBrand(kind connections.Kind, p theme.Palette) (asset, fallback string, color ui.Color) {
 	switch kind {
+	case connections.QuestDB:
+		return "", "database", ui.Hex("#e43957")
 	case connections.Cloudberry:
 		return "", "database", ui.Hex("#59a2d4")
 	case connections.OpenTenBase:

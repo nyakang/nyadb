@@ -46,6 +46,8 @@ func ParseURI(raw string) (URIImport, error) {
 	}
 	var kind Kind
 	switch strings.ToLower(u.Scheme) {
+	case "questdb":
+		return parseQuestDBURI(u)
 	case "rqlite", "rqlites":
 		return ParseRQLiteURI(raw)
 	case "consul", "consuls":

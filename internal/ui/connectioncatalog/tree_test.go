@@ -8,8 +8,8 @@ import (
 
 func TestNavicatObservedTreeGroupHierarchy(t *testing.T) {
 	s := New()
-	if got := s.catalogTreeDirect(); len(got) != 38 {
-		t.Fatalf("database rows including Consul; got %d", len(got))
+	if got := s.catalogTreeDirect(); len(got) != 39 {
+		t.Fatalf("database rows including QuestDB and Consul; got %d", len(got))
 	}
 	groups := s.catalogTreeGroups()
 	if len(groups) < 12 || groups[0].vendor != "阿里云" || groups[1].vendor != "华为" {

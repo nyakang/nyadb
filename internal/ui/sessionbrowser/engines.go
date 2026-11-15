@@ -198,6 +198,9 @@ func sessionNamespaces(ctx context.Context, s contract.Session) ([]string, error
 	return out, nil
 }
 func (s *State) engineLabel(w *Workspace) string {
+	if w.Kind == connections.QuestDB {
+		return "QuestDB"
+	}
 	if w.Kind == connections.RQLite {
 		return "RQLite"
 	}

@@ -9,6 +9,9 @@ import (
 // NormalizeProfile validates public settings and applies their canonical values.
 // Variants are normalized in place; callers retaining them must clone the slice.
 func NormalizeProfile(p Profile) (Profile, error) {
+	if p.Kind != QuestDB && p.QuestDBOptions != (QuestDBOptions{}) {
+		return p, fmt.Errorf("%w: QuestDB options on another engine", ErrInvalid)
+	}
 	if p.Kind != RQLite && p.RQLiteOptions != (RQLiteOptions{}) {
 		return p, fmt.Errorf("%w: RQLite options on another engine", ErrInvalid)
 	}
@@ -166,6 +169,8 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		}
 	}
 	switch p.Kind {
+	case QuestDB:
+		return normalizeQuestDBProfile(p)
 	case RQLite:
 		return normalizeRQLiteProfile(p)
 	case H2:

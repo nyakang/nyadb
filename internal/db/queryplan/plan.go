@@ -10,6 +10,9 @@ import (
 )
 
 func Build(engine, sql string) (string, error) {
+	if engine == "questdb" {
+		return buildQuestDB(sql)
+	}
 	if engine == "dolt" {
 		return buildDolt(sql)
 	}
@@ -86,6 +89,9 @@ func numeric(v any) *float64 {
 	return &n
 }
 func Parse(engine string, result contract.SQLResult) (*contract.ExecutionPlan, error) {
+	if engine == "questdb" {
+		return parseQuestDB(result)
+	}
 	if engine == "dolt" {
 		return parseDolt(result)
 	}

@@ -307,6 +307,9 @@ func (s *State) initEngineOptionsInputs() {
 }
 
 func (s *State) advanceEngineOptions(p *connections.Profile) error {
+	if p.Kind == connections.QuestDB {
+		return s.advanceQuestDBOptions(p)
+	}
 	if p.Kind == connections.RQLite {
 		return s.advanceRQLiteOptions(p)
 	}
@@ -446,6 +449,8 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 	formWidth := connectionScaledFormWidth(c, width)
 	labelWidth, fieldWidth := connectionFormLabelWidth, formWidth-connectionFormLabelWidth
 	switch s.connectionDraft.Kind {
+	case connections.QuestDB:
+		return s.questDBOptions(c, width, tab)
 	case connections.RQLite:
 		return s.rqliteOptions(c, width, tab)
 	case connections.H2:

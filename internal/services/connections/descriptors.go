@@ -12,6 +12,8 @@ type Descriptor struct {
 
 func Describe(kind Kind) (Descriptor, bool) {
 	switch kind {
+	case QuestDB:
+		return Descriptor{kind, "QuestDB", "questdb", "server", "questdb", 8812, contract.Capabilities{Query: true, Metadata: true, Count: true, Export: true, JSONL: true, Explain: true}}, true
 	case RQLite:
 		return Descriptor{kind, "RQLite", "rqlite", "rqlite", "sqlite", 4001, contract.Capabilities{Query: true, Metadata: true, EditableTables: true, Import: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true, DesignTables: true, Objects: true}}, true
 	case H2:
@@ -118,6 +120,8 @@ func Describe(kind Kind) (Descriptor, bool) {
 // FieldTypes offers common candidates without restricting custom declarations.
 func (d Descriptor) FieldTypes() []string {
 	switch d.Kind {
+	case QuestDB:
+		return []string{"BYTE", "SHORT", "INT", "LONG", "FLOAT", "DOUBLE", "STRING", "SYMBOL", "CHAR", "BOOLEAN", "DATE", "TIMESTAMP", "BINARY", "UUID", "LONG256", "IPv4", "GEOHASH(8c)"}
 	case Dameng:
 		return []string{"BIGINT", "INT", "DECIMAL(38,20)", "VARCHAR(255)", "CLOB", "BLOB", "VARBINARY(255)", "BIT", "DATE", "TIME(6)", "TIMESTAMP(6)", "TIMESTAMP(6) WITH TIME ZONE"}
 	case Oracle:
