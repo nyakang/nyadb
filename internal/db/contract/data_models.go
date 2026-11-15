@@ -281,6 +281,10 @@ type DataPage struct {
 	// ReadOnlyRows contains captured provider permissions for original row
 	// ordinals. Providers own this map until publishing; consumers only read it.
 	ReadOnlyRows map[int]bool
+	// ColumnEditKinds captures original column permissions. Nil preserves
+	// legacy behavior; a non-nil map permits only explicitly listed edit kinds.
+	// Existing immutable keys can allow insert while rejecting update.
+	ColumnEditKinds map[string][]string
 
 	Database, Table string
 	Columns         []string

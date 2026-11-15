@@ -205,6 +205,9 @@ func validDataMutationSnapshot(m *dataMutationState, snapshot contract.DataMutat
 		if item.Kind != m.edits[i].Kind || item.AffectedRelationships < 0 {
 			return false
 		}
+		if m.sequential && (item.Destination.Namespace() != m.object.Namespace() || item.Destination.Kind == "" || item.Destination.Name == "") {
+			return false
+		}
 	}
 	return true
 }
@@ -280,6 +283,10 @@ func (s *State) confirmDataMutation(services ui.Services, d *Document) {
 	keys, generation, request := slices.Clone(m.keys), m.generation, m.request
 	snapshot, object := m.snapshot, m.object
 	sequential := m.sequential
+	destinations := make([]contract.ObjectRef, len(m.snapshot.Items))
+	for i, item := range m.snapshot.Items {
+		destinations[i] = item.Destination
+	}
 	m.plan = nil
 	s.releaseDataMutation(d)
 	d.mutation.snapshot = snapshot
@@ -304,12 +311,15 @@ func (s *State) confirmDataMutation(services ui.Services, d *Document) {
 			activity.State, activity.AffectedRows = "uncertain", 0
 			activity.Error = locales.Text("返回结果不完整")
 		}
+		if !dataMutationDestinationsMatch(destinations, result) {
+			activity.State, activity.AffectedRows, activity.Error = "uncertain", 0, locales.Text("返回结果不完整")
+		}
 		contract.CompleteActivity(complete, activity)
 		for i := range history {
 			history[i].At, history[i].Duration = time.Now(), time.Since(started)
 		}
 		out <- mysqlEditResult{History: history, Generation: generation, Request: request, Profile: profile,
-			Keys: keys, MutationEdits: edits, Saved: result, Err: err}
+			Keys: keys, MutationEdits: edits, MutationDestinations: destinations, Saved: result, Err: err}
 		services.Invalidate()
 	}()
 }
@@ -321,6 +331,21 @@ func dataMutationCommitted(d *Document, keys []string, edits []contract.DataEdit
 		return false
 	}
 	return dataMutationDraftsMatch(d, keys, edits) && dataMutationReceiptComplete(d.object, edits, result)
+}
+
+func dataMutationDestinationsMatch(destinations []contract.ObjectRef, result *contract.DataEditResult) bool {
+	if result == nil || result.Sequential == nil {
+		return true
+	}
+	if len(destinations) != len(result.Sequential.Statements) {
+		return false
+	}
+	for i, statement := range result.Sequential.Statements {
+		if destinations[i] != statement.Destination {
+			return false
+		}
+	}
+	return true
 }
 
 func dataMutationReceiptComplete(object contract.ObjectRef, edits []contract.DataEdit, result *contract.DataEditResult) bool {
@@ -406,6 +431,9 @@ func (s *State) dataMutationModal(c *ui.Context, d *Document) {
 						}
 					}
 					text := kind + " · " + identity
+					if m.sequential {
+						text += " · " + item.Destination.Catalog + "." + item.Destination.Name
+					}
 					if m.presentation == nil || m.presentation.ShowRelationships {
 						text += fmt.Sprintf(" · %s: %d", locales.Text("关联关系"), item.AffectedRelationships)
 					}

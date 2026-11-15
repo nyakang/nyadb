@@ -369,6 +369,7 @@
   "mysqlFieldUniqueKey": "唯一索引",
   "dataCopyParameterizedSQL": "复制参数化 SQL",
   "mysqlFieldChunkHint": "大字段按需读取 · 单次最多 1024 字符/字节",
+  "dataCompleteFieldChunkHint": "查看片段会读取完整字段并检查是否发生变化；每次显示最多 1024 字符/字节。",
   "mysqlFieldMissingOrHidden": "字段不存在或已被隐藏",
   "mysqlFieldInfo": "字段信息",
   "mysqlFieldMetadataRetry": "字段元数据不可用，请重试读取数据",

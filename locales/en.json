@@ -369,6 +369,7 @@
   "mysqlFieldUniqueKey": "Unique index",
   "dataCopyParameterizedSQL": "Copy parameterized SQL",
   "mysqlFieldChunkHint": "Load large fields on demand · Up to 1024 characters/bytes per chunk",
+  "dataCompleteFieldChunkHint": "Viewing a chunk reads the complete field and checks for changes; each chunk displays up to 1024 characters/bytes.",
   "mysqlFieldMissingOrHidden": "The field is missing or hidden.",
   "mysqlFieldInfo": "Field info",
   "mysqlFieldMetadataRetry": "Field metadata unavailable. Reload the data to retry.",

@@ -42,11 +42,25 @@ func (s *Session) checkObject(o contract.ObjectRef) error {
 	return nil
 }
 func metadataRead(ctx context.Context, w *wire, sql string) (contract.ResultSet, error) {
-	budget := 32 << 20
-	set, _, err := w.query(ctx, sql, nil, &budget)
-	if err == nil && len(set.Truncation) > 0 {
-		err = contract.ErrUnsupported
-	}
+	// Native definitions and metadata must retain complete text independently
+	// of the SQL preview's 4096-byte cells. Bound the complete publication.
+	var rows [][]contract.Cell
+	budget, size := 0, 0
+	set, _, err := w.query(ctx, sql, func(_ []contract.Column, cells []contract.Cell) error {
+		size += 64 * len(cells)
+		for _, c := range cells {
+			if c.Truncated {
+				return contract.ErrUnsupported
+			}
+			size += len(c.Text) + len(c.Bytes)
+		}
+		if len(rows) >= 10000 || size > 32<<20 {
+			return contract.ErrUnsupported
+		}
+		rows = append(rows, cells)
+		return nil
+	}, &budget)
+	set.Rows, set.Truncation = rows, nil
 	return set, err
 }
 func (s *Session) Namespaces(ctx context.Context) (result []contract.Namespace, err error) {
@@ -125,60 +139,65 @@ func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*con
 	}
 	var result *contract.TableStructure
 	err := s.withConnection(ctx, func(child context.Context, w *wire) error {
-		objects, e := s.browse(child, w, o.Namespace())
-		if e != nil {
-			return e
-		}
-		found := false
-		for _, candidate := range objects {
-			if candidate.Ref == o {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return contract.ErrUnsupported
-		}
-		rows, e := metadataRead(child, w, "DESCRIBE "+qualified(o.Catalog, o.Name))
-		if e != nil {
-			return e
-		}
-		source, e := metadataRead(child, w, "SHOW CREATE "+strings.ToUpper(o.Kind)+" "+qualified(o.Catalog, o.Name))
-		if e != nil {
-			return e
-		}
-		if len(source.Rows) != 1 || len(source.Rows[0]) < 2 || source.Rows[0][1].Kind != contract.Text {
-			return contract.ErrUnsupported
-		}
-		t := &contract.TableStructure{Object: o, Database: o.Catalog, Name: o.Name, Kind: o.Kind, Engine: "TDengine", Definition: source.Rows[0][1].Text, Definitions: []contract.Definition{{Name: o.Name, Kind: o.Kind, SQL: source.Rows[0][1].Text}}, Editable: false}
-		for i, row := range rows.Rows {
-			if len(row) < 4 || !validName(row[0].Text) {
-				return contract.ErrUnsupported
-			}
-			typ, note := row[1].Text, row[3].Text
-			column := contract.StructureColumn{Name: row[0].Text, Type: typ, DataType: typ, Position: int64(i + 1), Nullable: true, ValueKind: valueKind(typ), Extra: note}
-			if strings.Contains(note, "TAG") {
-				column.Comment = "TAG"
-			} else if i == 0 || strings.Contains(note, "COMPOSITE KEY") {
-				column.Nullable = false
-				if !strings.EqualFold(o.Kind, "stable") {
-					column.Key = "PRI"
-				}
-			}
-			if typ == "VARCHAR" || typ == "NCHAR" || typ == "VARBINARY" {
-				n, e := strconv.ParseInt(row[2].Text, 10, 64)
-				if e != nil {
-					return contract.ErrUnsupported
-				}
-				column.CharacterMaxLength = &n
-				column.Type = typ + "(" + row[2].Text + ")"
-			}
-			t.Columns = append(t.Columns, column)
-		}
-		result = t
-		return nil
+		var e error
+		result, e = s.tableMetadataOnWire(child, w, o)
+		return e
 	})
 	return result, err
+}
+
+func (s *Session) tableMetadataOnWire(ctx context.Context, w *wire, o contract.ObjectRef) (*contract.TableStructure, error) {
+	objects, e := s.browse(ctx, w, o.Namespace())
+	if e != nil {
+		return nil, e
+	}
+	found := false
+	for _, candidate := range objects {
+		if candidate.Ref == o {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return nil, contract.ErrUnsupported
+	}
+	rows, e := metadataRead(ctx, w, "DESCRIBE "+qualified(o.Catalog, o.Name))
+	if e != nil {
+		return nil, e
+	}
+	source, e := metadataRead(ctx, w, "SHOW CREATE "+strings.ToUpper(o.Kind)+" "+qualified(o.Catalog, o.Name))
+	if e != nil {
+		return nil, e
+	}
+	if len(source.Rows) != 1 || len(source.Rows[0]) < 2 || source.Rows[0][1].Kind != contract.Text {
+		return nil, contract.ErrUnsupported
+	}
+	t := &contract.TableStructure{Object: o, Database: o.Catalog, Name: o.Name, Kind: o.Kind, Engine: "TDengine", Definition: source.Rows[0][1].Text, Definitions: []contract.Definition{{Name: o.Name, Kind: o.Kind, SQL: source.Rows[0][1].Text}}, Editable: false}
+	for i, row := range rows.Rows {
+		if len(row) < 4 || !validName(row[0].Text) {
+			return nil, contract.ErrUnsupported
+		}
+		typ, note := row[1].Text, row[3].Text
+		column := contract.StructureColumn{Name: row[0].Text, Type: typ, DataType: typ, Position: int64(i + 1), Nullable: true, ValueKind: valueKind(typ), Extra: note}
+		if strings.Contains(note, "TAG") {
+			column.Comment = "TAG"
+		} else if i == 0 || strings.Contains(note, "COMPOSITE KEY") {
+			column.Nullable = false
+			if !strings.EqualFold(o.Kind, "stable") {
+				column.Key = "PRI"
+			}
+		}
+		if typ == "VARCHAR" || typ == "NCHAR" || typ == "VARBINARY" {
+			n, e := strconv.ParseInt(row[2].Text, 10, 64)
+			if e != nil {
+				return nil, contract.ErrUnsupported
+			}
+			column.CharacterMaxLength = &n
+			column.Type = typ + "(" + row[2].Text + ")"
+		}
+		t.Columns = append(t.Columns, column)
+	}
+	return t, nil
 }
 
 func (s *Session) resolve(ctx context.Context, id int64, db, table string, o contract.ObjectRef) (*contract.TableStructure, error) {

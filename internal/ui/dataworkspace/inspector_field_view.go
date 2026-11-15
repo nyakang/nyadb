@@ -13,8 +13,8 @@ import (
 	"github.com/nyakang/nyadb/locales"
 )
 
-// The inspector follows the active real data tab rather than the connection
-// profile, but never asks the server for an unbounded cell value.
+// The inspector follows the active real data tab. Each explicit request returns
+// a bounded segment; the owning provider describes its native read scope.
 func (s *inspectorState) FieldView(c *ui.Context, t *Panel) {
 	if t == nil || t.closed {
 		return
@@ -130,7 +130,11 @@ func (s *inspectorState) FieldView(c *ui.Context, t *Panel) {
 					ui.Text(c, value).FontSize(theme.Font(c, theme.FontSize)).Padding(3)
 				})
 				if canRead {
-					ui.Text(c, locales.Text("大字段按需读取 · 单次最多 1024 字符/字节")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
+					hint := "大字段按需读取 · 单次最多 1024 字符/字节"
+					if t.runtime != nil && t.runtime.FieldReadScopeHint != "" {
+						hint = t.runtime.FieldReadScopeHint
+					}
+					ui.Text(c, locales.Text(hint)).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 					if t.chunkLoading {
 						ui.Text(c, locales.Text("正在读取字段片段…")).FontSize(theme.Font(c, 11))
 					}

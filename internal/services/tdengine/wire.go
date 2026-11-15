@@ -305,7 +305,7 @@ func safeError(err error, password string) error {
 	if err == nil {
 		return nil
 	}
-	for _, known := range []error{contract.ErrRevoked, contract.ErrSQLSessionLost, contract.ErrUnsupported, connections.ErrInvalid, context.Canceled, context.DeadlineExceeded} {
+	for _, known := range []error{contract.ErrRevoked, contract.ErrSQLSessionLost, contract.ErrSQLSessionLimit, contract.ErrUnsupported, contract.ErrDataConflict, contract.ErrDataReadOnly, contract.ErrDataEditLimit, contract.ErrDataPage, connections.ErrInvalid, context.Canceled, context.DeadlineExceeded} {
 		if errors.Is(err, known) {
 			return known
 		}

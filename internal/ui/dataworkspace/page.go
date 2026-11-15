@@ -261,6 +261,7 @@ func (s *State) consumePages() {
 			}
 			clearDraftHistory(t)
 			t.page = result.page
+			t.page.ColumnEditKinds = contract.CloneDataColumnEditKinds(result.page.ColumnEditKinds)
 			if result.page.CurrentCursor != nil {
 				if t.cursorHistory == nil {
 					t.cursorHistory = map[int64]*contract.DataCursor{}

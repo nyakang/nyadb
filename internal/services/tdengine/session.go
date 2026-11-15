@@ -21,6 +21,7 @@ type Session struct {
 	cancel                  context.CancelFunc
 	closed                  bool
 	leases                  map[*queryLease]bool
+	dataLeases              map[*dataLease]bool
 	metadataSlots, sqlSlots chan struct{}
 	active                  sync.WaitGroup
 	closeOnce               sync.Once
@@ -127,9 +128,16 @@ func (s *Session) Close() error {
 		for l := range s.leases {
 			all = append(all, l)
 		}
+		data := make([]*dataLease, 0, len(s.dataLeases))
+		for l := range s.dataLeases {
+			data = append(data, l)
+		}
 		s.mu.Unlock()
 		for _, l := range all {
 			l.Release()
+		}
+		for _, l := range data {
+			_ = l.Close()
 		}
 		s.active.Wait()
 		s.mu.Lock()

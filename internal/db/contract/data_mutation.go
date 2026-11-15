@@ -16,6 +16,7 @@ type DataMutationPlan interface {
 
 type DataMutationItem struct {
 	Kind, EntityID        string
+	Destination           ObjectRef // Optional original qualified native write destination.
 	AffectedRelationships int
 	Blocked               bool
 }

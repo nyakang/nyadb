@@ -68,7 +68,11 @@ func mutationWorkspace(t *testing.T) (*State, *Document, *Session) {
 func mutationPlanFor(d *Document, edits []contract.DataEdit) *mutationTestPlan {
 	snapshot := contract.DataMutationSnapshot{Object: d.object, Edits: edits, NativeJSON: `{"original":"完整猫预览","parameters":[],"relationships":[]}`}
 	for _, e := range edits {
-		snapshot.Items = append(snapshot.Items, contract.DataMutationItem{Kind: e.Kind, EntityID: "original-entity"})
+		item := contract.DataMutationItem{Kind: e.Kind, EntityID: "original-entity"}
+		if d.boundRuntime != nil && d.boundRuntime.SequentialWrites {
+			item.Destination = d.object
+		}
+		snapshot.Items = append(snapshot.Items, item)
 	}
 	return &mutationTestPlan{snapshot: contract.CloneDataMutationSnapshot(snapshot)}
 }

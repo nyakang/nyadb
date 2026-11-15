@@ -62,7 +62,7 @@ func TestTDengineNativePublicChooserVaultSQLGridStructureAndRecovery(t *testing.
 			defer lease.Release()
 			table := "public_rows"
 			db := "shell_" + strconv.FormatInt(time.Now().UnixNano(), 36)
-			if _, err = lease.Execute(context.Background(), "", "CREATE DATABASE `"+db+"` PRECISION 'ns'; CREATE TABLE `"+db+"`.`"+table+"`(ts TIMESTAMP,id BIGINT,note VARCHAR(255),sym NCHAR(255)); INSERT INTO `"+db+"`.`"+table+"` VALUES(1704067200123456789,9007199254740993,'native shared grid','same'),(1704067201123456789,-9,'second original row','same')"); err != nil {
+			if _, err = lease.Execute(context.Background(), "", "CREATE DATABASE `"+db+"` PRECISION 'ns'; CREATE TABLE `"+db+"`.`"+table+"`(ts TIMESTAMP,id BIGINT,note VARCHAR(255),sym NCHAR(255),bin VARBINARY(64)); INSERT INTO `"+db+"`.`"+table+"` VALUES(1704067200123456789,9007199254740993,'native shared grid','same','\\x00ff'),(1704067201123456789,-9,'second original row','same','\\x4142')"); err != nil {
 				t.Fatal(err)
 			}
 			defer func() { _, _ = lease.Execute(context.Background(), "", "DROP DATABASE `"+db+"`") }()
@@ -192,6 +192,37 @@ func TestTDengineNativePublicChooserVaultSQLGridStructureAndRecovery(t *testing.
 				t.Fatal("nonunique native fields granted row editing")
 			}
 			capture("grid", tt)
+			if len(data.data.Page().RowRefs) != 2 || data.data.Page().RowRefs[0] == nil || data.data.Page().RowSnapshots[0] == nil {
+				t.Fatal("public grid did not retain owned original rows")
+			}
+			if err = tt.Click("native shared grid"); err != nil {
+				t.Fatal("original public field selection failed", err)
+			}
+			s.dataWorkspace.ShowField(data.data)
+			tt.Frame()
+			panel := data.data.Inspector()
+			if panel.ChunkLoading() || panel.ChunkNext() != 0 || !tt.HasText("查看片段会读取完整字段并检查是否发生变化；每次显示最多 1024 字符/字节。") {
+				t.Fatal("public field was automatically read or native scope was hidden")
+			}
+			if err = tt.Click("读取所选字段下一段"); err != nil {
+				t.Fatal(err)
+			}
+			wait(tt, func() bool { return !panel.ChunkLoading() })
+			if panel.ChunkError() != "" || panel.ChunkText() != "native shared grid" || panel.ChunkNext() != 18 || panel.ChunkTotal() != 18 {
+				t.Fatal("public owned text field failed", panel.ChunkError(), panel.ChunkText())
+			}
+			if err = tt.Click("0x00ff"); err != nil {
+				t.Fatal("public native binary field selection failed", err)
+			}
+			tt.Frame()
+			if err = tt.Click("读取所选字段下一段"); err != nil {
+				t.Fatal(err)
+			}
+			wait(tt, func() bool { return !panel.ChunkLoading() })
+			if panel.ChunkError() != "" || panel.ChunkText() != "0x00ff" || panel.ChunkNext() != 2 || panel.ChunkTotal() != 2 {
+				t.Fatal("public original binary field changed bytes", panel.ChunkError(), panel.ChunkText())
+			}
+			capture("fields", tt)
 			var exported bytes.Buffer
 			s.SetEngineFiles(func(name string) (string, error) { return name, nil }, func(_ string, write func(io.Writer) error) error { return write(&exported) })
 			s.dataWorkspace.ExportJSONL(services, data.data)

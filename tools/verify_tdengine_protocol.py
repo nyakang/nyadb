@@ -32,6 +32,10 @@ REQUIRED_TESTS = {
     "TestNativeTDengineLostOriginalWriteAcknowledgementDoesNotReconnect",
 }
 APPLICATION_TESTS = {
+	"TestNativeTDengineDataDocumentCompleteRowsAndOriginalIdentity",
+	"TestNativeTDengineDataDocumentStableChildAndMetadataRevocation",
+	"TestNativeTDengineDataDocumentCloseWaitsAndSiblingReadsRemainIndependent",
+	"TestNativeTDengineFieldProjectionSemantics",
     "TestNativeTDengineOriginalTypesMetadataPagingAndFullExport",
     "TestNativeTDengineStableChildHierarchyAndCompositeIdentity",
     "TestNativeTDengineSequentialFailureReceiptsAndPhysicalIsolation",

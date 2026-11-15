@@ -14,7 +14,7 @@ import (
 )
 
 func (s *Session) DataRuntime() contract.DataRuntime {
-	return contract.DataRuntime{PageCancellationAcknowledged: true, Loader: s.load, AdvancedLoader: s.page, TableMetadata: s.tableMetadata, TableInfo: s.tableInfo, Count: s.count, Exporter: s.export, JSONL: s.jsonl, Capabilities: s.Capabilities(), FilterModes: []string{"equal", "not_equal", "less", "greater", "like", "is_null", "is_not_null"}, ReadScopeHint: "TDengine 分页读取当前可见数据；跨页不提供一致快照。"}
+	return contract.DataRuntime{ReserveDocument: s.ReserveDataDocument, PageCancellationAcknowledged: true, Loader: s.load, AdvancedLoader: s.page, TableMetadata: s.tableMetadata, TableInfo: s.tableInfo, Count: s.count, Exporter: s.export, JSONL: s.jsonl, Capabilities: s.Capabilities(), FilterModes: []string{"equal", "not_equal", "less", "greater", "like", "is_null", "is_not_null"}, ReadScopeHint: "TDengine 分页读取当前可见数据；跨页不提供一致快照。"}
 }
 
 func filterLiteral(column contract.StructureColumn, value string) (string, error) {
@@ -76,7 +76,7 @@ func dataQuery(t *contract.TableStructure, o contract.DataOptions, columns []str
 		if _, ok := known[name]; !ok {
 			return "", connections.ErrInvalid
 		}
-		parts = append(parts, quote(name))
+		parts = append(parts, dataColumnSQL(t, name))
 	}
 	q := "SELECT " + strings.Join(parts, ",") + " FROM " + qualified(t.Database, t.Name)
 	filters := o.Filters
@@ -93,7 +93,7 @@ func dataQuery(t *contract.TableStructure, o contract.DataOptions, columns []str
 		if mode == "" {
 			mode = "equal"
 		}
-		name := quote(f.Column)
+		name := dataColumnSQL(t, f.Column)
 		if mode == "is_null" || mode == "is_not_null" {
 			operator := " IS NULL"
 			if mode == "is_not_null" {
@@ -131,7 +131,7 @@ func dataQuery(t *contract.TableStructure, o contract.DataOptions, columns []str
 		if sort.Descending {
 			direction = " DESC"
 		}
-		parts = append(parts, quote(sort.Column)+direction)
+		parts = append(parts, dataColumnSQL(t, sort.Column)+direction)
 	}
 	if len(parts) > 0 {
 		q += " ORDER BY " + strings.Join(parts, ",")
@@ -143,6 +143,14 @@ func dataQuery(t *contract.TableStructure, o contract.DataOptions, columns []str
 		q += " LIMIT " + strconv.Itoa(o.Limit+1) + " OFFSET " + strconv.FormatInt(o.Offset, 10)
 	}
 	return q, nil
+}
+
+func dataColumnSQL(t *contract.TableStructure, name string) string {
+	if strings.EqualFold(t.Kind, "stable") && name == "tbname" {
+		// Native pseudo columns are expressions, not quoted stored columns.
+		return "tbname"
+	}
+	return quote(name)
 }
 func (s *Session) load(ctx context.Context, id int64, db, table string, offset int64, limit int) (*contract.DataPage, error) {
 	return s.page(ctx, id, db, table, contract.DataOptions{Offset: offset, Limit: limit})

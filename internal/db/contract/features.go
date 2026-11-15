@@ -123,6 +123,7 @@ type DataRuntime struct {
 	ImportAtomicBatches bool
 	Selector            DataSelector
 	ReadScopeHint       string                   // Optional localized presentation of the original read/count/export scope.
+	FieldReadScopeHint  string                   // Optional localized field-reader scope; the returned chunk remains bounded.
 	ReadDescription     func(DataOptions) string // pure, parameter-free native request information.
 	// CaptureKVKeyRead verifies the original complete row/page observations and
 	// captured read grants. It may perform I/O on its own original read channel.
@@ -190,13 +191,14 @@ func Require[T any](s Session) (T, error) {
 
 // Feature providers are independent; an absent provider leaves its operations disabled.
 type DataReads struct {
-	Loader         func(context.Context, int64, string, string, int64, int) (*DataPage, error)
-	AdvancedLoader func(context.Context, int64, string, string, DataOptions) (*DataPage, error)
-	RowReader      func(context.Context, int64, string, string, RowRef) (*DataRow, error)
-	TableMetadata  func(context.Context, int64, string, string) (*TableStructure, error)
-	TableInfo      func(context.Context, int64, string, string) (*TableInfo, error)
-	Count          func(context.Context, int64, string, string) (int64, error)
-	Chunk          func(context.Context, int64, string, string, string, RowRef, int64, int) (*FieldChunk, error)
+	FieldReadScopeHint string
+	Loader             func(context.Context, int64, string, string, int64, int) (*DataPage, error)
+	AdvancedLoader     func(context.Context, int64, string, string, DataOptions) (*DataPage, error)
+	RowReader          func(context.Context, int64, string, string, RowRef) (*DataRow, error)
+	TableMetadata      func(context.Context, int64, string, string) (*TableStructure, error)
+	TableInfo          func(context.Context, int64, string, string) (*TableInfo, error)
+	Count              func(context.Context, int64, string, string) (int64, error)
+	Chunk              func(context.Context, int64, string, string, string, RowRef, int64, int) (*FieldChunk, error)
 }
 type DataReadsProvider interface{ DataReads() DataReads }
 type DataEdits struct {
@@ -234,6 +236,7 @@ func ComposeData(s Session) DataRuntime {
 	}
 	if p, e := Require[DataReadsProvider](s); e == nil {
 		v := p.DataReads()
+		r.FieldReadScopeHint = v.FieldReadScopeHint
 		r.Loader = v.Loader
 		r.AdvancedLoader = v.AdvancedLoader
 		r.RowReader = v.RowReader

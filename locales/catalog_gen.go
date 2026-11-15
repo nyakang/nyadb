@@ -3736,6 +3736,16 @@ func (msgs Messages) MysqlFieldChunkHint() string {
 	return Catalog.Format(msgs.locale, "mysqlFieldChunkHint", nil)
 }
 
+// DataCompleteFieldChunkHint says "查看片段会读取完整字段并检查是否发生变化；每次显示最多 1024 字符/字节。"
+// in the language the app shows.
+func DataCompleteFieldChunkHint() string { return In(i18n.Locale()).DataCompleteFieldChunkHint() }
+
+// DataCompleteFieldChunkHint says "查看片段会读取完整字段并检查是否发生变化；每次显示最多 1024 字符/字节。"
+// in the language of msgs.
+func (msgs Messages) DataCompleteFieldChunkHint() string {
+	return Catalog.Format(msgs.locale, "dataCompleteFieldChunkHint", nil)
+}
+
 // MysqlFieldMissingOrHidden says "字段不存在或已被隐藏"
 // in the language the app shows.
 func MysqlFieldMissingOrHidden() string { return In(i18n.Locale()).MysqlFieldMissingOrHidden() }

@@ -118,3 +118,19 @@ func TestInspectorLargeFieldsKeepCopyAndChunkActionsVisible(t *testing.T) {
 		t.Fatal("bounded display altered the copied fragment")
 	}
 }
+
+func TestInspectorUsesOriginalProviderFieldReadScope(t *testing.T) {
+	doc := sampleSelection()
+	s, p := testInspector(doc)
+	doc.Row, doc.Column = 0, "label"
+	doc.Page.RowRefs = []*contract.RowRef{{Database: "test_schema", Table: "entries"}}
+	p.runtime = &Runtime{FieldReadScopeHint: "查看片段会读取完整字段并检查是否发生变化；每次显示最多 1024 字符/字节。"}
+	s.ChunkLoader = func(context.Context, int64, string, string, string, contract.RowRef, int64, int) (*contract.FieldChunk, error) {
+		t.Fatal("scope presentation triggered a field read")
+		return nil, contract.ErrUnsupported
+	}
+	tt := ui.NewTester(func(c *ui.Context) { s.FieldView(c, p) }, 400, 900)
+	if !tt.HasText(p.runtime.FieldReadScopeHint) || tt.HasText("大字段按需读取 · 单次最多 1024 字符/字节") || !tt.HasText("读取所选字段下一段") {
+		t.Fatal("field view hid the original provider's read scope")
+	}
+}

@@ -42,7 +42,7 @@ func dataSequentialTestResult(object contract.ObjectRef, edits []contract.DataEd
 }
 
 func TestDataSequentialWriteRequiresOriginalAcknowledgementsAndRetainsFailedPrefix(t *testing.T) {
-	for _, mode := range []string{"success", "native-failure", "partial-no-error", "unknown", "unknown-no-error", "malformed", "wrong-object", "wrong-original-prefix", "verified", "fake-commit", "generation", "park", "cancel"} {
+	for _, mode := range []string{"success", "native-failure", "partial-no-error", "unknown", "unknown-no-error", "malformed", "wrong-object", "wrong-destination", "wrong-original-prefix", "verified", "fake-commit", "generation", "park", "cancel"} {
 		t.Run(mode, func(t *testing.T) {
 			s, d, active := mutationWorkspace(t)
 			d.boundRuntime.SequentialWrites = true
@@ -92,6 +92,8 @@ func TestDataSequentialWriteRequiresOriginalAcknowledgementsAndRetainsFailedPref
 					r.Sequential.Statements[1].NativeJSON = ""
 				case "wrong-object":
 					r.Sequential.Object.Name = "foreign"
+				case "wrong-destination":
+					r.Sequential.Statements[0].Destination.Name = "same-catalog-foreign-child"
 				case "wrong-original-prefix":
 					r.Outcomes[0].Original = nil
 				case "verified":
@@ -180,7 +182,7 @@ func TestDataSequentialWriteRequiresOriginalAcknowledgementsAndRetainsFailedPref
 			}
 			select {
 			case result := <-activities:
-				if (mode == "native-failure" || mode == "partial-no-error") && (result.State != "partial" || result.AffectedRows != 1) || (mode == "unknown" || mode == "unknown-no-error" || mode == "cancel") && (result.State != "uncertain" || result.AffectedRows != 1) || (mode == "wrong-object" || mode == "wrong-original-prefix" || mode == "fake-commit") && (result.State != "uncertain" || result.AffectedRows != 0) {
+				if (mode == "native-failure" || mode == "partial-no-error") && (result.State != "partial" || result.AffectedRows != 1) || (mode == "unknown" || mode == "unknown-no-error" || mode == "cancel") && (result.State != "uncertain" || result.AffectedRows != 1) || (mode == "wrong-object" || mode == "wrong-destination" || mode == "wrong-original-prefix" || mode == "fake-commit") && (result.State != "uncertain" || result.AffectedRows != 0) {
 					t.Fatal("native activity discarded acknowledged prefix", result)
 				}
 			case <-time.After(5 * time.Second):

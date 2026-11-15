@@ -13,7 +13,7 @@ type Descriptor struct {
 func Describe(kind Kind) (Descriptor, bool) {
 	switch kind {
 	case TDengine:
-		return Descriptor{kind, "TDengine", "tdengine", "server", "tdengine", 6041, contract.Capabilities{Query: true, Metadata: true, Count: true, Export: true, JSONL: true}}, true
+		return Descriptor{kind, "TDengine", "tdengine", "server", "tdengine", 6041, contract.Capabilities{Query: true, Metadata: true, Count: true, FieldChunks: true, Export: true, JSONL: true}}, true
 	case QuestDB:
 		return Descriptor{kind, "QuestDB", "questdb", "server", "questdb", 8812, contract.Capabilities{Query: true, Metadata: true, Count: true, Export: true, JSONL: true, Explain: true}}, true
 	case RQLite:

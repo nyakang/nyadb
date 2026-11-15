@@ -40,18 +40,19 @@ type mysqlCellEditor struct {
 	Refocus                                       bool
 }
 type mysqlEditResult struct {
-	History             []mysqlDataHistoryEntry
-	Generation, Request uint64
-	Profile             int64
-	Keys                []string
-	Saved               *contract.DataEditResult
-	Row                 *contract.DataRow
-	TargetRow           int
-	TargetKey, Field    string
-	Dedicated           bool
-	Err                 error
-	Verification        *contract.DataVerification
-	MutationEdits       []contract.DataEdit
+	History              []mysqlDataHistoryEntry
+	Generation, Request  uint64
+	Profile              int64
+	Keys                 []string
+	Saved                *contract.DataEditResult
+	Row                  *contract.DataRow
+	TargetRow            int
+	TargetKey, Field     string
+	Dedicated            bool
+	Err                  error
+	Verification         *contract.DataVerification
+	MutationEdits        []contract.DataEdit
+	MutationDestinations []contract.ObjectRef
 }
 type mysqlCellHit struct {
 	Row, Source int
@@ -115,9 +116,9 @@ func mysqlDataCanEdit(t *Document, row, source int) bool {
 		return false
 	}
 	if d := mysqlDataDraftForRow(t, row); d != nil {
-		return !dataEditDeletesRow(d.Kind) && t.allowsDataEdit(d.Kind)
+		return !dataEditDeletesRow(d.Kind) && t.allowsDataEdit(d.Kind) && contract.DataColumnEditAllowed(t.page, t.page.ColumnMetadata[source].Name, d.Kind)
 	}
-	return t.allowsDataEdit("update") && row < len(t.page.RowSnapshots) && t.page.RowSnapshots[row] != nil && mysqlDataRowKey(t, row) != ""
+	return t.allowsDataEdit("update") && contract.DataColumnEditAllowed(t.page, t.page.ColumnMetadata[source].Name, "update") && row < len(t.page.RowSnapshots) && t.page.RowSnapshots[row] != nil && mysqlDataRowKey(t, row) != ""
 }
 func mysqlDataHasDraft(t *Document) bool {
 	if t == nil {
@@ -200,6 +201,15 @@ func (s *State) finishMySQLCellEdit(t *Document, accept bool) {
 	}
 	source := slices.Index(t.page.Columns, e.Field)
 	if source < 0 || mysqlDataRowKey(t, e.Row) != e.Key {
+		return
+	}
+	kind := "update"
+	if draft := mysqlDataDraftForRow(t, e.Row); draft != nil {
+		kind = draft.Kind
+	}
+	if !contract.DataColumnEditAllowed(t.page, e.Field, kind) {
+		t.edit.Editor = e
+		t.edit.Err = locales.Text("此字段类型暂不支持编辑")
 		return
 	}
 	v := contract.DataValue{Kind: e.Original.Kind, Text: e.Text}
@@ -413,7 +423,7 @@ func (s *State) stageMySQLDataRecord(services ui.Services, t *Document, endpoint
 	mysqlDataClearColumnSelection(t)
 	mysqlDataScrollRecordIntoView(t, row)
 	for i, col := range t.page.ColumnMetadata {
-		if !col.Generated && !contract.DataColumnGenerated(col) && !strings.Contains(col.Extra, "auto_increment") && !t.hiddenColumns[col.Name] {
+		if !col.Generated && !contract.DataColumnGenerated(col) && contract.DataColumnEditAllowed(t.page, col.Name, "insert") && !strings.Contains(col.Extra, "auto_increment") && !t.hiddenColumns[col.Name] {
 			s.beginMySQLCellEdit(services, t, row, i, false)
 			break
 		}
@@ -703,7 +713,7 @@ func (s *State) consumeEdits(services ui.Services) {
 				s.rememberNativeWriteReceipt(t, r.Saved.NativeJSON, r.Saved.Sequential != nil)
 			}
 			historyErr := r.Err
-			if historyErr == nil && len(r.MutationEdits) > 0 && !dataMutationReceiptComplete(t.object, r.MutationEdits, r.Saved) {
+			if historyErr == nil && len(r.MutationEdits) > 0 && (!dataMutationReceiptComplete(t.object, r.MutationEdits, r.Saved) || !dataMutationDestinationsMatch(r.MutationDestinations, r.Saved)) {
 				historyErr = errors.New(locales.Text("提交结果不完整，请核验数据库"))
 			}
 			s.recordDataWriteHistory(t, r.History, r.Saved, historyErr, r.Generation != s.sessionFor(t).Generation || !s.sessionFor(t).Connected)
@@ -834,7 +844,7 @@ func (s *State) consumeEdits(services ui.Services) {
 				s.openMySQLCellEditor(services, t, row, source, v, r.Dedicated)
 				continue
 			}
-			if r.Saved == nil || r.Saved.CommitUncertain || r.Saved.Incomplete || len(r.Saved.Outcomes) != len(r.Keys) || r.Saved.Sequential != nil && len(r.MutationEdits) == 0 || len(r.MutationEdits) > 0 && !dataMutationCommitted(t, r.Keys, r.MutationEdits, r.Saved) {
+			if r.Saved == nil || r.Saved.CommitUncertain || r.Saved.Incomplete || len(r.Saved.Outcomes) != len(r.Keys) || r.Saved.Sequential != nil && len(r.MutationEdits) == 0 || len(r.MutationEdits) > 0 && (!dataMutationCommitted(t, r.Keys, r.MutationEdits, r.Saved) || !dataMutationDestinationsMatch(r.MutationDestinations, r.Saved)) {
 				t.edit.Uncertain = cloneEditResult(r.Saved)
 				if t.edit.Uncertain == nil {
 					t.edit.Uncertain = &contract.DataEditResult{}
@@ -1021,7 +1031,7 @@ func (s *State) navigateMySQLCellEdit(services ui.Services, t *Document, row int
 	}
 	for _, name := range order {
 		source := slices.Index(t.page.Columns, name)
-		if source >= 0 && !t.hiddenColumns[name] && !t.page.ColumnMetadata[source].Generated && !contract.DataColumnGenerated(t.page.ColumnMetadata[source]) {
+		if source >= 0 && !t.hiddenColumns[name] && !t.page.ColumnMetadata[source].Generated && !contract.DataColumnGenerated(t.page.ColumnMetadata[source]) && mysqlDataCanEdit(t, row, source) {
 			visible = append(visible, name)
 		}
 	}
