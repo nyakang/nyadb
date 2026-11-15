@@ -258,7 +258,7 @@ func (s *State) startDataAnalysis(services ui.Services, t *Document) {
 	}
 	analyzer := s.Analyzer
 	if analyzer == nil {
-		analyzer = s.runtime().Analyzer
+		analyzer = s.runtimeFor(t).Analyzer
 	}
 	if analyzer == nil {
 		t.tools.analysisErr = locales.Text("完整数据分析服务不可用")

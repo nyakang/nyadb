@@ -28,8 +28,9 @@ func (s *State) Cancel(t *Document) {
 	if t == nil || t.closed {
 		return
 	}
-	if s.runtimeFor(t).PageFailureRequiresReopen && t.loading {
-		t.readRetired, t.readStopping = true, true
+	runtime := s.runtimeFor(t)
+	if (runtime.PageFailureRequiresReopen || runtime.PageCancellationAcknowledged) && t.loading {
+		t.readRetired, t.readStopping = runtime.PageFailureRequiresReopen, true
 		if t.cancel != nil {
 			t.cancel()
 		}
@@ -49,7 +50,7 @@ func (s *State) settlePage(t *Document) {
 	}
 	t.tools.historyActiveRead = nil
 	t.request++
-	if !s.runtimeFor(t).PageFailureRequiresReopen {
+	if runtime := s.runtimeFor(t); !runtime.PageFailureRequiresReopen && !runtime.PageCancellationAcknowledged {
 		s.cancelMySQLChunk(t)
 	}
 	if t.cancel != nil {
@@ -75,7 +76,7 @@ func (s *State) Load(services ui.Services, t *Document, refresh bool) {
 		t.err = "原数据读取范围已失效，请重新打开数据"
 		return
 	}
-	if t.loading && s.runtimeFor(t).PageFailureRequiresReopen {
+	if runtime := s.runtimeFor(t); t.loading && (runtime.PageFailureRequiresReopen || runtime.PageCancellationAcknowledged) {
 		if refresh {
 			s.Cancel(t)
 		}
@@ -192,7 +193,7 @@ func (s *State) changeMySQLDataPage(services ui.Services, t *Document, offset in
 	}
 	clearDraftHistory(t)
 	t.offset = offset
-	if !s.runtimeFor(t).PageFailureRequiresReopen {
+	if runtime := s.runtimeFor(t); !runtime.PageFailureRequiresReopen && !runtime.PageCancellationAcknowledged {
 		t.page = nil
 		t.columns = nil
 	}
@@ -222,7 +223,8 @@ func (s *State) consumePages() {
 			stopping := t.readStopping
 			s.settlePage(t)
 			t.readStopping = false
-			if s.runtimeFor(t).PageFailureRequiresReopen && t.page != nil &&
+			runtime := s.runtimeFor(t)
+			if (runtime.PageFailureRequiresReopen || runtime.PageCancellationAcknowledged) && t.page != nil &&
 				(stopping || result.err != nil || result.page == nil || result.generation != s.sessionFor(t).Generation || !s.sessionFor(t).Connected) {
 				t.offset = t.page.Offset
 				t.after = cloneCursor(t.page.CurrentCursor)
@@ -232,6 +234,10 @@ func (s *State) consumePages() {
 			}
 			if result.generation != s.sessionFor(t).Generation || !s.sessionFor(t).Connected {
 				t.err = "原数据库会话已失效，请刷新表数据"
+				continue
+			}
+			if stopping && s.runtimeFor(t).PageCancellationAcknowledged && !s.runtimeFor(t).PageFailureRequiresReopen {
+				t.readInfo.Canceled = true
 				continue
 			}
 			if stopping || s.runtimeFor(t).PageFailureRequiresReopen && (result.err != nil || result.page == nil) {

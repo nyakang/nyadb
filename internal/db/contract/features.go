@@ -91,6 +91,10 @@ type DataSelector struct {
 // DataRuntime contains operation-bound functions. Workers capture this value
 // before starting; adapters must check the original session on every call.
 type DataRuntime struct {
+	// PageCancellationAcknowledged keeps a canceled page pending until its
+	// original executor returns. Stateless providers can then read again on the
+	// same document; cancellation alone does not retire its original range.
+	PageCancellationAcknowledged bool
 	// PageFailureRequiresReopen retires the original data range after a failed
 	// or canceled page. The UI waits for acknowledgement and requires a new
 	// explicit document reservation; auxiliary readers keep their own scopes.

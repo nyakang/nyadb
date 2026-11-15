@@ -30,7 +30,7 @@ INSERT INTO original_grid VALUES(9007199254740993,replace(hex(zeroblob(256)),'0'
 	}
 	t.Cleanup(func() { _ = d.Close() })
 	r := d.Runtime()
-	if r.Saver == nil || !r.Capabilities.EditableTables || !r.NativeReceipts || r.Verify == nil || r.Transactions.Begin != nil || r.Capabilities.Keyset {
+	if r.Saver == nil || !r.Capabilities.EditableTables || !r.NativeReceipts || r.Verify == nil || r.Transactions.Begin != nil || !r.Capabilities.Keyset {
 		t.Fatal("original document data write capabilities or transaction scope changed")
 	}
 	page, err := r.AdvancedLoader(context.Background(), p.ID, "main", o.Name, contract.DataOptions{Limit: 1})
@@ -105,8 +105,8 @@ INSERT INTO original_grid VALUES(9007199254740993,replace(hex(zeroblob(256)),'0'
 	if _, err := r.Loader(context.Background(), p.ID+1, "main", o.Name, 0, 1); !errors.Is(err, connections.ErrInvalid) {
 		t.Fatal("document escaped its original profile")
 	}
-	if _, err := r.AdvancedLoader(context.Background(), p.ID, "main", o.Name, contract.DataOptions{Limit: 1, UseKeyset: true}); !errors.Is(err, contract.ErrUnsupported) {
-		t.Fatal("unsupported seek semantics were silently substituted")
+	if keyed, err := r.AdvancedLoader(context.Background(), p.ID, "main", o.Name, contract.DataOptions{Limit: 1, UseKeyset: true}); err != nil || !keyed.KeysetAvailable || keyed.NextCursor == nil {
+		t.Fatal("native cursor capability has no original boundary", err)
 	}
 	nativeExecute(t, l, "UPDATE original_grid SET txt='changed' WHERE id=1")
 	changed, err := r.RowReader(context.Background(), p.ID, "main", o.Name, *page.RowRefs[0])

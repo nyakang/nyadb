@@ -16,6 +16,8 @@ import (
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
+const maxDataColumns = 512
+
 func (s *Session) DataReads() contract.DataReads {
 	return contract.DataReads{Loader: s.loadData, AdvancedLoader: s.pageData, RowReader: s.readDataRow, TableMetadata: s.dataMetadata, TableInfo: s.dataTableInfo, Count: s.countData, Chunk: s.readDataChunk}
 }
@@ -55,7 +57,7 @@ func (s *Session) dataTable(ctx context.Context, id int64, database, name string
 		return tableSnapshot{}, err
 	}
 	t, err := s.table(ctx, o)
-	if err == nil && (len(t.structure.Columns) == 0 || len(t.structure.Columns) > 512) {
+	if err == nil && (len(t.structure.Columns) == 0 || len(t.structure.Columns) > maxDataColumns) {
 		err = contract.ErrUnsupported
 	}
 	return t, err
@@ -120,46 +122,53 @@ func dataWhere(t tableSnapshot, o contract.DataOptions, masked bool) (string, er
 }
 
 func dataSource(t tableSnapshot, o contract.DataOptions, masked bool) (string, error) {
+	if o.After != nil {
+		return "", connections.ErrInvalid
+	}
+	order, err := dataOrder(t, o)
+	if err != nil {
+		return "", err
+	}
+	return dataOrderedSource(t, o, masked, order, "")
+}
+
+func dataOrderedSource(t tableSnapshot, o contract.DataOptions, masked bool, terms []dataOrderTerm, seek string) (string, error) {
 	if o.Offset < 0 || o.Limit < 1 || o.Limit > contract.DataMaxPageSize {
 		return "", contract.ErrDataPage
 	}
-	if o.UseKeyset || o.After != nil {
-		return "", contract.ErrUnsupported
+	out, err := dataOrderedSelect(t, o, masked, terms, seek)
+	if err != nil {
+		return "", err
 	}
+	out += fmt.Sprintf(" LIMIT %d", o.Limit+1)
+	if o.After == nil {
+		out += fmt.Sprintf(" OFFSET %d", o.Offset)
+	}
+	return out, nil
+}
+
+func dataOrderedSelect(t tableSnapshot, o contract.DataOptions, masked bool, terms []dataOrderTerm, seek string) (string, error) {
 	where, err := dataWhere(t, o, masked)
 	if err != nil {
 		return "", err
 	}
-	columns := map[string]bool{}
 	fields := make([]string, len(t.structure.Columns))
 	for i, c := range t.structure.Columns {
-		columns[c.Name] = true
 		fields[i] = fmt.Sprintf("%s AS c%d", quote(c.Name), i)
 	}
-	sorts := append([]contract.DataSortRule(nil), o.Sorts...)
-	if len(sorts) == 0 && o.SortColumn != "" {
-		sorts = append(sorts, contract.DataSortRule{Column: o.SortColumn, Descending: o.SortDescending})
-	}
-	if len(sorts) > contract.DataMaxSortRules {
-		return "", connections.ErrInvalid
-	}
 	var order []string
-	used := map[string]bool{}
-	for _, sort := range sorts {
-		if !columns[sort.Column] || used[sort.Column] {
-			return "", connections.ErrInvalid
-		}
-		used[sort.Column] = true
+	for _, term := range terms {
 		direction := " ASC"
-		if sort.Descending {
+		if term.Descending {
 			direction = " DESC"
 		}
-		order = append(order, quote(sort.Column)+direction)
+		order = append(order, term.expression()+direction)
 	}
-	// Binary tie breakers remain separate from user/column collations. A
-	// unique index may use different collation from the column declaration.
-	for _, key := range t.key {
-		order = append(order, quote(key)+" COLLATE BINARY ASC")
+	if seek != "" {
+		if where != "" {
+			where = "(" + where + ") AND "
+		}
+		where += seek
 	}
 	out := "SELECT " + strings.Join(fields, ",") + " FROM main." + quote(t.structure.Name)
 	if where != "" {
@@ -168,7 +177,7 @@ func dataSource(t tableSnapshot, o contract.DataOptions, masked bool) (string, e
 	if len(order) > 0 {
 		out += " ORDER BY " + strings.Join(order, ",")
 	}
-	return out + fmt.Sprintf(" LIMIT %d OFFSET %d", o.Limit+1, o.Offset), nil
+	return out, nil
 }
 
 func (s *Session) readDataProjection(ctx context.Context, t tableSnapshot, source string, limit, maxRows int, full bool) ([]dataRow, error) {
@@ -240,23 +249,58 @@ func (s *Session) loadData(ctx context.Context, id int64, database, name string,
 }
 
 func (s *Session) pageData(ctx context.Context, id int64, database, name string, o contract.DataOptions) (*contract.DataPage, error) {
+	return s.pageDataScope(ctx, id, database, name, o, s.dataScope)
+}
+
+func (s *Session) pageDataScope(ctx context.Context, id int64, database, name string, o contract.DataOptions, scope string) (*contract.DataPage, error) {
 	started := time.Now()
 	t, err := s.dataTable(ctx, id, database, name, o.Object)
 	if err != nil {
 		return nil, err
 	}
-	source, err := dataSource(t, o, false)
+	order, err := dataOrder(t, o)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := s.readDataProjection(ctx, t, source, 1024, o.Limit+1, false)
+	seek, err := s.cursorWhere(scope, t, o, order, false)
+	if err != nil {
+		return nil, err
+	}
+	if o.After != nil {
+		if o.Offset != 0 && o.Offset != o.After.Offset {
+			return nil, connections.ErrInvalid
+		}
+		o.Offset = o.After.Offset
+	}
+	source, err := dataOrderedSource(t, o, false, order, seek)
+	if err != nil {
+		return nil, err
+	}
+	var rows []dataRow
+	var cursor *contract.DataCursor
+	keyset := o.UseKeyset && len(t.key) > 0
+	if keyset {
+		rows, cursor, err = s.readCursorPage(ctx, scope, t, o, source, order)
+	} else {
+		rows, err = s.readDataProjection(ctx, t, source, 1024, o.Limit+1, false)
+	}
 	if err != nil {
 		return nil, err
 	}
 	editable := t.structure.Editable
 	out := &contract.DataPage{Object: t.structure.Object, Editable: &editable, Database: database, Table: name, ColumnMetadata: t.structure.Columns, Offset: o.Offset, Limit: o.Limit, LiveRead: true, StableOrder: len(t.key) > 0, HasMore: len(rows) > o.Limit}
+	out.KeysetAvailable, out.NextCursor = keyset, cursor
+	out.CurrentCursor = o.After
+	out.PagingMode = "offset"
+	if keyset {
+		out.PagingMode = "keyset"
+	}
 	// Values in generated literals stay out of presentation SQL.
-	out.QuerySQL, err = dataSource(t, o, true)
+	maskedSeek, err := s.cursorWhere(scope, t, o, order, true)
+	if err != nil {
+		return nil, err
+	}
+	out.QuerySQL, err = dataOrderedSource(t, o, true, order, maskedSeek)
 	if err != nil {
 		return nil, err
 	}

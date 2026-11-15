@@ -330,6 +330,13 @@ func TestNativeRQLiteUnknownDataWriteCannotBeResolvedByLaterReadsOrRecovery(t *t
 			if later.Rows[0][1].Text != "applied once" {
 				t.Fatal("independent later native read failed")
 			}
+			var exportRows int
+			if err := r.Exporter(context.Background(), q.ID, "main", "unknown_data", contract.DataOptions{}, []string{"id", "note"}, func([]contract.DataValue) error { exportRows++; return nil }); err != nil || exportRows != 1 {
+				t.Fatal("independent export failed after unknown original write", err)
+			}
+			if analysis, err := r.Analyzer(context.Background(), q.ID, "main", "unknown_data", contract.DataOptions{}, []string{"id"}); err != nil || analysis.Rows != 1 {
+				t.Fatal("independent analysis failed after unknown original write", err)
+			}
 			verified, err := r.Verify(context.Background(), q.ID, "main", "unknown_data", copyDataResult(out))
 			if err != nil || verified.Status != "indeterminate" || !reflect.DeepEqual(verified.Recovered, out) {
 				t.Fatal("later read settled or erased original unknown receipt")

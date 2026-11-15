@@ -30,6 +30,23 @@ import (
 
 const nativeBinarySHA256 = "37b0be99b2e1d3ca2950c5d2d7432c444be8f3d7526331b2b85b205b8ee6933c"
 
+func nativeArtifact(t *testing.T) (string, string) {
+	t.Helper()
+	version := os.Getenv("NYADB_RQLITE_VERSION")
+	if version == "" {
+		version = "10.7.1"
+	}
+	switch version {
+	case "10.7.1":
+		return version, nativeBinarySHA256
+	case "8.43.4":
+		return version, "3b6bd8ad0497777bdece2919b0dc0b7702b6121c0b7db8ebb49f664e59087dff"
+	default:
+		t.Fatal("native RQLite fixture requires an explicitly pinned upstream version")
+		return "", ""
+	}
+}
+
 // Every native fixture owns one exact official server process and one private
 // database/auth directory. It never discovers or shuts down external servers.
 func nativeFixture(t *testing.T, tlsMode string) connections.Profile {
@@ -41,7 +58,7 @@ func nativeFixture(t *testing.T, tlsMode string) connections.Profile {
 func nativeFixtureWithJoin(t *testing.T, tlsMode, join string) (connections.Profile, string) {
 	t.Helper()
 	if os.Getenv("NYADB_RQLITE_IT") != "1" {
-		t.Skip("set NYADB_RQLITE_IT=1 and NYADB_RQLITE_BINARY to the pinned official v10.7.1 server")
+		t.Skip("set NYADB_RQLITE_IT=1, NYADB_RQLITE_BINARY and optional NYADB_RQLITE_VERSION for the pinned official server")
 	}
 	binary := os.Getenv("NYADB_RQLITE_BINARY")
 	raw, err := os.ReadFile(binary)
@@ -49,7 +66,8 @@ func nativeFixtureWithJoin(t *testing.T, tlsMode, join string) (connections.Prof
 		t.Fatal("official RQLite fixture binary unavailable")
 	}
 	digest := sha256.Sum256(raw)
-	if hex.EncodeToString(digest[:]) != nativeBinarySHA256 {
+	version, expectedDigest := nativeArtifact(t)
+	if hex.EncodeToString(digest[:]) != expectedDigest {
 		t.Fatal("native RQLite fixture must use the exact verified official server")
 	}
 	dir := t.TempDir()
@@ -130,6 +148,9 @@ func nativeFixtureWithJoin(t *testing.T, tlsMode, join string) (connections.Prof
 		opened, e := OpenSession(ctx, p, "original-fixture-password")
 		cancel()
 		if e == nil {
+			if strings.TrimPrefix(opened.(*Session).version, "v") != version {
+				t.Error("native server version differs from its pinned original artifact")
+			}
 			_ = opened.Close()
 			break
 		}
@@ -138,7 +159,7 @@ func nativeFixtureWithJoin(t *testing.T, tlsMode, join string) (connections.Prof
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
-	t.Logf("official native RQLite fixture pid=%d artifact=%s TLS=%s", cmd.Process.Pid, nativeBinarySHA256, tlsMode)
+	t.Logf("official native RQLite fixture pid=%d version=%s artifact=%s TLS=%s", cmd.Process.Pid, version, expectedDigest, tlsMode)
 	return p, raftAddr
 }
 

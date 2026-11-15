@@ -2,7 +2,9 @@ package rqlite
 
 import (
 	"context"
-	"encoding/json"
+	"crypto/rand"
+	"encoding/hex"
+	"io"
 	"reflect"
 	"sync"
 
@@ -24,6 +26,7 @@ type dataDocument struct {
 	done    chan struct{}
 	writes  chan struct{}
 	unknown *contract.DataEditResult
+	scope   string
 }
 
 func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocumentLease, error) {
@@ -36,7 +39,12 @@ func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocume
 		return nil, contract.ErrRevoked
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	d := &dataDocument{s: s, object: o, ctx: ctx, cancel: cancel, done: make(chan struct{}), writes: make(chan struct{}, 1)}
+	var scope [32]byte
+	if _, err := rand.Read(scope[:]); err != nil {
+		cancel()
+		return nil, err
+	}
+	d := &dataDocument{s: s, object: o, ctx: ctx, cancel: cancel, done: make(chan struct{}), writes: make(chan struct{}, 1), scope: hex.EncodeToString(scope[:])}
 	s.documents[d] = true
 	return d, nil
 }
@@ -84,7 +92,49 @@ func dataCall[T any](d *dataDocument, ctx context.Context, id int64, db, table s
 
 func (d *dataDocument) Runtime() contract.DataRuntime {
 	s := d.s
-	r := contract.DataRuntime{Capabilities: s.Capabilities(), FilterModes: s.DataFilterModes()}
+	r := contract.DataRuntime{Capabilities: s.Capabilities(), FilterModes: s.DataFilterModes(), PageCancellationAcknowledged: true}
+	r.Exporter = func(ctx context.Context, id int64, db, table string, o contract.DataOptions, fields []string, sink func([]contract.DataValue) error) error {
+		if o.Object != (contract.ObjectRef{}) && o.Object != d.object {
+			return connections.ErrInvalid
+		}
+		fields, err := copyDataFields(fields)
+		if err != nil {
+			return err
+		}
+		captured, err := copyDataOptions(o)
+		if err != nil {
+			return err
+		}
+		captured.Object = d.object
+		_, err = dataCall(d, ctx, id, db, table, func(ctx context.Context) (bool, error) {
+			return true, s.exportData(ctx, id, db, table, captured, fields, sink)
+		})
+		return err
+	}
+	r.Analyzer = func(ctx context.Context, id int64, db, table string, o contract.DataOptions, fields []string) (*contract.DataAnalysis, error) {
+		if o.Object != (contract.ObjectRef{}) && o.Object != d.object {
+			return nil, connections.ErrInvalid
+		}
+		fields, err := copyDataFields(fields)
+		if err != nil {
+			return nil, err
+		}
+		captured, err := copyDataOptions(o)
+		if err != nil {
+			return nil, err
+		}
+		captured.Object = d.object
+		return dataCall(d, ctx, id, db, table, func(ctx context.Context) (*contract.DataAnalysis, error) {
+			return s.analyzeData(ctx, id, db, table, captured, fields)
+		})
+	}
+	r.JSONL = func(ctx context.Context, o contract.ObjectRef, w io.Writer) error {
+		if o != d.object {
+			return connections.ErrInvalid
+		}
+		_, err := dataCall(d, ctx, o.ProfileID, "main", o.Name, func(ctx context.Context) (bool, error) { return true, s.exportJSONL(ctx, o, w) })
+		return err
+	}
 	if !s.config.Options.ReadOnly {
 		r.NativeReceipts = true
 		r.EditValueKinds = []contract.CellKind{contract.Text, contract.Integer, contract.Floating, contract.Binary}
@@ -109,14 +159,15 @@ func (d *dataDocument) Runtime() contract.DataRuntime {
 		}
 		// These neutral requests contain only data. Deep-copy both expression
 		// trees and cursor bytes before worker admission.
-		b, err := json.Marshal(o)
-		var captured contract.DataOptions
-		if err != nil || json.Unmarshal(b, &captured) != nil {
-			return nil, connections.ErrInvalid
+		captured, err := copyDataOptions(o)
+		if err != nil {
+			return nil, err
 		}
 		o = captured
 		o.Object = d.object
-		return dataCall(d, ctx, id, db, table, func(ctx context.Context) (*contract.DataPage, error) { return s.pageData(ctx, id, db, table, o) })
+		return dataCall(d, ctx, id, db, table, func(ctx context.Context) (*contract.DataPage, error) {
+			return s.pageDataScope(ctx, id, db, table, o, d.scope)
+		})
 	}
 	r.Loader = func(ctx context.Context, id int64, db, table string, offset int64, limit int) (*contract.DataPage, error) {
 		return r.AdvancedLoader(ctx, id, db, table, contract.DataOptions{Offset: offset, Limit: limit})
@@ -158,6 +209,18 @@ func (d *dataDocument) Runtime() contract.DataRuntime {
 	return r
 }
 
+func copyDataFields(fields []string) ([]string, error) {
+	if len(fields) == 0 || len(fields) > maxDataColumns {
+		return nil, connections.ErrInvalid
+	}
+	for _, field := range fields {
+		if !validName(field) {
+			return nil, connections.ErrInvalid
+		}
+	}
+	return append([]string(nil), fields...), nil
+}
+
 func copyDataRef(ref contract.RowRef) contract.RowRef {
 	ref.Columns = append([]string(nil), ref.Columns...)
 	values, typed := ref.Values, ref.TypedValues
@@ -184,6 +247,7 @@ func (d *dataDocument) Close() error {
 	d.active.Wait() // Dispatched native requests acknowledge independently.
 	d.mu.Lock()
 	d.unknown = nil
+	d.scope = ""
 	d.mu.Unlock()
 	d.s.mu.Lock()
 	delete(d.s.documents, d)

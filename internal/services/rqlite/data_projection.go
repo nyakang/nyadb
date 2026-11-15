@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -102,44 +103,9 @@ func decodeDataRows(r receipt, columns, limit, maxRows int, full bool) ([]dataRo
 			return nil, errIncomplete
 		}
 		row.fp[cid] = &fingerprint
-		v := contract.Cell{Truncated: int64(len(data)) < length}
-		switch typ {
-		case "blob":
-			v.Kind, v.Bytes = contract.Binary, bytes.Clone(data)
-		case "text":
-			// Trim only a partial trailing code point. Invalid original UTF-8
-			// inside the range is explicitly unsupported, never normalized.
-			if v.Truncated && len(data) > 0 {
-				start := len(data) - 1
-				for start > 0 && !utf8.RuneStart(data[start]) {
-					start--
-				}
-				if !utf8.FullRune(data[start:]) {
-					data = data[:start]
-				}
-			}
-			if !utf8.Valid(data) {
-				return nil, contract.ErrUnsupported
-			}
-			v.Kind, v.Text = contract.Text, string(data)
-		case "integer":
-			if v.Truncated {
-				return nil, errIncomplete
-			}
-			if _, e := strconv.ParseInt(string(data), 10, 64); e != nil {
-				return nil, errIncomplete
-			}
-			v.Kind, v.Text = contract.Integer, string(data)
-		case "real":
-			if v.Truncated {
-				return nil, errIncomplete
-			}
-			if _, e := strconv.ParseFloat(string(data), 64); e != nil {
-				return nil, contract.ErrUnsupported
-			}
-			v.Kind, v.Text = contract.Floating, string(data)
-		default:
-			return nil, errIncomplete
+		v, e := storageDataCell(typ, data, int64(len(data)) < length)
+		if e != nil {
+			return nil, e
 		}
 		if full && v.Truncated {
 			return nil, contract.ErrDataEditLimit
@@ -152,4 +118,46 @@ func decodeDataRows(r receipt, columns, limit, maxRows int, full bool) ([]dataRo
 		}
 	}
 	return rows, nil
+}
+
+func storageDataCell(typ string, data []byte, truncated bool) (contract.Cell, error) {
+	v := contract.Cell{Truncated: truncated}
+	switch typ {
+	case "blob":
+		v.Kind, v.Bytes = contract.Binary, bytes.Clone(data)
+	case "text":
+		// Withhold only a partial trailing code point from a bounded preview.
+		if truncated && len(data) > 0 {
+			start := len(data) - 1
+			for start > 0 && !utf8.RuneStart(data[start]) {
+				start--
+			}
+			if !utf8.FullRune(data[start:]) {
+				data = data[:start]
+			}
+		}
+		if !utf8.Valid(data) {
+			return v, contract.ErrUnsupported
+		}
+		v.Kind, v.Text = contract.Text, string(data)
+	case "integer":
+		if truncated {
+			return v, errIncomplete
+		}
+		if _, err := strconv.ParseInt(string(data), 10, 64); err != nil {
+			return v, errIncomplete
+		}
+		v.Kind, v.Text = contract.Integer, string(data)
+	case "real":
+		if truncated {
+			return v, errIncomplete
+		}
+		if n, err := strconv.ParseFloat(string(data), 64); err != nil || math.IsInf(n, 0) || math.IsNaN(n) {
+			return v, contract.ErrUnsupported
+		}
+		v.Kind, v.Text = contract.Floating, string(data)
+	default:
+		return v, errIncomplete
+	}
+	return v, nil
 }

@@ -59,7 +59,8 @@ func (s *State) Refresh(services ui.Services, t *Document) {
 	if t == nil || t.closed {
 		return
 	}
-	if t.readRetired || t.loading && s.runtimeFor(t).PageFailureRequiresReopen {
+	runtime := s.runtimeFor(t)
+	if t.readRetired || t.loading && (runtime.PageFailureRequiresReopen || runtime.PageCancellationAcknowledged) {
 		s.Load(services, t, true)
 		return
 	}
@@ -67,7 +68,7 @@ func (s *State) Refresh(services ui.Services, t *Document) {
 	t.after = nil
 	t.useKeyset = t.keysetEnabled()
 	t.cursorHistory = nil
-	if !s.runtimeFor(t).PageFailureRequiresReopen {
+	if !runtime.PageFailureRequiresReopen && !runtime.PageCancellationAcknowledged {
 		t.page = nil
 	}
 	t.selectedRow = -1

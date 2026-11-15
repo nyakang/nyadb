@@ -45,7 +45,18 @@ type nativeResult struct {
 // can stop admission, but after dispatch we consume the original bounded HTTP
 // result. Losing that result leaves possible writes uncertain and unreplayed.
 func (s *Session) request(ctx context.Context, path string, statements []any, transaction, possibleWrite bool) (out receipt, err error) {
-	if len(statements) == 0 || len(statements) > 1024 {
+	return s.requestBounded(ctx, path, statements, transaction, possibleWrite, maxReceiptBytes)
+}
+
+func (s *Session) requestBounded(ctx context.Context, path string, statements []any, transaction, possibleWrite bool, receiptLimit int64) (out receipt, err error) {
+	if receiptLimit < 1 || receiptLimit > 64<<20 || possibleWrite && receiptLimit != maxReceiptBytes {
+		return out, errIncomplete
+	}
+	statementLimit := 1024
+	if path == "/db/query" && !possibleWrite {
+		statementLimit = 4096 // One guarded analysis of all admitted columns.
+	}
+	if len(statements) == 0 || len(statements) > statementLimit {
 		return out, errIncomplete
 	}
 	body, e := json.Marshal(statements)
@@ -108,8 +119,8 @@ func (s *Session) request(ctx context.Context, path string, statements []any, tr
 		return out, errResponseLost
 	}
 	defer res.Body.Close()
-	raw, e := io.ReadAll(io.LimitReader(res.Body, maxReceiptBytes+1))
-	if e != nil || len(raw) > maxReceiptBytes {
+	raw, e := io.ReadAll(io.LimitReader(res.Body, receiptLimit+1))
+	if e != nil || int64(len(raw)) > receiptLimit {
 		out.Uncertain = possibleWrite
 		return out, errIncomplete
 	}
