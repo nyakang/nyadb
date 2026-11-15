@@ -68,6 +68,11 @@ func (l *rqliteSchemaAdapterLease) Operations() contract.SchemaDesignOperations 
 			return l.acknowledge(rename(ctx, r))
 		}
 	}
+	if copy := ops.Copy; copy != nil {
+		ops.Copy = func(ctx context.Context, r contract.SchemaCopyRequest) contract.SchemaDesignOutcome {
+			return l.acknowledge(copy(ctx, r))
+		}
+	}
 	return ops
 }
 

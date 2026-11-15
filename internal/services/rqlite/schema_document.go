@@ -109,6 +109,7 @@ func (d *schemaDocument) Operations() contract.SchemaDesignOperations {
 		ops.CanApply, ops.Apply = d.writable, d.apply
 		ops.CanDrop, ops.Drop = d.writable, d.drop
 		ops.CanRename, ops.Rename = d.writable, d.rename
+		ops.CanCopy, ops.Copy = d.writable, d.copy
 	}
 	return ops
 }
@@ -155,5 +156,5 @@ func (s *Session) SchemaDesignDocumentFeatures() contract.SchemaDesignDocumentFe
 	can := func(target contract.SchemaDesignTarget) bool {
 		return !s.config.Options.ReadOnly && s.checkSchemaTarget(target) == nil
 	}
-	return contract.SchemaDesignDocumentFeatures{CanApply: can, CanDrop: can, CanRename: can}
+	return contract.SchemaDesignDocumentFeatures{CanApply: can, CanDrop: can, CanRename: can, CanCopy: can}
 }

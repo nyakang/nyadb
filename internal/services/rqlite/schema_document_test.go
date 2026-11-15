@@ -96,7 +96,7 @@ func TestSchemaDocumentFeaturesPreserveQualifiedScopeAndNeverReserveProofOrReque
 	}, nil)
 	features := s.SchemaDesignDocumentFeatures()
 	target := schemaUnitTarget(s, "original")
-	if features.CanApply == nil || features.CanDrop == nil || features.CanRename == nil || features.CanCopy != nil || !features.CanApply(target) || !features.CanDrop(target) || !features.CanRename(target) {
+	if features.CanApply == nil || features.CanDrop == nil || features.CanRename == nil || features.CanCopy == nil || !features.CanApply(target) || !features.CanDrop(target) || !features.CanRename(target) || !features.CanCopy(target) {
 		t.Fatal("original document feature discovery changed supported operations")
 	}
 	for _, change := range []func(*contract.SchemaDesignTarget){func(t *contract.SchemaDesignTarget) { t.Object.ProfileID++ }, func(t *contract.SchemaDesignTarget) { t.Generation++ }, func(t *contract.SchemaDesignTarget) { t.Object.Catalog = "other" }, func(t *contract.SchemaDesignTarget) { t.Object.Schema = "main" }, func(t *contract.SchemaDesignTarget) { t.Object.Kind = "view" }, func(t *contract.SchemaDesignTarget) { t.Object.Name = "sqlite_schema" }} {

@@ -23,7 +23,7 @@ import (
 
 // Holds only the native acknowledgement to make parking deterministic. Product
 // descriptors, provider features, runtime publication and shell callbacks are real.
-func rqliteSchemaPublicShell(t *testing.T, p connections.Profile, password string) (*State, *ui.Tester, *ui.Services, connections.Profile, <-chan contract.SchemaDesignOutcome, chan struct{}) {
+func rqliteSchemaPublicShell(t *testing.T, p connections.Profile, password string, faults ...bool) (*State, *ui.Tester, *ui.Services, connections.Profile, <-chan contract.SchemaDesignOutcome, chan struct{}) {
 	t.Helper()
 	s, _, profiles, _ := profileTestState(t)
 	t.Cleanup(s.CloseMySQLSessions)
@@ -33,7 +33,7 @@ func rqliteSchemaPublicShell(t *testing.T, p connections.Profile, password strin
 		if err != nil {
 			return nil, err
 		}
-		return &rqliteSchemaAdapterFixture{Session: raw.(*rqlite.Session), observed: observed, release: release}, nil
+		return &rqliteSchemaAdapterFixture{Session: raw.(*rqlite.Session), observed: observed, release: release, fault: len(faults) > 0 && faults[0]}, nil
 	}))
 	p.Name = "original public schema"
 	p, err := profiles.Create(context.Background(), p)
@@ -170,7 +170,7 @@ func TestRQLiteNativePublicSchemaDropRenameParkedReceiptAndOriginalShellCleanup(
 			s.submitNavigation(*services, navigation.DatabaseNode(p.ID, "main"))
 			waitRQLiteSchemaPublic(t, tt, func() bool { return s.sessions.Current().Pending == "" && s.sessions.Current().Cache["main"] != nil })
 			workspace := s.objectWorkspace
-			if !workspace.CanCreateTable(p.ID, "main") || !workspace.CanDropTable(p.ID, "main", "native_public_schema") || !workspace.CanRenameTable(p.ID, "main", "native_public_schema") || workspace.CanCopyTable(p.ID, "main", "native_public_schema") || workspace.CanChangeTable(p.ID) {
+			if !workspace.CanCreateTable(p.ID, "main") || !workspace.CanDropTable(p.ID, "main", "native_public_schema") || !workspace.CanRenameTable(p.ID, "main", "native_public_schema") || !workspace.CanCopyTable(p.ID, "main", "native_public_schema") || workspace.CanChangeTable(p.ID) {
 				t.Fatal("public operation discovery omitted supported tools or advertised unsupported tools")
 			}
 			if ops := s.runtime.SchemaDesign(p.ID); ops.Apply != nil || ops.Drop != nil || ops.Rename != nil || ops.Copy != nil {

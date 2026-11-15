@@ -548,12 +548,13 @@ func (s *State) TableError() string {
 
 // CancelTableFor requests acknowledgement from the original operation. Keep
 // pending set until its executor returns so an uncertain command cannot replay.
+// Settled owned receipts survive disconnect until the user explicitly closes them.
 func (s *State) CancelTableFor(profileID int64) {
 	if x := s.schemaRename; x != nil && x.target.Object.ProfileID == profileID {
 		if x.cancel != nil {
 			x.cancel()
 		}
-		if !x.applying {
+		if !x.applying && (x.owner == nil || x.owner.last == nil) {
 			s.closeSchemaRename()
 		}
 	}
@@ -561,7 +562,7 @@ func (s *State) CancelTableFor(profileID int64) {
 		if x.cancel != nil {
 			x.cancel()
 		}
-		if !x.applying {
+		if !x.applying && (x.owner == nil || x.owner.last == nil) {
 			s.closeSchemaCopy()
 		}
 	}
@@ -569,7 +570,7 @@ func (s *State) CancelTableFor(profileID int64) {
 		if x.cancel != nil {
 			x.cancel()
 		}
-		if !x.applying {
+		if !x.applying && (x.owner == nil || x.owner.last == nil) {
 			s.closeSchemaDrop()
 		}
 	}

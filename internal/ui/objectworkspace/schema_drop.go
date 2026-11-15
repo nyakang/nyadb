@@ -174,10 +174,18 @@ func (s *State) consumeSchemaDrop(services ui.Services) {
 		if x.cancel != nil {
 			x.cancel()
 		}
-		x.open = false
 		if !x.applying {
+			if x.owner != nil && x.owner.last != nil {
+				// A lost original session revokes reads and writes, not its receipt.
+				x.results, x.cancel, x.busy, x.cancelRequested = nil, nil, false, false
+				x.blocked, x.owner.showReceipt = true, true
+				return
+			}
 			s.closeSchemaDrop()
 			return
+		}
+		if x.owner == nil {
+			x.open = false
 		}
 	}
 	if x.results == nil {
@@ -214,8 +222,11 @@ func (s *State) consumeSchemaDrop(services ui.Services) {
 				return
 			}
 			if !s.schemaDropValid(x) {
-				s.closeSchemaDrop()
-				return
+				if x.owner == nil || x.owner.last == nil {
+					s.closeSchemaDrop()
+					return
+				}
+				x.owner.showReceipt = true
 			}
 			x.blocked = true // require an explicit fresh read before any retry
 			if out.State == "committed" && out.Verified && out.Actual != nil && !out.Actual.Schema.Exists && out.Actual.Target == x.target && out.Error == nil {
@@ -294,7 +305,7 @@ func (s *State) schemaDropModal(c *ui.Context) {
 						x.open = false
 					}
 				}
-				if ui.Button(c, locales.Text("重新读取结构")).Disabled(x.busy || x.completed).Clicked() {
+				if ui.Button(c, locales.Text("重新读取结构")).Disabled(x.busy || x.completed || !s.schemaDropValid(x)).Clicked() {
 					s.readSchemaDrop(c.Services())
 				}
 				if ui.PrimaryButton(c, locales.Text("确认删除表")).Disabled(x.busy || x.blocked || x.original == nil || x.confirmation != x.target.Object.Name || !s.schemaDropValid(x)).Clicked() {

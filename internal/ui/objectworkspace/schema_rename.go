@@ -204,10 +204,18 @@ func (s *State) consumeSchemaRename(services ui.Services) {
 		if x.cancel != nil {
 			x.cancel()
 		}
-		x.open = false
 		if !x.applying {
+			if x.owner != nil && x.owner.last != nil {
+				// A lost original session revokes reads and writes, not its receipt.
+				x.results, x.cancel, x.busy, x.cancelRequested = nil, nil, false, false
+				x.blocked, x.owner.showReceipt = true, true
+				return
+			}
 			s.closeSchemaRename()
 			return
+		}
+		if x.owner == nil {
+			x.open = false
 		}
 	}
 	if x.results == nil {
@@ -241,8 +249,11 @@ func (s *State) consumeSchemaRename(services ui.Services) {
 				return
 			}
 			if !s.schemaRenameValid(x) {
-				s.closeSchemaRename()
-				return
+				if x.owner == nil || x.owner.last == nil {
+					s.closeSchemaRename()
+					return
+				}
+				x.owner.showReceipt = true
 			}
 			x.blocked = true
 			expected := x.target
@@ -322,7 +333,7 @@ func (s *State) schemaRenameModal(c *ui.Context) {
 						x.open = false
 					}
 				}
-				if ui.Button(c, locales.Text("重新读取结构")).Disabled(x.busy || x.completed).Clicked() {
+				if ui.Button(c, locales.Text("重新读取结构")).Disabled(x.busy || x.completed || !s.schemaRenameValid(x)).Clicked() {
 					s.readSchemaRename(c.Services())
 				}
 				if ui.PrimaryButton(c, locales.Text("确认重命名表")).Disabled(x.busy || x.blocked || err != nil || !s.schemaRenameValid(x)).Clicked() {
