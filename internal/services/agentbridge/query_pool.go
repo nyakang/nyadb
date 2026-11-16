@@ -24,10 +24,23 @@ type QueryConfig struct {
 	// ReturnAllResults is opt-in: common JDBC agents, including H2, reject
 	// that optional dispatch method. Split still preserves every statement.
 	ReturnAllResults bool
+	// RetainUnsentSteps preserves the captured suffix after an executor/sink
+	// failure. These steps are local non-dispatch evidence, never native success.
+	RetainUnsentSteps bool
 	// AcquireConnection admits a physical workload lease in the adapter's
 	// shared pool. The returned release waits until the original session closes.
 	// A waiting acquisition must honor ctx without dispatching native work.
 	AcquireConnection func(context.Context) (func(), error)
+	// OpenConnection optionally returns a captured, physically initialized
+	// original session and its owning release. It replaces generic opening and
+	// initialization; failure must retain original dispatch/loss classification.
+	OpenConnection func(context.Context) (*Session, func(), error)
+	// ObserveStatement receives an independent receipt for every dispatched or
+	// failed executor call, before result projection. It runs on the worker.
+	ObserveStatement func(string, Receipt)
+	// DecodeStatement observes a captured source and original executor receipt.
+	// Product-specific mutation counts remain separate from unchanged wire bytes.
+	DecodeStatement func(string, Receipt) (QuerySnapshot, error)
 }
 
 // QueryPool binds SQL documents to one captured runtime. It owns its logical
@@ -139,6 +152,40 @@ func (l *queryLease) connect(ctx context.Context) error {
 	session := l.session
 	l.mu.Unlock()
 	if session != nil {
+		return nil
+	}
+	if open := l.pool.config.OpenConnection; open != nil {
+		original, release, err := open(ctx)
+		if original != nil && original.client != l.pool.client {
+			// A faulty factory cannot detach a session owned by another runtime.
+			return ErrRequest
+		}
+		if err != nil {
+			if original != nil {
+				_, _ = original.Close()
+			}
+			if release != nil {
+				release()
+			}
+			if errors.Is(err, contract.ErrSQLSessionLost) {
+				l.mu.Lock()
+				l.lost = true
+				l.mu.Unlock()
+			}
+			return l.settleError(err)
+		}
+		if original == nil || release == nil || original.client != l.pool.client || !original.Alive() {
+			if original != nil {
+				_, _ = original.Close()
+			}
+			if release != nil {
+				release()
+			}
+			return ErrRequest
+		}
+		l.mu.Lock()
+		l.session, l.releaseConnection = original, release
+		l.mu.Unlock()
 		return nil
 	}
 	var release func()
@@ -264,8 +311,13 @@ func (l *queryLease) ExecuteStream(ctx context.Context, schema, source string, s
 		result.SetLegacyView()
 	}()
 	budget, remaining := 8<<20, l.pool.config.MaxRows
-	for _, statement := range parts {
+	for ordinal, statement := range parts {
 		if child.Err() != nil {
+			if l.pool.config.RetainUnsentSteps {
+				for _, unsent := range parts[ordinal:] {
+					result.Steps = append(result.Steps, contract.StatementOutcome{SQL: unsent, State: "not_started"})
+				}
+			}
 			return result, child.Err()
 		}
 		params := map[string]any{"sql": statement, "maxRows": max(1, remaining), "timeoutSecs": l.pool.config.TimeoutSeconds}
@@ -279,6 +331,9 @@ func (l *queryLease) ExecuteStream(ctx context.Context, schema, source string, s
 		l.mu.Lock()
 		l.receipts = append(l.receipts, cloneReceipts([]Receipt{r})[0])
 		l.mu.Unlock()
+		if observe := l.pool.config.ObserveStatement; observe != nil {
+			observe(statement, r.Clone())
+		}
 		if len(r.Result) > 0 {
 			native = append(native, append(json.RawMessage(nil), r.Result...))
 		}
@@ -289,7 +344,11 @@ func (l *queryLease) ExecuteStream(ctx context.Context, schema, source string, s
 		var snapshot QuerySnapshot
 		var decodeErr error
 		if r.ExecutorAcknowledged && r.RemoteError == nil {
-			snapshot, decodeErr = DecodeQuery(r, l.pool.config.Decoder)
+			if decode := l.pool.config.DecodeStatement; decode != nil {
+				snapshot, decodeErr = decode(statement, r)
+			} else {
+				snapshot, decodeErr = DecodeQuery(r, l.pool.config.Decoder)
+			}
 			if decodeErr == nil {
 				step.State = "completed"
 				step.AffectedRows = snapshot.SQL.AffectedRows
@@ -358,6 +417,11 @@ func (l *queryLease) ExecuteStream(ctx context.Context, schema, source string, s
 		}
 		result.Steps = append(result.Steps, step)
 		if err != nil {
+			if l.pool.config.RetainUnsentSteps {
+				for _, unsent := range parts[ordinal+1:] {
+					result.Steps = append(result.Steps, contract.StatementOutcome{SQL: unsent, State: "not_started"})
+				}
+			}
 			return result, l.settleError(err)
 		}
 	}

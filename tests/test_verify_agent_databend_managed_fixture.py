@@ -28,6 +28,14 @@ class DatabendManagedDiagnosticTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             FIXTURE.verify_named_acceptance('--- PASS: TestDatabendPublicProvider (0.01s)')
 
+    def test_private_provider_and_runtime_require_their_actual_named_cases(self):
+        names = FIXTURE.REQUIRED + FIXTURE.PROVIDER_REQUIRED + FIXTURE.RUNTIME_REQUIRED
+        output = '\n'.join('--- PASS: ' + name + ' (0.01s)' for name in names)
+        FIXTURE.verify_named_acceptance(output, names)
+        for name in names:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                FIXTURE.verify_named_acceptance(output.replace('PASS: ' + name, 'SKIP: ' + name), names)
+
     def test_archive_requires_exact_complete_bytes_order_modes_and_timestamps(self):
         for change in ['none', 'bytes', 'missing', 'duplicate', 'mode', 'time', 'order']:
             with self.subTest(change=change), tempfile.TemporaryDirectory() as directory:

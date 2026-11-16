@@ -10,6 +10,9 @@ import (
 type Kind string
 
 const (
+	// Databend is an adapter identity; chooser and builtin publication require
+	// their own complete native workbench acceptance.
+	Databend      Kind = "databend"
 	ZooKeeper     Kind = "zookeeper"
 	TDengine      Kind = "tdengine"
 	QuestDB       Kind = "questdb"
@@ -105,6 +108,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	DatabendOptions      DatabendOptions
 	ZooKeeperOptions     ZooKeeperOptions
 	TDengineOptions      TDengineOptions
 	QuestDBOptions       QuestDBOptions

@@ -25,10 +25,16 @@ REQUIRED = [
     'TestDatabendManagedOriginalInstallPoolMetadataCursorAndReceipts',
     'TestDatabendManagedOriginalLateOpenCloseAndExplicitProcessRecovery',
 ]
+PROVIDER_REQUIRED = [
+    'TestDatabendProviderOriginalNamespacesStructuresSQLAndPartialReceipts',
+    'TestDatabendProviderOriginalPinnedProfileRestartCloneAndReconnect',
+    'TestDatabendProviderOriginalSQLCancellationWaitsForExecutorAndKeepsIndependentLease',
+]
+RUNTIME_REQUIRED = ['TestDatabendRuntimeOriginalGenerationsIsolationAndLatePublication']
 
 
-def verify_named_acceptance(output):
-    for name in REQUIRED:
+def verify_named_acceptance(output, names=None):
+    for name in REQUIRED if names is None else names:
         if not re.search(r'^\s*--- PASS: ' + re.escape(name) + r' \(', output, re.MULTILINE):
             raise RuntimeError('Required managed original diagnostic missing: ' + name)
 
@@ -167,10 +173,112 @@ def verify_receipts(directory):
     return len(records)
 
 
+def verify_provider_receipts(directory, database):
+    records = [json.loads(line, parse_float=Decimal) for line in
+               (directory / 'original-receipts.jsonl').read_text().splitlines()]
+    for record in records:
+        transport.verify_receipt(record)
+    groups = {name: [r for r in records if r['test'] == name] for name in PROVIDER_REQUIRED}
+    for name, group in groups.items():
+        methods = {r['method'] for r in group}
+        if {'provider-handshake', 'provider-metadata-open', 'provider-metadata-query',
+                'provider-query-open', 'provider-query-executor'} - methods:
+            raise RuntimeError('Private provider lacks original startup/metadata/SQL evidence: ' + name)
+    first = groups[PROVIDER_REQUIRED[0]]
+    namespaces = [r['receipt']['Result'] for r in first if r['method'] == 'provider-metadata-query'
+                  and (r['receipt']['Result'] or {}).get('columns') == ['databases_in_default']]
+    if len(namespaces) != 1 or [database] not in namespaces[0]['rows'] or [database.replace('nyadb_transport_', 'nyadbXtransport_', 1)] not in namespaces[0]['rows']:
+        raise RuntimeError('Original literal namespace metadata lacks the independent database')
+    objects = [r['receipt']['Result'] for r in first if r['method'] == 'provider-metadata-list_objects']
+    if (len(objects) != 1 or 'foreign_table' in {o['name'] for o in objects[0]} or
+            {'managed_values', 'native_view'} - {o['name'] for o in objects[0]}):
+        raise RuntimeError('Native original metadata omitted owned objects or leaked wildcard identities')
+    structures = [r['receipt']['Result'] for r in first if r['method'] == 'provider-metadata-query']
+    if sum(s.get('columns') == ['Field', 'Type', 'Null', 'Default', 'Extra'] for s in structures) != 2:
+        raise RuntimeError('Native table/view DESCRIBE metadata is incomplete')
+    definitions = [s.get('rows', []) for s in structures if s.get('columns') in
+                   [['Table', 'Create Table'], ['View', 'Create View']]]
+    if (len(definitions) != 2 or not any('ENGINE=FUSE' in row[1] for rows in definitions for row in rows)):
+        raise RuntimeError('Complete native table/view definitions or engine clauses missing')
+    executors = [r['receipt'] for r in first if r['method'] == 'provider-query-executor']
+    errors = [r for r in executors if r.get('RemoteError')]
+    if len(errors) != 1 or not errors[0]['ExecutorAcknowledged']:
+        raise RuntimeError('Original failed SQL executor envelope missing')
+    counts = [r['Result'] for r in executors if (r['Result'] or {}).get('columns') in
+              [['number of rows inserted'], ['number of rows updated'], ['number of rows deleted']]]
+    if (len(counts) != 3 or any(s.get('rows') != [[1]] or s.get('column_types') != ['uint64'] or
+                              s.get('affected_rows') != 0 for s in counts)):
+        raise RuntimeError('Private provider native mutation counts differ from unchanged original receipts')
+    journal = [json.loads(line) for line in (directory / 'independent-http-receipts.jsonl').read_text().splitlines()]
+    partial = [r for r in journal if r['test'] == PROVIDER_REQUIRED[0]]
+    rows = []
+    for r in partial:
+        raw = base64.b64decode(r['native_bytes'], validate=True)
+        value = json.loads(raw)
+        if (transport.sha(raw) != r['native_sha256'] or value.get('error') is not None or
+                r['sql'] != 'SELECT id FROM "' + database + '".managed_writes WHERE id IN (41,42) ORDER BY id'):
+            raise RuntimeError('Independent private provider partial-write evidence differs')
+        rows += value.get('data') or []
+    if rows != [['41']]:
+        raise RuntimeError('First provider write was not durable or unsent suffix was executed')
+    cancellation = json.loads((directory / 'provider-cancellation.json').read_text())
+    canceled = [r['receipt'] for r in groups[PROVIDER_REQUIRED[2]]
+                if r['method'] == 'provider-query-executor' and r['receipt']['CancellationRequested']]
+    if (len(canceled) != 1 or not canceled[0]['ExecutorAcknowledged'] or canceled[0]['ProcessExitConfirmed'] or
+            not re.fullmatch('[0-9a-f]{32}', cancellation.get('original_query_id', '')) or
+            cancellation.get('submitted') != 1 or cancellation.get('final_http_status') != 200 or
+            cancellation.get('executor_acknowledged') is not True or cancellation.get('native_kill_or_rollback_accepted') is not False):
+        raise RuntimeError('Private provider cancellation lacks its original executor/final acknowledgement')
+    cancellation_rows = []
+    for r in journal:
+        if r['test'] != PROVIDER_REQUIRED[2]:
+            continue
+        raw = base64.b64decode(r['native_bytes'], validate=True)
+        value = json.loads(raw)
+        if (transport.sha(raw) != r['native_sha256'] or value.get('error') is not None or
+                r['sql'] != 'SELECT count() FROM "' + database + '".managed_writes WHERE id=59'):
+            raise RuntimeError('Independent canceled SQL suffix identity/bytes differ')
+        cancellation_rows += value.get('data') or []
+    if cancellation_rows != [['0']]:
+        raise RuntimeError('Canceled SQL suffix was dispatched or replayed')
+    return {'required_diagnostics': PROVIDER_REQUIRED,
+            'complete_original_receipts': sum(map(len, groups.values())),
+            'durable_first_write': 41, 'unsent_write': 42,
+            'public_provider_registered': False}
+
+
+def verify_runtime_receipts(directory):
+    records = [json.loads(line, parse_float=Decimal) for line in
+               (directory / 'original-receipts.jsonl').read_text().splitlines()]
+    records = [r for r in records if r['test'] in RUNTIME_REQUIRED]
+    for record in records:
+        transport.verify_receipt(record)
+    methods = {r['method'] for r in records}
+    if {'runtime-handshake', 'runtime-metadata-open', 'runtime-metadata-query',
+            'runtime-query-open', 'runtime-query-executor'} - methods:
+        raise RuntimeError('Private runtime lacks original process/session/SQL receipts')
+    queries = [r['receipt']['Result'] for r in records if r['method'] == 'runtime-query-executor']
+    writes = [q for q in queries if (q or {}).get('columns') == ['number of rows inserted']]
+    if len(writes) != 1 or writes[0].get('rows') != [[1]] or writes[0].get('affected_rows') != 0:
+        raise RuntimeError('Original runtime durable write was lost or replayed')
+    recovered = [q for q in queries if (q or {}).get('columns') == ['id']]
+    if len(recovered) != 1 or recovered[0].get('rows') != [[55]]:
+        raise RuntimeError('Native recovered query lacks exact original durable/unsent evidence')
+    generations = [json.loads(line) for line in (directory / 'runtime-generations.jsonl').read_text().splitlines()]
+    if (len(generations) != 1 or generations[0]['test'] != RUNTIME_REQUIRED[0] or
+            not 0 < generations[0]['original'] < generations[0]['independent'] < generations[0]['replacement'] < generations[0]['late_replacement'] or
+            generations[0]['first_write'] != 55 or generations[0]['unsent_write'] != 56 or generations[0]['recovery_replayed'] is not False):
+        raise RuntimeError('Private runtime original generation/late replacement evidence differs')
+    return {'required_diagnostics': RUNTIME_REQUIRED, 'original_receipts': len(records),
+            'generations': generations[0], 'public_provider_registered': False}
+
+
 def verify_independent_writes(directory):
     observed = {name: [] for name in REQUIRED}
     for line in (directory / 'independent-http-receipts.jsonl').read_text().splitlines():
         r = json.loads(line)
+        if r['test'] not in REQUIRED:
+            continue
         raw = base64.b64decode(r['native_bytes'], validate=True)
         if transport.sha(raw) != r['native_sha256']:
             raise RuntimeError('Independent original native HTTP bytes changed')
@@ -192,6 +300,7 @@ def main():
     parser.add_argument('--dbx', type=Path, default=ROOT / 'temp/dbx')
     parser.add_argument('--cache', type=Path, default=ROOT / 'build/databend/package-cache')
     parser.add_argument('--race', action='store_true')
+    parser.add_argument('--provider', action='store_true', help='Also verify private provider/config/SQL/metadata acceptance')
     args = parser.parse_args()
     original, reproduced, dbx, cache = [p.resolve() for p in
                                        [args.build, args.reproduced_build, args.dbx, args.cache]]
@@ -204,7 +313,7 @@ def main():
     base = ROOT / 'build/databend' / ('managed-' + nonce)
     base.mkdir(parents=True, mode=0o700)
     print('Evidence: ' + str(base), flush=True)
-    result = {'scope': 'original_managed_linux_package_install_process_pool', 'status': 'running',
+    result = {'scope': 'original_managed_linux_package_install_process_pool' + ('_private_provider' if args.provider else ''), 'status': 'running',
               'pins': pins, 'image': transport.IMAGE, 'race': args.race,
               'public_provider_registered': False, 'independent_builds_identical': True}
     secret, username = secrets.token_hex(24), 'nyadb_managed'
@@ -273,6 +382,10 @@ def main():
         native_sql('CREATE TABLE "' + database + '".managed_pages (id UInt64, payload Binary)')
         native_sql('INSERT INTO "' + database + '".managed_pages SELECT number, unhex(\'00ff\') FROM numbers(205)')
         native_sql('CREATE TABLE "' + database + '".managed_writes (id UInt64)')
+        if args.provider:
+            native_sql('CREATE DATABASE "nyadbXtransport_' + nonce + '"')
+            native_sql('CREATE TABLE "nyadbXtransport_' + nonce + '".foreign_table (id UInt64)')
+            native_sql('CREATE VIEW "' + database + '".native_view AS SELECT id,exact,payload,absent FROM "' + database + '".managed_values')
         (base / 'independent-http-seed.json').write_text(json.dumps(journal, indent=2))
         fixture = {'Endpoint': endpoint, 'Username': username, 'PasswordFile': str(credential),
                    'Package': str(original / 'package'), 'Directory': str(base), 'Database': database,
@@ -284,21 +397,33 @@ def main():
         command = ['go', 'test', '-count=1', '-v', '-timeout=8m']
         if args.race:
             command.append('-race')
-        command += ['-run', '^TestDatabendManagedOriginal', './internal/services/databend']
+        command += ['-run', '^TestDatabend(ManagedOriginal|ProviderOriginal)' if args.provider else '^TestDatabendManagedOriginal', './internal/services/databend']
         if transport.run_diagnostics(command, env, base / 'go-test.log'):
             raise RuntimeError('Original managed diagnostics failed; inspect ' + str(base / 'go-test.log'))
-        verify_named_acceptance((base / 'go-test.log').read_text())
+        if args.provider:
+            runtime_command = ['go', 'test', '-count=1', '-v', '-timeout=8m']
+            if args.race:
+                runtime_command.append('-race')
+            runtime_command += ['-run', '^TestDatabendRuntimeOriginal', './internal/services/dbruntime']
+            if transport.run_diagnostics(runtime_command, env, base / 'runtime-go-test.log'):
+                raise RuntimeError('Original runtime diagnostics failed; inspect ' + str(base / 'runtime-go-test.log'))
+            verify_named_acceptance((base / 'runtime-go-test.log').read_text(), RUNTIME_REQUIRED)
+        required = REQUIRED + (PROVIDER_REQUIRED if args.provider else [])
+        verify_named_acceptance((base / 'go-test.log').read_text(), required)
         result['original_executor_receipts'] = verify_receipts(base)
         result['writes'] = verify_independent_writes(base)
+        if args.provider:
+            result['private_provider'] = verify_provider_receipts(base, database)
+            result['private_runtime'] = verify_runtime_receipts(base)
         result['original_processes_exited'] = transport.verify_processes(base)
-        if result['original_processes_exited'] != 5:
+        if result['original_processes_exited'] != (15 if args.provider else 5):
             raise RuntimeError('Original independent process lifecycle coverage differs')
         if verify_build(original, dbx, cache) != pins or verify_build(reproduced, dbx, cache) != pins:
             raise RuntimeError('Original managed artifacts/sources changed during product verification')
-        result.update(status='passed', required_diagnostics=REQUIRED, original_package_unchanged=True,
+        result.update(status='passed', required_diagnostics=required, original_package_unchanged=True,
                       original_source_unchanged=True, unverified=[
                           'native Windows/macOS packages and product execution',
-                          'public config persistence/URI/chooser/editor/provider/workspaces',
+                          'public URI/chooser/editor/provider/workspaces' if args.provider else 'public config persistence/URI/chooser/editor/provider/workspaces',
                           'native TLS/cloud/warehouse/routes/other versions/modes',
                           'native kill/rollback and concurrent keyless mutation guarantees',
                       ])

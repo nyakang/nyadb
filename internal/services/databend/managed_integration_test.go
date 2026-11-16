@@ -62,26 +62,7 @@ func startManagedNative(t *testing.T, f managedFixture, store *driverstore.Store
 	t.Helper()
 	config := connections.DatabendManagedConfig{Transport: connections.DatabendConfig{Endpoint: endpoint, Username: f.Username, ConnectTimeoutSeconds: 60}, Database: f.Database, DriverVersion: f.Version, DriverSHA256: f.SHA256, MaxConnections: 3, MetadataReserve: 1}
 	p, err := StartManaged(context.Background(), store, config, localTransportSecret(t, f.localTransportFixture), func(pid int) error {
-		exe, err := os.Readlink(fmt.Sprintf("/proc/%d/exe", pid))
-		if err != nil || !strings.HasPrefix(exe, f.Directory+string(os.PathSeparator)) || !strings.HasSuffix(exe, "/jre/bin/java") {
-			return errors.New("original installed Java executable identity differs")
-		}
-		stat, err := os.ReadFile(fmt.Sprintf("/proc/%d/stat", pid))
-		if err != nil {
-			return err
-		}
-		fields := strings.Fields(string(stat[strings.LastIndexByte(string(stat), ')')+1:]))
-		if len(fields) < 20 {
-			return errors.New("original process start identity missing")
-		}
-		journal, err := os.OpenFile(filepath.Join(f.Directory, "processes.jsonl"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
-		if err != nil {
-			return err
-		}
-		defer journal.Close()
-		record, _ := json.Marshal(map[string]any{"pid": pid, "start_ticks": fields[19], "executable": exe})
-		_, err = journal.Write(append(record, '\n'))
-		return err
+		return recordManagedNativeProcess(t, f, pid)
 	})
 	if err != nil {
 		t.Fatal("original managed process start", err)
@@ -89,6 +70,30 @@ func startManagedNative(t *testing.T, f managedFixture, store *driverstore.Store
 	t.Cleanup(func() { _ = p.Close() })
 	recordTransportReceipt(t, f.localTransportFixture, "managed-handshake", p.StartupReceipt())
 	return p
+}
+
+func recordManagedNativeProcess(t *testing.T, f managedFixture, pid int) error {
+	t.Helper()
+	exe, err := os.Readlink(fmt.Sprintf("/proc/%d/exe", pid))
+	if err != nil || !strings.HasPrefix(exe, f.Directory+string(os.PathSeparator)) || !strings.HasSuffix(exe, "/jre/bin/java") {
+		return errors.New("original installed Java executable identity differs")
+	}
+	stat, err := os.ReadFile(fmt.Sprintf("/proc/%d/stat", pid))
+	if err != nil {
+		return err
+	}
+	fields := strings.Fields(string(stat[strings.LastIndexByte(string(stat), ')')+1:]))
+	if len(fields) < 20 {
+		return errors.New("original process start identity missing")
+	}
+	journal, err := os.OpenFile(filepath.Join(f.Directory, "processes.jsonl"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		return err
+	}
+	defer journal.Close()
+	record, _ := json.Marshal(map[string]any{"pid": pid, "start_ticks": fields[19], "executable": exe})
+	_, err = journal.Write(append(record, '\n'))
+	return err
 }
 
 func openManagedNative(t *testing.T, f managedFixture, p *ManagedProcess, metadata bool) *ManagedSession {
