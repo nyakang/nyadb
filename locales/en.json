@@ -4323,5 +4323,12 @@
   "nativeSequentialStatementAcknowledged": "Native statement acknowledged (no batch transaction)",
   "nativeSequentialStatementFailed": "Native statement failed; earlier acknowledged writes remain",
   "nativeSequentialStatementUnknown": "Native write receipt unknown; replay prohibited",
-  "nativeSequentialStatementNotSent": "Native statement not sent"
+  "nativeSequentialStatementNotSent": "Native statement not sent",
+  "tdengineDataMutationTitle": "Confirm TDengine data changes",
+  "tdengineDataMutationHint": "Statements execute independently without a batch transaction. An insert with the same key merges an existing record; omitted fields are retained and explicit NULL clears them. Original records are checked before writing; the check and write are not atomic. Supertables write only to the selected existing child table. Unknown receipts prohibit replay.",
+  "tdengineDataMutationPreview": "Complete TDengine native write preview",
+  "tdengineDataMutationHistory": "Confirmed TDengine data changes",
+  "tdengineDataMutationInsert": "Insert or merge record",
+  "tdengineDataMutationUpdate": "Merge record fields",
+  "tdengineDataMutationDelete": "Delete records at the selected timestamp"
 }

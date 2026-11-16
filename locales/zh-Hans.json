@@ -4323,5 +4323,12 @@
   "nativeSequentialStatementAcknowledged": "原生语句已确认（无批次事务）",
   "nativeSequentialStatementFailed": "原生语句失败；先前已确认的写入已保留",
   "nativeSequentialStatementUnknown": "原生写入回执未知，禁止重放",
-  "nativeSequentialStatementNotSent": "原生语句未发送"
+  "nativeSequentialStatementNotSent": "原生语句未发送",
+  "tdengineDataMutationTitle": "确认 TDengine 数据更改",
+  "tdengineDataMutationHint": "各语句独立执行，不提供批次事务。同键新增会合并已有记录；省略字段保留，显式 NULL 清空。写入前会检查原始记录，检查与写入不具有原子性。超级表只写入所选的已有子表。未知回执禁止重放。",
+  "tdengineDataMutationPreview": "TDengine 原生写入完整预览",
+  "tdengineDataMutationHistory": "已确认的 TDengine 数据更改",
+  "tdengineDataMutationInsert": "新增或合并记录",
+  "tdengineDataMutationUpdate": "合并记录字段",
+  "tdengineDataMutationDelete": "删除所选时间戳记录"
 }

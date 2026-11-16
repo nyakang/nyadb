@@ -1,10 +1,46 @@
 package contract
 
+import "slices"
+
+// HasDataWriteExecutor accepts a direct saver or a mandatory confirmation path
+// covering every advertised edit kind. Partial previews cannot advertise an
+// editor whose remaining actions have no executor.
+func HasDataWriteExecutor(r DataRuntime) bool {
+	if r.Saver != nil {
+		return true
+	}
+	if r.SubmitEdits == nil {
+		return false
+	}
+	kinds := r.EditKinds
+	if kinds == nil {
+		kinds = []string{"insert", "update", "delete"}
+	}
+	if len(kinds) == 0 {
+		return false
+	}
+	for _, kind := range kinds {
+		switch kind {
+		case "copy":
+			if r.PreviewKeyCopy == nil {
+				return false
+			}
+		case "insert", "update", "delete", "detach_delete":
+			if r.PreviewEdits == nil || !slices.Contains(r.PreviewEditKinds, kind) {
+				return false
+			}
+		default:
+			return false
+		}
+	}
+	return true
+}
+
 // BoundDataCapabilities removes advertised features whose document binding has
 // no executor. It never reserves another lease or opens a server resource.
 func BoundDataCapabilities(r DataRuntime) Capabilities {
 	c := r.Capabilities
-	c.EditableTables = c.EditableTables && r.Saver != nil && (!r.AsyncWrites || r.Verify != nil)
+	c.EditableTables = c.EditableTables && HasDataWriteExecutor(r) && (!r.AsyncWrites || r.Verify != nil)
 	c.Transactions = c.Transactions && r.Transactions.Begin != nil && r.Transactions.Commit != nil && r.Transactions.Rollback != nil
 	c.Keyset = c.Keyset && r.AdvancedLoader != nil
 	c.Count = c.Count && r.Count != nil

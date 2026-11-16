@@ -63,7 +63,7 @@ func TestNativeTDengineDataDocumentCompleteRowsAndOriginalIdentity(t *testing.T)
 			o := s.Namespace(db).Object("table", "owned")
 			doc := nativeDataDocument(t, s, o)
 			page, err := doc.page(ctx, p.ID, db, o.Name, contract.DataOptions{Object: o, Limit: 2, SortColumn: "ts"})
-			if err != nil || len(page.Rows) != 1 || len(page.RowRefs) != 1 || !page.Rows[0][4].Truncated || !page.Rows[0][6].Truncated || *page.Editable {
+			if err != nil || len(page.Rows) != 1 || len(page.RowRefs) != 1 || !page.Rows[0][4].Truncated || !page.Rows[0][6].Truncated || !*page.Editable {
 				nativeDataMetadataEvidence(t, s, o)
 				t.Fatal("original owned page unavailable", err, page)
 			}

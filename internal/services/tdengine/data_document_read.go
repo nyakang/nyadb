@@ -56,7 +56,9 @@ func (l *dataLease) page(ctx context.Context, id int64, db, table string, o cont
 		if e != nil {
 			return e
 		}
-		editable := false
+		l.mu.Lock()
+		editable := l.writeAdmission() == nil
+		l.mu.Unlock()
 		page = &contract.DataPage{Object: l.object, Database: db, Table: table, Offset: o.Offset, Limit: o.Limit, Editable: &editable, ColumnMetadata: slices.Clone(m.Columns), ColumnEditKinds: contract.CloneDataColumnEditKinds(m.Permissions), LiveRead: true, PagingMode: "offset", QuerySQL: q}
 		for _, c := range m.Columns {
 			page.Columns = append(page.Columns, c.Name)

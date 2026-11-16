@@ -11,7 +11,7 @@ import (
 )
 
 // One original document owns its key grants and independently canceled native
-// read operations. Reservation never opens a socket or performs metadata I/O.
+// native operations. Reservation never opens a socket or performs metadata I/O.
 type dataLease struct {
 	mu                     sync.Mutex
 	session                *Session
@@ -60,16 +60,19 @@ func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocume
 
 func (s *Session) DataDocumentCapabilities() contract.Capabilities {
 	c := s.Capabilities()
-	// Native grid writes are a separate acceptance step. These original read
-	// leases expose complete rows/chunks without advertising a saver.
-	c.EditableTables = false
 	c.FieldChunks = true
 	return c
 }
 
 func (l *dataLease) Runtime() contract.DataRuntime {
 	return contract.DataRuntime{PageCancellationAcknowledged: true, Capabilities: l.session.DataDocumentCapabilities(),
-		AdvancedLoader: l.page, RowReader: l.row, Chunk: l.chunk, Count: l.count,
+		NativeReceipts: true, SequentialWrites: true, InsertOmittedValues: true,
+		PreviewEdits: l.previewEdits, SubmitEdits: l.submitEdits,
+		EditKinds: []string{"insert", "update", "delete"}, PreviewEditKinds: []string{"insert", "update", "delete"},
+		EditValueKinds:       []contract.CellKind{contract.Null, contract.Text, contract.Integer, contract.Floating, contract.Boolean, contract.Binary, contract.Decimal, contract.DateTime},
+		MutationPresentation: &contract.DataMutationPresentation{Title: "确认 TDengine 数据更改", Hint: "各语句独立执行，不提供批次事务。同键新增会合并已有记录；省略字段保留，显式 NULL 清空。写入前会检查原始记录，检查与写入不具有原子性。超级表只写入所选的已有子表。未知回执禁止重放。", PreviewLabel: "TDengine 原生写入完整预览", HistoryLabel: "已确认的 TDengine 数据更改", CreateLabel: "新增或合并记录", UpdateLabel: "合并记录字段", DeleteLabel: "删除所选时间戳记录"},
+		ReceiptPresentation:  &contract.NativeWriteReceiptPresentation{ExportFilename: "tdengine-write-receipt.json"},
+		AdvancedLoader:       l.page, RowReader: l.row, Chunk: l.chunk, Count: l.count,
 		TableMetadata: l.metadata, TableInfo: l.info, Exporter: l.export, JSONL: l.jsonl,
 		FilterModes:        []string{"equal", "not_equal", "less", "greater", "like", "is_null", "is_not_null"},
 		ReadScopeHint:      "TDengine 分页读取当前可见数据；跨页不提供一致快照。",

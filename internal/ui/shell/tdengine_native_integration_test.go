@@ -183,13 +183,13 @@ func TestTDengineNativePublicChooserVaultSQLGridStructureAndRecovery(t *testing.
 				t.Fatal("navigator lost qualified data identity")
 			}
 			wait(tt, func() bool { return !data.data.Busy() })
-			if data.data.Error() != "" || data.data.Page() == nil || len(data.data.Page().Rows) != 2 || data.data.Page().Rows[0][1].Value.Text != "9007199254740993" || data.data.Page().Editable == nil || *data.data.Page().Editable {
+			if data.data.Error() != "" || data.data.Page() == nil || len(data.data.Page().Rows) != 2 || data.data.Page().Rows[0][1].Value.Text != "9007199254740993" || data.data.Page().Editable == nil || *data.data.Page().Editable == readOnly {
 				t.Fatal("native shared grid failed", data.data.Error())
 			}
-			s.dataWorkspace.EditCell(services, data.data, 0, "note", contract.Cell{Kind: contract.Text, Text: "must not identify by duplicate timestamp/symbol"})
+			s.dataWorkspace.EditCell(services, data.data, 0, "ts", contract.Cell{Kind: contract.DateTime, Text: "2024-01-01T00:00:05Z"})
 			tt.Frame()
 			if data.data.HasDraft() {
-				t.Fatal("nonunique native fields granted row editing")
+				t.Fatal("original timestamp identity granted editing")
 			}
 			capture("grid", tt)
 			if len(data.data.Page().RowRefs) != 2 || data.data.Page().RowRefs[0] == nil || data.data.Page().RowSnapshots[0] == nil {
@@ -215,6 +215,11 @@ func TestTDengineNativePublicChooserVaultSQLGridStructureAndRecovery(t *testing.
 				t.Fatal("public native binary field selection failed", err)
 			}
 			tt.Frame()
+			if _, open := tt.Find("取消单元格编辑"); open {
+				if err = tt.Click("取消单元格编辑"); err != nil {
+					t.Fatal(err)
+				}
+			}
 			if err = tt.Click("读取所选字段下一段"); err != nil {
 				t.Fatal(err)
 			}

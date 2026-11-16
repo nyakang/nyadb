@@ -117,7 +117,9 @@ func (s *Session) Catalog() string    { return s.profile.Database }
 func (s *Session) Alive() bool        { s.mu.Lock(); defer s.mu.Unlock(); return !s.closed }
 func (s *Session) Capabilities() contract.Capabilities {
 	d, _ := connections.Describe(connections.TDengine)
-	return d.Capabilities
+	c := d.Capabilities
+	c.EditableTables = c.EditableTables && !s.profile.TDengineOptions.ReadOnly
+	return c
 }
 func (s *Session) Close() error {
 	s.closeOnce.Do(func() {

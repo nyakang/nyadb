@@ -30,7 +30,7 @@ func TestTDengineNativeProfileAndURIIdentity(t *testing.T) {
 		t.Fatal("TDengine credentials or semantic family exposed")
 	}
 	d, _ := connections.Describe(connections.TDengine)
-	if d.DefaultPort != 6041 || d.Dialect != "tdengine" || !d.Capabilities.Query || !d.Capabilities.Export || d.Capabilities.EditableTables || d.Capabilities.Transactions || d.Capabilities.Keyset || d.Capabilities.DesignTables {
+	if d.DefaultPort != 6041 || d.Dialect != "tdengine" || !d.Capabilities.Query || !d.Capabilities.Export || !d.Capabilities.EditableTables || d.Capabilities.Transactions || d.Capabilities.Keyset || d.Capabilities.DesignTables {
 		t.Fatal("unimplemented native semantics advertised")
 	}
 	for _, raw := range []string{"tdengine://host:0", "tdengine://host?password=secret", "tdengine://host?schema=public", "tdengine://host?query_timeout=0", "tdengine://host?query_timeout=1&query_timeout=2", "tdengine://host?read_only=1", "tdengine://host?sslmode=prefer", "tdengine://host?ca_file=/tmp/root", "tdengine://host#fragment"} {

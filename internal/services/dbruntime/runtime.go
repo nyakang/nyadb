@@ -231,7 +231,7 @@ func (s *session) Capabilities() contract.Capabilities {
 			documents = p.DataDocumentCapabilities()
 		}
 	}
-	caps.EditableTables = caps.EditableTables && (r.Saver != nil || documents.EditableTables)
+	caps.EditableTables = caps.EditableTables && (contract.HasDataWriteExecutor(r) || documents.EditableTables)
 	caps.Transactions = caps.Transactions && (r.Transactions.Begin != nil && r.Transactions.Commit != nil && r.Transactions.Rollback != nil || documents.Transactions)
 	caps.Count = caps.Count && (r.Count != nil || documents.Count)
 	caps.FieldChunks = caps.FieldChunks && (r.Chunk != nil || documents.FieldChunks)

@@ -169,7 +169,17 @@ func (s *State) openMySQLData(services ui.Services, database, table string) {
 		return
 	}
 	s.nextTabID++
-	t := &tab{id: s.nextTabID, kind: tabMySQLData, title: database + "." + table + " · 数据", data: s.dataWorkspace.OpenObject(s.nextTabID, s.runtime.Namespace(w.ProfileID, database).Object(neutralObjectKind(kind), table), s.objectCapabilitiesFor(w.ProfileID))}
+	namespace := s.runtime.Namespace(w.ProfileID, database)
+	object := namespace.Object(neutralObjectKind(kind), table)
+	// Display categories can contain distinct native kinds, such as TDengine
+	// tables and STABLEs. Preserve the qualified identity supplied by metadata.
+	for _, item := range s.sessions.CacheFor(w.ProfileID)[database] {
+		if item.Name == table && item.Kind == kind && item.Ref.Namespace() == namespace && item.Ref.Name == table && item.Ref.Kind != "" {
+			object = item.Ref
+			break
+		}
+	}
+	t := &tab{id: s.nextTabID, kind: tabMySQLData, title: database + "." + table + " · 数据", data: s.dataWorkspace.OpenObject(s.nextTabID, object, s.objectCapabilitiesFor(w.ProfileID))}
 	s.tabs = append(s.tabs, t)
 	s.activeTab = len(s.tabs) - 1
 	s.dataWorkspace.Load(services, t.data, false)

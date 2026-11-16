@@ -327,6 +327,9 @@ func (l *dataLease) checkOriginalEdit(ctx context.Context, w *wire, m *dataMetad
 }
 
 func (l *dataLease) submitEdits(ctx context.Context, id int64, db, table string, supplied contract.DataMutationPlan) (*contract.DataEditResult, error) {
+	if ctx == nil {
+		return nil, connections.ErrInvalid
+	}
 	if err := l.identity(id, db, table); err != nil {
 		return nil, err
 	}

@@ -44059,3 +44059,73 @@ func NativeSequentialStatementNotSent() string {
 func (msgs Messages) NativeSequentialStatementNotSent() string {
 	return Catalog.Format(msgs.locale, "nativeSequentialStatementNotSent", nil)
 }
+
+// TdengineDataMutationTitle says "确认 TDengine 数据更改"
+// in the language the app shows.
+func TdengineDataMutationTitle() string { return In(i18n.Locale()).TdengineDataMutationTitle() }
+
+// TdengineDataMutationTitle says "确认 TDengine 数据更改"
+// in the language of msgs.
+func (msgs Messages) TdengineDataMutationTitle() string {
+	return Catalog.Format(msgs.locale, "tdengineDataMutationTitle", nil)
+}
+
+// TdengineDataMutationHint says "各语句独立执行，不提供批次事务。同键新增会合并已有记录；省略字段保留，显式 NULL …"
+// in the language the app shows.
+func TdengineDataMutationHint() string { return In(i18n.Locale()).TdengineDataMutationHint() }
+
+// TdengineDataMutationHint says "各语句独立执行，不提供批次事务。同键新增会合并已有记录；省略字段保留，显式 NULL …"
+// in the language of msgs.
+func (msgs Messages) TdengineDataMutationHint() string {
+	return Catalog.Format(msgs.locale, "tdengineDataMutationHint", nil)
+}
+
+// TdengineDataMutationPreview says "TDengine 原生写入完整预览"
+// in the language the app shows.
+func TdengineDataMutationPreview() string { return In(i18n.Locale()).TdengineDataMutationPreview() }
+
+// TdengineDataMutationPreview says "TDengine 原生写入完整预览"
+// in the language of msgs.
+func (msgs Messages) TdengineDataMutationPreview() string {
+	return Catalog.Format(msgs.locale, "tdengineDataMutationPreview", nil)
+}
+
+// TdengineDataMutationHistory says "已确认的 TDengine 数据更改"
+// in the language the app shows.
+func TdengineDataMutationHistory() string { return In(i18n.Locale()).TdengineDataMutationHistory() }
+
+// TdengineDataMutationHistory says "已确认的 TDengine 数据更改"
+// in the language of msgs.
+func (msgs Messages) TdengineDataMutationHistory() string {
+	return Catalog.Format(msgs.locale, "tdengineDataMutationHistory", nil)
+}
+
+// TdengineDataMutationInsert says "新增或合并记录"
+// in the language the app shows.
+func TdengineDataMutationInsert() string { return In(i18n.Locale()).TdengineDataMutationInsert() }
+
+// TdengineDataMutationInsert says "新增或合并记录"
+// in the language of msgs.
+func (msgs Messages) TdengineDataMutationInsert() string {
+	return Catalog.Format(msgs.locale, "tdengineDataMutationInsert", nil)
+}
+
+// TdengineDataMutationUpdate says "合并记录字段"
+// in the language the app shows.
+func TdengineDataMutationUpdate() string { return In(i18n.Locale()).TdengineDataMutationUpdate() }
+
+// TdengineDataMutationUpdate says "合并记录字段"
+// in the language of msgs.
+func (msgs Messages) TdengineDataMutationUpdate() string {
+	return Catalog.Format(msgs.locale, "tdengineDataMutationUpdate", nil)
+}
+
+// TdengineDataMutationDelete says "删除所选时间戳记录"
+// in the language the app shows.
+func TdengineDataMutationDelete() string { return In(i18n.Locale()).TdengineDataMutationDelete() }
+
+// TdengineDataMutationDelete says "删除所选时间戳记录"
+// in the language of msgs.
+func (msgs Messages) TdengineDataMutationDelete() string {
+	return Catalog.Format(msgs.locale, "tdengineDataMutationDelete", nil)
+}

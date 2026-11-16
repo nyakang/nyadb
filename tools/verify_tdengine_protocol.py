@@ -32,6 +32,10 @@ REQUIRED_TESTS = {
     "TestNativeTDengineLostOriginalWriteAcknowledgementDoesNotReconnect",
 }
 APPLICATION_TESTS = {
+	"TestTDengineNativePublicDataWriteConfirmationTypedValuesAndReadback",
+	"TestTDengineNativePublicStableWritesKeepOriginalChildAndTag",
+	"TestTDengineNativePublicUnknownWriteReceiptCloseGuardAndRecovery",
+	"TestTDengineNativePublicParkedWriteAndMetadataRevokedSuffix",
 	"TestNativeTDengineDataWriteExactMergeNullEmptyAndDelete",
 	"TestNativeTDengineDataWriteStableOriginalChildAndRevokedMetadata",
 	"TestNativeTDengineDataWritePartialFailureRetainsOriginalPrefix",
