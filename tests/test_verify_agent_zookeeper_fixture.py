@@ -27,6 +27,19 @@ class ZooKeeperAcceptanceEvidenceTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             FIXTURE.verify_acceptance(output)
 
+    def test_provider_acceptance_requires_original_protocol_and_each_real_workflow(self):
+        required = FIXTURE.REQUIRED + FIXTURE.PROVIDER_REQUIRED
+        output = '\n'.join('--- PASS: ' + name + ' (0.01s)' for name in required)
+        FIXTURE.verify_acceptance(output, required)
+        for name in required:
+            with self.subTest(missing=name), self.assertRaises(RuntimeError):
+                FIXTURE.verify_acceptance(output.replace('--- PASS: ' + name, '--- SKIP: ' + name), required)
+
+    def test_original_bridge_passes_do_not_accept_provider_or_workspace(self):
+        output = '\n'.join('--- PASS: ' + name + ' (0.01s)' for name in FIXTURE.REQUIRED)
+        with self.assertRaises(RuntimeError):
+            FIXTURE.verify_acceptance(output, FIXTURE.REQUIRED + FIXTURE.PROVIDER_REQUIRED)
+
 
 if __name__ == '__main__':
     unittest.main()

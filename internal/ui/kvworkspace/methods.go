@@ -18,6 +18,14 @@ var methods = []Method{
 }
 
 func Methods() []Method { return append([]Method(nil), methods...) }
+
+func znodeRequestMethod(method string) bool {
+	switch method {
+	case "kv_list_prefix", "kv_get", "kv_put", "kv_delete", "connection_info":
+		return true
+	}
+	return false
+}
 func (s *State) MethodsFor(d *Document) []Method {
 	if s.owned(d) && len(d.presentation.Methods) > 0 {
 		out := make([]Method, 0, len(d.presentation.Methods))
@@ -207,5 +215,5 @@ func (s *State) documentMethodAllowed(d *Document, method string) bool {
 		}
 		return false
 	}
-	return method != contract.KVConsulHTTPRequestMethod
+	return method != contract.KVConsulHTTPRequestMethod && !znodeRequestMethod(method)
 }

@@ -23,7 +23,8 @@ type KVScope struct {
 	Prefix     []byte
 	Header     KVHeader
 	Version    string
-	HTTP       KVHTTPIdentity // zero for protobuf providers; no invented etcd identity
+	HTTP       KVHTTPIdentity  // zero for protobuf providers; no invented etcd identity
+	ZNode      KVZNodeIdentity // zero for other protocols; logical ZooKeeper namespace
 }
 
 func (s KVScope) Clone() KVScope { s.Prefix = slices.Clone(s.Prefix); return s }
@@ -132,9 +133,14 @@ type KVResult struct {
 	RequestOmittedFields                      []string
 	HTTP                                      *KVHTTPResult
 	HTTPSessionDestroy                        *KVHTTPSessionDestroyEvidence
+	ZNode                                     *KVZNodeResult
 }
 
 func (r KVResult) Clone() KVResult {
+	if r.ZNode != nil {
+		v := r.ZNode.Clone()
+		r.ZNode = &v
+	}
 	if r.HTTPSessionDestroy != nil {
 		v := r.HTTPSessionDestroy.Clone()
 		r.HTTPSessionDestroy = &v

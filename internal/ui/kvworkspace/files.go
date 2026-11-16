@@ -91,7 +91,7 @@ func EncodeRequest(r contract.KVRequest) ([]byte, error) {
 			return nil, err
 		}
 	}
-	supported := r.Method == HTTPSessionRenewalMethod || r.Method == HTTPWatchMethod || r.Method == contract.KVConsulHTTPRequestMethod || r.Method == SnapshotMethod || r.Method == AlarmsMethod || r.Method == MembersMethod || r.Method == CompactMethod || eventMethod(r.Method) || r.Method == RenewalMethod || leaseBrowserMethod(r.Method) || r.Method == AuthManagementMethod
+	supported := znodeRequestMethod(r.Method) || r.Method == HTTPSessionRenewalMethod || r.Method == HTTPWatchMethod || r.Method == contract.KVConsulHTTPRequestMethod || r.Method == SnapshotMethod || r.Method == AlarmsMethod || r.Method == MembersMethod || r.Method == CompactMethod || eventMethod(r.Method) || r.Method == RenewalMethod || leaseBrowserMethod(r.Method) || r.Method == AuthManagementMethod
 	for _, m := range methods {
 		if m.Path == r.Method {
 			supported = true
@@ -282,6 +282,10 @@ func (s *State) ReceiptJSON(d *Document) (string, bool) {
 		return "", false
 	}
 	r := s.selectedReceipt(d)
+	if r != nil && r.Result.ZNode != nil {
+		raw, err := encodeZNodeOperationReceipt(*r)
+		return string(raw), err == nil
+	}
 	if r != nil && r.Result.HTTP != nil {
 		raw, err := encodeHTTPOperationReceipt(*r)
 		return string(raw), err == nil
@@ -317,6 +321,10 @@ func (s *State) ExportReceipt(d *Document, native bool) {
 	if native {
 		name = "response.pb"
 		raw = bytes.Clone(r.Result.Native)
+		if r.Result.ZNode != nil {
+			name = "response.jsonrpc.json"
+			raw = bytes.Clone(r.Result.ZNode.Native)
+		}
 		if r.Result.HTTP != nil {
 			name = "response.http-body.bin"
 			if !r.Result.HTTP.Captured || !r.Result.HTTP.EOF {

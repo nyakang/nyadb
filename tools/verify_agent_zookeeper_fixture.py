@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Verify the original DBX v1 agent against an owned official ZooKeeper 3.9.4.
 
-This accepts the managed native protocol foundation only. It does not publish
-or accept a public connection card, provider, URI, editor or KV workbench.
+By default this accepts the managed native protocol foundation. --provider also
+accepts injected provider/document/workspace workflows. Neither mode publishes
+or accepts a public connection card, runtime provider, URI or editor.
 Requires Linux, Docker, Go and the complete original source in temp/dbx.
 """
 import argparse
@@ -28,6 +29,11 @@ REQUIRED = [
     'TestZooKeeperAgentNativeEphemeralOwnershipAndExplicitProcessClose',
     'TestZooKeeperAgentNativeCommittedLostReplyCancellationQueueAndRecovery',
     'TestZooKeeperAgentNativeEndpointRoutesRequireCompleteCapturedMapping',
+]
+PROVIDER_REQUIRED = [
+    'TestZooKeeperNativeProviderOriginalValuesNamespaceListingAndDocumentOwnership',
+    'TestZooKeeperNativeWorkspaceConfirmationParkedReceiptFilesAndUnknownRecovery',
+    'TestZooKeeperNativeWorkspaceCommittedLostReplyCancellationRecoveryAndNoReplay',
 ]
 
 
@@ -72,8 +78,8 @@ def json_stream(raw):
         yield value
 
 
-def verify_acceptance(output):
-    for name in REQUIRED:
+def verify_acceptance(output, required=REQUIRED):
+    for name in required:
         if not re.search(r'^--- PASS: ' + re.escape(name) + r' \(', output, re.M):
             raise RuntimeError('Required native acceptance missing: ' + name)
 
@@ -162,6 +168,7 @@ def cleanup_processes(base):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--race', action='store_true')
+    parser.add_argument('--provider', action='store_true')
     args = parser.parse_args()
     if platform.system() != 'Linux' or platform.machine() not in ['x86_64', 'amd64']:
         raise RuntimeError('This pinned acceptance requires Linux amd64')
@@ -175,10 +182,11 @@ def main():
     before = source_snapshot()
     (base / 'accepted-original-source.json').write_text(json.dumps(before, indent=2))
     archive, archive_digest, version = build_bundle(base, before)
-    result = {'scope': 'managed-native-protocol-foundation', 'public_entry_accepted': False,
+    required = REQUIRED + PROVIDER_REQUIRED if args.provider else REQUIRED
+    result = {'scope': 'private-native-provider-workspace' if args.provider else 'managed-native-protocol-foundation', 'public_entry_accepted': False,
               'product': 'ZooKeeper', 'server_version': '3.9.4', 'image': IMAGE,
               'race': args.race, 'driver_sha256': archive_digest,
-              'passed_tests': [], 'unverified': ['public provider/editor/chooser/URI/KV workspace',
+              'passed_tests': [], 'unverified': ['public runtime/editor/chooser/URI' if args.provider else 'public provider/editor/chooser/URI/KV workspace',
                   'TLS/mTLS', 'digest ACL enforcement', 'SASL authentication', 'ensemble failover', 'SSH routes']}
     container = None
     try:
@@ -206,19 +214,23 @@ def main():
         fixture.write_text(json.dumps({'archive': str(archive), 'sha256': archive_digest,
             'version': version, 'directory': str(base), 'endpoint': endpoint}, indent=2))
         env = dict(os.environ, CGO_ENABLED='1' if args.race else '0',
+            NYADB_ZOOKEEPER_PROVIDER_IT='1' if args.provider else '0',
             NYADB_AGENT_ZOOKEEPER_IT='1', NYADB_AGENT_ZOOKEEPER_FIXTURE_FILE=str(fixture))
         command = ['go', 'test', '-count=1', '-v', '-timeout=5m']
         if args.race:
             command += ['-race']
-        command += ['./internal/services/agentbridge', '-run', '^TestZooKeeperAgentNative']
+        command += ['./internal/services/agentbridge']
+        if args.provider:
+            command += ['./internal/ui/kvworkspace']
+        command += ['-run', '^TestZooKeeper(AgentNative|Native)']
         completed = subprocess.run(command, cwd=ROOT, env=env, stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT, timeout=360)
         output = completed.stdout.decode(errors='replace')
         (base / 'acceptance.log').write_text(output)
         if completed.returncode:
             raise RuntimeError('Original ZooKeeper acceptance failed:\n' + output[-16000:])
-        verify_acceptance(output)
-        result['passed_tests'] = REQUIRED
+        verify_acceptance(output, required)
+        result['passed_tests'] = required
         if source_snapshot() != before:
             raise RuntimeError('Original source changed during acceptance')
         result['original_source_unchanged'] = True

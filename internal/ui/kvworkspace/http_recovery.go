@@ -7,7 +7,7 @@ import (
 )
 
 func sameKVRecoveryIdentity(a, b contract.KVScope) bool {
-	return a.Namespace == b.Namespace && bytes.Equal(a.Prefix, b.Prefix) && a.Header.ClusterID == b.Header.ClusterID && a.Header.MemberID == b.Header.MemberID && a.Version == b.Version && a.HTTP == b.HTTP
+	return a.Namespace == b.Namespace && bytes.Equal(a.Prefix, b.Prefix) && a.Header.ClusterID == b.Header.ClusterID && a.Header.MemberID == b.Header.MemberID && a.Version == b.Version && a.HTTP == b.HTTP && a.ZNode == b.ZNode
 }
 
 func (s *State) consumeRequestRecovery(d *Document, job *operation, result *outcome) {
@@ -29,7 +29,7 @@ func (s *State) consumeRequestRecovery(d *Document, job *operation, result *outc
 			d.unknown = &Receipt{Scope: job.scope.Clone(), Authored: unknown.Request, Result: unknown.Clone()}
 		}
 	}
-	if d.last == nil && result.recoveryResult != nil && result.recoveryResult.HTTP != nil {
+	if d.last == nil && result.recoveryResult != nil && (result.recoveryResult.HTTP != nil || result.recoveryResult.ZNode != nil) {
 		last := result.recoveryResult
 		d.last = &Receipt{Scope: job.scope.Clone(), Authored: last.Request, Result: last.Clone()}
 	}

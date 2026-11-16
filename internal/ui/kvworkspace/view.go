@@ -546,11 +546,11 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 			}
 			r := s.selectedReceipt(d)
 			copyLabel := locales.Text("复制完整 JSON")
-			if r != nil && r.Result.HTTP != nil {
+			if r != nil && (r.Result.HTTP != nil || r.Result.ZNode != nil) {
 				copyLabel = locales.Text("复制完整操作记录")
 			}
-			if ui.Button(c, copyLabel).Disabled(r == nil || r.Result.HTTP == nil && r.Result.JSON == "" && r.AuthManagement == nil && r.Compaction == nil).Clicked() {
-				if r.Result.HTTP != nil || r.AuthManagement != nil || r.Compaction != nil {
+			if ui.Button(c, copyLabel).Disabled(r == nil || r.Result.HTTP == nil && r.Result.ZNode == nil && r.Result.JSON == "" && r.AuthManagement == nil && r.Compaction == nil).Clicked() {
+				if r.Result.HTTP != nil || r.Result.ZNode != nil || r.AuthManagement != nil || r.Compaction != nil {
 					raw, err := encodeOperationReceipt(*r)
 					if err == nil {
 						c.WriteClipboard(string(raw))
@@ -563,6 +563,15 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 				s.ExportOperationRecord(d)
 			}
 			ui.Button(c, locales.Text("导出原生回执")).Disabled(r == nil || d.FileBusy() || s.deps.Files.SavePath == nil).Menu(func(m *ui.Menu) {
+				if r != nil && r.Result.ZNode != nil {
+					if m.Item("JSON-RPC (.json)").Disabled(len(r.Result.ZNode.Native) == 0).Chosen() {
+						s.ExportReceipt(d, true)
+					}
+					if m.Item("JSON (.json)").Disabled(r.Result.JSON == "").Chosen() {
+						s.ExportReceipt(d, false)
+					}
+					return
+				}
 				if r != nil && r.Result.HTTP != nil {
 					if m.Item("HTTP body (.bin)").Disabled(len(r.Result.HTTP.Body) == 0 && !r.Result.HTTP.Captured).Chosen() {
 						s.ExportReceipt(d, true)
@@ -596,6 +605,10 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 		}
 		if r.Result.HTTP != nil {
 			s.httpReceiptView(c, d, r)
+			return
+		}
+		if r.Result.ZNode != nil {
+			s.znodeReceiptView(c, d, r)
 			return
 		}
 		if r.LeaseManagement != nil {
