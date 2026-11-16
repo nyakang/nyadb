@@ -8,7 +8,8 @@ document isolation/recovery. --public additionally accepts the real
 chooser/editor/shell workflow, including localized UI and lost-write recovery.
 --security additionally verifies digest ACLs, TLS/mTLS, mandatory SASL Digest
 (server FIPS mode disabled), secure editor checks and original receipt recovery.
-Foundation modes never accept the public entry. Topology, SSH routes, Kerberos
+--topology also verifies a real three-member ensemble and authenticated TLS/mTLS.
+Foundation modes never accept the public entry. SSH routes, Kerberos
 and other server versions remain separately unverified.
 Requires Linux, Docker, Go and the complete original source in temp/dbx.
 """
@@ -58,6 +59,10 @@ SECURITY_REQUIRED = [
     'TestZooKeeperNativePublicSASLRequiredAuthenticationAndOriginalReceipt',
     'TestZooKeeperNativePublicEditorSecurityFilesVaultTestAndCancellation',
 ]
+TOPOLOGY_REQUIRED = [
+    'TestZooKeeperNativePublicEnsembleFailoverKeepsOriginalDocumentSession',
+    'TestZooKeeperNativePublicAuthenticatedTLSAndMutualTLSOriginalReceipts',
+]
 EDITOR_CONTROLS = {
     'general': ['ZooKeeper Chroot', 'ZooKeeper Namespace', 'ZooKeeper 驱动包', '导入驱动包', '连接密码'],
     'advanced': ['ZooKeeper 其他服务器', 'ZooKeeper 会话超时（毫秒）', 'ZooKeeper 连接超时（毫秒）', 'ZooKeeper 文档连接上限'],
@@ -65,7 +70,8 @@ EDITOR_CONTROLS = {
 }
 
 
-def acceptance_requirements(provider=False, public_runtime=False, public=False, security=False):
+def acceptance_requirements(provider=False, public_runtime=False, public=False, security=False, topology=False):
+    security = security or topology
     required = list(REQUIRED)
     if provider or public_runtime or public or security:
         required += PROVIDER_REQUIRED
@@ -75,6 +81,8 @@ def acceptance_requirements(provider=False, public_runtime=False, public=False, 
         required += PUBLIC_REQUIRED
     if security:
         required += SECURITY_REQUIRED
+    if topology:
+        required += TOPOLOGY_REQUIRED
     return required
 
 
@@ -107,28 +115,32 @@ def prepare_security_material(base):
     return directory, password
 
 
-def prepare_security_servers(base, token, containers):
+def prepare_security_servers(base, token, containers, topology=False):
     directory, password = prepare_security_material(base)
     username, digest_secret, sasl_secret = 'fixtureuser', 'owned-digest-secret', 'owned-sasl-secret'
     jaas = directory / 'jaas.conf'
     jaas.write_text('Server { org.apache.zookeeper.server.auth.DigestLoginModule required user_fixtureuser="' + sasl_secret + '"; };\nClient { org.apache.zookeeper.server.auth.DigestLoginModule required username="' + username + '" password="' + sasl_secret + '"; };\n')
     endpoints = {}
-    for mode in ['tls', 'mtls', 'sasl']:
+    modes = ['tls', 'mtls', 'sasl'] + (['sasl-tls', 'sasl-mtls'] if topology else [])
+    for mode in modes:
+        secure = mode != 'sasl'
+        mutual = mode in ['mtls', 'sasl-mtls']
+        sasl = mode.startswith('sasl')
         config = directory / (mode + '.cfg')
         text = 'tickTime=500\ndataDir=/data\nclientPort=2181\nadmin.enableServer=false\n4lw.commands.whitelist=srvr,ruok\n'
-        if mode in ['tls', 'mtls']:
-            text += 'secureClientPort=2281\nserverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory\nssl.enabledProtocols=TLSv1.3,TLSv1.2\nssl.keyStore.location=/security/server.p12\nssl.keyStore.type=PKCS12\nssl.keyStore.password=' + password + '\nssl.trustStore.location=/security/trust.p12\nssl.trustStore.type=PKCS12\nssl.trustStore.password=' + password + '\nssl.clientAuth=' + ('need' if mode == 'mtls' else 'none') + '\n'
-        else:
+        if secure:
+            text += 'secureClientPort=2281\nserverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory\nssl.enabledProtocols=TLSv1.3,TLSv1.2\nssl.keyStore.location=/security/server.p12\nssl.keyStore.type=PKCS12\nssl.keyStore.password=' + password + '\nssl.trustStore.location=/security/trust.p12\nssl.trustStore.type=PKCS12\nssl.trustStore.password=' + password + '\nssl.clientAuth=' + ('need' if mutual else 'none') + '\n'
+        if sasl:
             text += 'authProvider.1=org.apache.zookeeper.server.auth.SASLAuthenticationProvider\nenforce.auth.enabled=true\nenforce.auth.schemes=sasl\n'
-        if mode == 'mtls':
+        if mutual:
             text += 'ssl.clientHostnameVerification=false\n'
         config.write_text(text)
-        internal = '2281' if mode != 'sasl' else '2181'
+        internal = '2281' if secure else '2181'
         cid = run(['docker', 'create', '--name', 'nyadb-zookeeper-' + token + '-' + mode,
                    '--label', 'nyadb.zookeeper.fixture=' + token, '-p', '127.0.0.1::' + internal,
                    '-v', str(directory) + ':/security:ro',
-                   '-e', 'SERVER_JVMFLAGS=' + ('-Djava.security.auth.login.config=/security/jaas.conf -Dzookeeper.fips-mode=false' if mode == 'sasl' else ''),
-                   '-e', 'CLIENT_JVMFLAGS=' + ('-Djava.security.auth.login.config=/security/jaas.conf -Dzookeeper.fips-mode=false' if mode == 'sasl' else '-Dzookeeper.sasl.client=false'),
+                   '-e', 'SERVER_JVMFLAGS=' + ('-Djava.security.auth.login.config=/security/jaas.conf -Dzookeeper.fips-mode=false' if sasl else ''),
+                   '-e', 'CLIENT_JVMFLAGS=' + ('-Djava.security.auth.login.config=/security/jaas.conf -Dzookeeper.fips-mode=false' if sasl else '-Dzookeeper.sasl.client=false'),
                    IMAGE, 'zkServer.sh', 'start-foreground', '/security/' + mode + '.cfg']).decode().strip()
         containers.append((mode, cid))
         run(['docker', 'start', cid])
@@ -141,9 +153,9 @@ def prepare_security_servers(base, token, containers):
         while True:
             try:
                 with socket.create_connection(('127.0.0.1', port), timeout=1) as conn:
-                    if mode != 'sasl':
+                    if secure:
                         context = ssl.create_default_context(cafile=str(directory / 'ca.pem'))
-                        if mode == 'mtls':
+                        if mutual:
                             context.load_cert_chain(str(directory / 'client.pem'), str(directory / 'client.key'))
                         conn = context.wrap_socket(conn, server_hostname='127.0.0.1')
                     conn.sendall(b'ruok')
@@ -157,7 +169,7 @@ def prepare_security_servers(base, token, containers):
         endpoints[mode] = endpoint
         # Real Java client authors protected fixture nodes; native agent tests
         # independently prove both permitted and denied operations.
-        acl = 'sasl:' + username + ':cdrwa' if mode == 'sasl' else 'world:anyone:cdrwa'
+        acl = 'sasl:' + username + ':cdrwa' if sasl else 'world:anyone:cdrwa'
         commands = 'create /nyadb_secure fixture ' + acl + '\nget /nyadb_secure\nquit\n'
         completed = subprocess.run(['docker', 'exec', '-i', cid, 'zkCli.sh', '-server', '127.0.0.1:2181'],
             input=commands.encode(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
@@ -165,14 +177,17 @@ def prepare_security_servers(base, token, containers):
         if completed.returncode or 'Created /nyadb_secure' not in output or 'fixture' not in output:
             raise RuntimeError('Real Java secure fixture authoring failed: ' + mode + '\n' + output[-4000:])
         (base / (mode + '-seed.log')).write_text(output)
+        if topology and not sasl:
+            seed_digest_acl(base, cid, {'username': username, 'digest_secret': digest_secret}, mode + '-digest-seed.log')
     return {'tls_endpoint': endpoints['tls'], 'mtls_endpoint': endpoints['mtls'], 'sasl_endpoint': endpoints['sasl'],
+            'sasl_tls_endpoint': endpoints.get('sasl-tls', ''), 'sasl_mtls_endpoint': endpoints.get('sasl-mtls', ''),
             'ca_file': str(directory / 'ca.pem'), 'wrong_ca_file': str(directory / 'wrong-ca.pem'),
             'client_cert_file': str(directory / 'client.pem'), 'client_key_file': str(directory / 'client.key'),
             'wrong_client_cert_file': str(directory / 'wrong-client.pem'), 'wrong_client_key_file': str(directory / 'wrong-client.key'),
             'username': username, 'digest_secret': digest_secret, 'sasl_secret': sasl_secret}
 
 
-def seed_digest_acl(base, container, security):
+def seed_digest_acl(base, container, security, log='digest-seed.log'):
     credential = security['username'] + ':' + security['digest_secret']
     identity = security['username'] + ':' + base64.b64encode(hashlib.sha1(credential.encode()).digest()).decode()
     commands = 'create /nyadb_digest fixture digest:' + identity + ':cdrwa\nquit\n'
@@ -181,7 +196,116 @@ def seed_digest_acl(base, container, security):
     output = completed.stdout.decode(errors='replace')
     if completed.returncode or 'Created /nyadb_digest' not in output or security['digest_secret'] in output:
         raise RuntimeError('Real Java digest ACL fixture authoring failed')
-    (base / 'digest-seed.log').write_text(output)
+    (base / log).write_text(output)
+
+
+def prepare_ensemble(base, token, containers, networks):
+    name = 'nyadb-zookeeper-' + token + '-ensemble'
+    network = run(['docker', 'network', 'create', '--label', 'nyadb.zookeeper.fixture=' + token, name]).decode().strip()
+    networks.append(network)
+    servers = ' '.join(f'server.{i}=zk{i}:2888:3888;2181' for i in [1, 2, 3])
+    endpoints, members = [], []
+    reserved = []
+    try:
+        for i in [1, 2, 3]:
+            reservation = socket.socket()
+            reserved.append(reservation)
+            reservation.bind(('127.0.0.1', 0))
+            port = reservation.getsockname()[1]
+            endpoints.append('127.0.0.1:' + str(port))
+            mode = 'ensemble-' + str(i)
+            cid = run(['docker', 'create', '--name', 'nyadb-zookeeper-' + token + '-' + mode,
+                '--network', network, '--network-alias', 'zk' + str(i), '--label', 'nyadb.zookeeper.fixture=' + token,
+                '-p', f'127.0.0.1:{port}:2181', '-e', 'ZOO_MY_ID=' + str(i), '-e', 'ZOO_SERVERS=' + servers,
+                '-e', 'ZOO_TICK_TIME=500', '-e', 'ZOO_INIT_LIMIT=20', '-e', 'ZOO_SYNC_LIMIT=10',
+                '-e', 'ZOO_4LW_COMMANDS_WHITELIST=srvr,ruok', IMAGE]).decode().strip()
+            containers.append((mode, cid))
+            members.append(cid)
+        for i, cid in enumerate(members):
+            # Docker receives an explicit original port, so stop/start cannot
+            # silently publish a replacement endpoint. Hold it until startup.
+            reserved[i].close()
+            run(['docker', 'start', cid])
+            inspected = json.loads(run(['docker', 'inspect', cid]))[0]
+            (base / f'ensemble-{i+1}-container.json').write_text(json.dumps(inspected, indent=2))
+    finally:
+        for reservation in reserved:
+            reservation.close()
+    roles = []
+    deadline = time.monotonic() + 60
+    while time.monotonic() < deadline:
+        roles = ensemble_roles(endpoints)
+        if roles.count('leader') == 1 and roles.count('follower') == 2:
+            break
+        time.sleep(.2)
+    else:
+        raise RuntimeError('Owned three-member ensemble did not elect one leader and two followers')
+    commands = 'create /nyadb_ensemble fixture\ncreate /nyadb_ensemble/ns namespace\nget /nyadb_ensemble/ns\nquit\n'
+    seeded = subprocess.run(['docker', 'exec', '-i', members[0], 'zkCli.sh', '-server', '127.0.0.1:2181'],
+        input=commands.encode(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
+    output = seeded.stdout.decode(errors='replace')
+    if seeded.returncode or 'Created /nyadb_ensemble/ns' not in output:
+        raise RuntimeError('Real Java ensemble fixture authoring failed: ' + output[-4000:])
+    (base / 'ensemble-seed.log').write_text(output)
+    (base / 'ensemble-roles.json').write_text(json.dumps({'roles': roles, 'containers': members, 'endpoints': endpoints}, indent=2))
+    return {'endpoints': endpoints, 'containers': members, 'token': token}
+
+
+def ensemble_roles(endpoints):
+    roles = []
+    for endpoint in endpoints:
+        try:
+            host, port = endpoint.rsplit(':', 1)
+            with socket.create_connection((host, int(port)), timeout=1) as conn:
+                conn.sendall(b'srvr')
+                reply = b''
+                while True:
+                    chunk = conn.recv(8192)
+                    if not chunk:
+                        break
+                    reply += chunk
+            match = re.search(rb'^Mode: (leader|follower)\r?$', reply, re.M)
+            roles.append(match.group(1).decode() if match else '')
+        except OSError:
+            roles.append('')
+    return roles
+
+
+def verify_ensemble_observations(topology, inspected, roles):
+    if len(inspected) != 3 or len(roles) != 3 or roles.count('leader') != 1 or roles.count('follower') != 2:
+        raise RuntimeError('Restarted ensemble did not restore three-member quorum')
+    for i, member in enumerate(inspected):
+        if member.get('Id') != topology['containers'][i] or member.get('Config', {}).get('Labels', {}).get('nyadb.zookeeper.fixture') != topology['token']:
+            raise RuntimeError('Restarted original ensemble member ownership changed')
+        if member.get('State', {}).get('Running') is not True:
+            raise RuntimeError('Restarted original ensemble member is not running')
+        mapped = member.get('NetworkSettings', {}).get('Ports', {}).get('2181/tcp') or []
+        if len(mapped) != 1 or mapped[0].get('HostIp') != '127.0.0.1' or '127.0.0.1:' + str(mapped[0].get('HostPort')) != topology['endpoints'][i]:
+            raise RuntimeError('Restarted original ensemble endpoint changed')
+
+
+def verify_ensemble_restart(base, topology):
+    inspected = [json.loads(run(['docker', 'inspect', member]))[0] for member in topology['containers']]
+    roles = ensemble_roles(topology['endpoints'])
+    verify_ensemble_observations(topology, inspected, roles)
+    result = {'original_endpoints_retained': True, 'roles': roles, 'endpoints': topology['endpoints'], 'containers': topology['containers']}
+    (base / 'ensemble-restored.json').write_text(json.dumps({'observations': inspected, **result}, indent=2))
+    return result
+
+
+def cleanup_owned_container(base, mode, container, token):
+    inspected = json.loads(run(['docker', 'inspect', container]))[0]
+    if inspected.get('Id') != container or inspected.get('Config', {}).get('Labels', {}).get('nyadb.zookeeper.fixture') != token:
+        raise RuntimeError('Fixture container ownership changed')
+    volumes = {mount['Name'] for mount in inspected.get('Mounts', []) if mount.get('Type') == 'volume'}
+    (base / (mode + '-cleanup-container.json')).write_text(json.dumps(inspected, indent=2))
+    (base / (mode + '.log')).write_bytes(run(['docker', 'logs', container]))
+    # Docker removes only this original container's anonymous volumes with -v;
+    # named volumes and resources belonging to another container stay intact.
+    run(['docker', 'rm', '-f', '-v', container])
+    if volumes.intersection(run(['docker', 'volume', 'ls', '-q']).decode().splitlines()):
+        raise RuntimeError('Owned anonymous volumes remained after cleanup')
+    return len(volumes)
 
 
 def verify_public_images(base):
@@ -226,6 +350,61 @@ def verify_security_images(base):
             for stage in ['digest-denied-write', 'tls-recovery', 'mtls-recovery', 'sasl-receipt']:
                 images.append((f'{language}-{width}x{height}-security-{stage}.png', (width, height)))
     return verify_images(base, images)
+
+
+def verify_topology_images(base):
+    images = []
+    for language in ['zh-Hans', 'en']:
+        for width, height in [(1280, 800), (720, 520)]:
+            for stage in ['ensemble-failover', 'digest-tls', 'digest-mtls', 'sasl-tls', 'sasl-mtls']:
+                images.append((f'{language}-{width}x{height}-security-{stage}.png', (width, height)))
+    return verify_images(base, images)
+
+
+def verify_topology_receipts(base):
+    evidence = []
+    for mode in ['ensemble', 'digest-tls', 'digest-mtls', 'sasl-tls', 'sasl-mtls']:
+        path = base / f'topology-{mode}-receipts.json'
+        raw = path.read_bytes()
+        records = json.loads(raw)
+        if not isinstance(records, dict):
+            raise RuntimeError('Topology receipt records missing')
+        for name, method in [('write', 'kv_put'), ('verified', 'kv_get')]:
+            verify_security_receipt(records.get(name), method)
+        node = records['verified']['Result']['ZNode']['Reply']['Node']
+        if node.get('Value') != base64.b64encode(bytes([0, 255, 128])).decode() or node.get('Stat', {}).get('version') != 0:
+            raise RuntimeError('Topology independent original binary write verification differs')
+        if type(records.get('generation')) is not int or records['generation'] <= 0:
+            raise RuntimeError('Topology original generation missing')
+        if mode == 'ensemble':
+            for name, method in [('root', 'kv_get'), ('created', 'kv_put'), ('before', 'kv_get'), ('after', 'kv_get'), ('closed', 'kv_get')]:
+                verify_security_receipt(records.get(name), method)
+            before = records['before']['Result']['ZNode']['Reply']['Node']
+            after = records['after']['Result']['ZNode']['Reply']['Node']
+            owner = records.get('ephemeral_owner')
+            if type(owner) is not int or owner == 0 or before.get('Stat', {}).get('ephemeralOwner') != owner or after.get('Stat', {}).get('ephemeralOwner') != owner or before.get('Value') != after.get('Value'):
+                raise RuntimeError('Topology failover replaced original ephemeral owner/value')
+            failed, surviving = records.get('failed_member'), records.get('surviving_member')
+            if type(failed) is not int or type(surviving) is not int or failed not in [0, 1, 2] or surviving not in [0, 1, 2] or failed == surviving:
+                raise RuntimeError('Topology original socket did not move to a surviving member')
+            if type(records.get('original_pid')) is not int or records['original_pid'] <= 0 or records.get('original_process_starts_during_failover') != 0 or records.get('root_identity') != '/nyadb_ensemble/ns':
+                raise RuntimeError('Topology failover lacks original process/root identity')
+            if records['closed']['Result']['ZNode']['Reply'].get('Found') is not False:
+                raise RuntimeError('Topology original document close left its ephemeral value')
+        else:
+            verify_security_receipt(records.get('read'), 'kv_get')
+            if records.get('wrong_ca_rejected') is not True:
+                raise RuntimeError('Topology combined authentication bypassed server trust')
+            if mode.endswith('mtls') and records.get('missing_client_rejected') is not True:
+                raise RuntimeError('Topology combined authentication lacks mandatory client identity rejection')
+            if mode.startswith('digest'):
+                verify_security_receipt(records.get('denied'), 'kv_get', denied=True)
+            else:
+                rejected = records.get('rejected') or {}
+                if rejected.get('original_process_starts') != 1 or rejected.get('test_deadline_expired') is not False or not isinstance(rejected.get('error'), str) or not rejected['error']:
+                    raise RuntimeError('Topology secure SASL rejection lacks original process evidence')
+        evidence.append({'path': path.name, 'sha256': digest(raw)})
+    return evidence
 
 
 def verify_images(base, images):
@@ -278,6 +457,23 @@ def verify_security_receipt(receipt, method, denied=False):
             raise RuntimeError('Security receipt missing original result JSON') from error
         if projected != native['result']:
             raise RuntimeError('Security receipt result differs from original native envelope')
+        if method == 'kv_get':
+            reply = znode.get('Reply') or {}
+            if type(projected.get('found')) is not bool or projected['found'] is not reply.get('Found'):
+                raise RuntimeError('Security receipt found projection differs from original envelope')
+            if projected['found']:
+                value = projected.get('value') or {}
+                try:
+                    original = base64.b64decode(value['data'], validate=True) if value.get('encoding') == 'base64' else value['data'].encode() if value.get('encoding') == 'utf8' else None
+                except (ValueError, KeyError, AttributeError) as error:
+                    raise RuntimeError('Security receipt original value encoding malformed') from error
+                node = reply.get('Node') or {}
+                if original is None or node.get('Value') != base64.b64encode(original).decode():
+                    raise RuntimeError('Security receipt value projection differs from original envelope')
+                metadata = projected.get('metadata') or {}
+                for name in ['version', 'ephemeralOwner']:
+                    if type(metadata.get(name)) is not int or node.get('Stat', {}).get(name) != metadata[name]:
+                        raise RuntimeError('Security receipt stat projection differs from original envelope')
     return raw
 
 
@@ -460,7 +656,10 @@ def main():
     parser.add_argument('--public-runtime', action='store_true')
     parser.add_argument('--public', action='store_true')
     parser.add_argument('--security', action='store_true')
+    parser.add_argument('--topology', action='store_true')
     args = parser.parse_args()
+    if args.topology:
+        args.security = True
     if args.security:
         args.public = True
     if args.public:
@@ -479,16 +678,18 @@ def main():
     before = source_snapshot()
     (base / 'accepted-original-source.json').write_text(json.dumps(before, indent=2))
     archive, archive_digest, version = build_bundle(base, before)
-    required = acceptance_requirements(args.provider, args.public_runtime, args.public, args.security)
-    result = {'scope': 'public-native-security-workflow' if args.security else 'public-native-workflow' if args.public else 'public-runtime-profile-foundation' if args.public_runtime else 'private-native-provider-workspace' if args.provider else 'managed-native-protocol-foundation', 'public_entry_accepted': False,
+    required = acceptance_requirements(args.provider, args.public_runtime, args.public, args.security, args.topology)
+    result = {'scope': 'public-native-topology-and-security-workflow' if args.topology else 'public-native-security-workflow' if args.security else 'public-native-workflow' if args.public else 'public-runtime-profile-foundation' if args.public_runtime else 'private-native-provider-workspace' if args.provider else 'managed-native-protocol-foundation', 'public_entry_accepted': False,
               'public_runtime_accepted': False,
               'security_accepted': False,
+              'topology_accepted': False,
               'product': 'ZooKeeper', 'server_version': '3.9.4', 'image': IMAGE,
               'race': args.race, 'driver_sha256': archive_digest,
               'passed_tests': [], 'unverified': ([] if args.public else ['public editor/chooser/navigation/shell workflow' if args.public_runtime else 'public runtime/editor/chooser/URI' if args.provider else 'public provider/editor/chooser/URI/KV workspace']) + [
                   'TLS/mTLS', 'digest ACL enforcement', 'SASL authentication', 'ensemble failover', 'SSH routes', 'other server versions']}
     container = None
     containers = []
+    networks = []
     try:
         container = run(['docker', 'run', '-d', '--name', 'nyadb-zookeeper-' + token,
             '--label', 'nyadb.zookeeper.fixture=' + token, '-p', '127.0.0.1::2181',
@@ -512,17 +713,19 @@ def main():
                 raise RuntimeError('Owned ZooKeeper did not become ready')
             time.sleep(.2)
         fixture = base / 'fixture.json'
-        security = prepare_security_servers(base, token, containers) if args.security else None
+        security = prepare_security_servers(base, token, containers, args.topology) if args.security else None
         if security:
             seed_digest_acl(base, container, security)
+        topology = prepare_ensemble(base, token, containers, networks) if args.topology else None
         fixture.write_text(json.dumps({'archive': str(archive), 'sha256': archive_digest,
-            'version': version, 'directory': str(base), 'endpoint': endpoint, 'security': security}, indent=2))
+            'version': version, 'directory': str(base), 'endpoint': endpoint, 'security': security, 'topology': topology}, indent=2))
         fixture.chmod(0o600)
         env = dict(os.environ, CGO_ENABLED='1' if args.race else '0',
             NYADB_ZOOKEEPER_PROVIDER_IT='1' if args.provider else '0',
             NYADB_ZOOKEEPER_PUBLIC_RUNTIME_IT='1' if args.public_runtime else '0',
             NYADB_ZOOKEEPER_PUBLIC_IT='1' if args.public else '0',
             NYADB_ZOOKEEPER_SECURITY_IT='1' if args.security else '0',
+            NYADB_ZOOKEEPER_TOPOLOGY_IT='1' if args.topology else '0',
             NYADB_AGENT_ZOOKEEPER_IT='1', NYADB_AGENT_ZOOKEEPER_FIXTURE_FILE=str(fixture))
         command = ['go', 'test', '-count=1', '-v', '-timeout=10m' if args.public else '-timeout=5m']
         if args.race:
@@ -550,6 +753,12 @@ def main():
                 'tls': 'trusted CA and server IP SAN verification; TLS 1.2/1.3 allowed by server',
                 'mtls': 'mandatory trusted client certificate; client hostname check disabled on server; server identity verified by client',
                 'sasl': 'mandatory SASL DIGEST-MD5; ZooKeeper server/client JVM FIPS mode disabled'}
+        if args.topology:
+            result['topology_images'] = verify_topology_images(base)
+            result['topology_receipts'] = verify_topology_receipts(base)
+            result['ensemble_restored'] = verify_ensemble_restart(base, topology)
+            result['topology_policies'] = {'ensemble': 'three official members; observed original TCP member stopped; quorum retained; original process/session/ephemeral owner retained',
+                'secure_authentication': 'digest and SASL DIGEST-MD5 over TLS/mTLS; SASL JVM FIPS mode disabled'}
         if source_snapshot() != before:
             raise RuntimeError('Original source changed during acceptance')
         result['original_source_unchanged'] = True
@@ -559,14 +768,18 @@ def main():
         result['public_runtime_accepted'] = args.public_runtime
         result['public_entry_accepted'] = args.public
         result['security_accepted'] = args.security
+        result['topology_accepted'] = args.topology
         if args.security:
             result['unverified'] = ['ensemble failover', 'SSH routes', 'other server versions', 'SASL Kerberos/GSSAPI', 'SASL Digest with server FIPS mode enabled']
+        if args.topology:
+            result['unverified'] = ['SSH/HTTP/proxy routes', 'other server versions', 'ensemble quorum loss and uncertain in-flight write failover', 'SASL Kerberos/GSSAPI', 'SASL Digest with server FIPS mode enabled', 'DBX browser/action depth']
         result['status'] = 'passed'
     except Exception as error:
         result['status'] = 'failed'
         result['public_runtime_accepted'] = False
         result['public_entry_accepted'] = False
         result['security_accepted'] = False
+        result['topology_accepted'] = False
         result['error'] = str(error)
         raise
     finally:
@@ -579,11 +792,8 @@ def main():
             cleanup_errors.append('Original process cleanup failed: ' + str(error))
         for mode, owned in containers:
             try:
-                labels = json.loads(run(['docker', 'inspect', owned]))[0]['Config']['Labels']
-                if labels.get('nyadb.zookeeper.fixture') != token:
-                    raise RuntimeError('Fixture container ownership changed')
-                (base / (mode + '.log')).write_bytes(run(['docker', 'logs', owned]))
-                run(['docker', 'rm', '-f', owned])
+                removed = cleanup_owned_container(base, mode, owned, token)
+                result['anonymous_volumes_removed'] = result.get('anonymous_volumes_removed', 0) + removed
             except Exception as error:
                 cleanup_errors.append('Owned ' + mode + ' container cleanup failed: ' + str(error))
         if containers:
@@ -593,11 +803,24 @@ def main():
             else:
                 result['container_removed'] = True
                 result['containers_removed'] = len(containers)
+        for network in networks:
+            try:
+                inspected = json.loads(run(['docker', 'network', 'inspect', network]))[0]
+                if inspected.get('Labels', {}).get('nyadb.zookeeper.fixture') != token:
+                    raise RuntimeError('Fixture network ownership changed')
+                run(['docker', 'network', 'rm', network])
+                remaining = run(['docker', 'network', 'ls', '-q', '--filter', 'label=nyadb.zookeeper.fixture=' + token]).decode().strip()
+                if remaining:
+                    raise RuntimeError('Owned network remained after cleanup')
+                result['networks_removed'] = len(networks)
+            except Exception as error:
+                cleanup_errors.append('Owned network cleanup failed: ' + str(error))
         if cleanup_errors:
             result['status'] = 'failed'
             result['public_runtime_accepted'] = False
             result['public_entry_accepted'] = False
             result['security_accepted'] = False
+            result['topology_accepted'] = False
             result['error'] = '\n'.join(filter(None, [result.get('error'), *cleanup_errors]))
         (base / 'verification.json').write_text(json.dumps(result, indent=2))
         if cleanup_errors:

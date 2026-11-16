@@ -2,6 +2,7 @@ package localdb
 
 import (
 	"context"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -90,7 +91,7 @@ func TestZooKeeperSavedOptionsRejectAmbiguitySecretsAndForeignEngine(t *testing.
 		other, _ := connections.Defaults(kind)
 		other.Name = string(kind)
 		if kind == connections.H2 {
-			other.Database = "/owned/main"
+			other.Database = filepath.Join(t.TempDir(), "main")
 		}
 		other, err = store.Create(ctx, other)
 		if err != nil {

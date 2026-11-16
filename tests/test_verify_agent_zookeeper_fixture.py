@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
 
 SPEC = importlib.util.spec_from_file_location('zookeeper_fixture', Path(__file__).resolve().parents[1] / 'tools/verify_agent_zookeeper_fixture.py')
@@ -13,6 +14,180 @@ SPEC.loader.exec_module(FIXTURE)
 
 
 class ZooKeeperAcceptanceEvidenceTests(unittest.TestCase):
+    def test_cleanup_requires_original_ownership_and_removes_anonymous_volumes(self):
+        inspected = {'Id': 'original', 'Config': {'Labels': {'nyadb.zookeeper.fixture': 'owned'}},
+            'Mounts': [{'Type': 'volume', 'Name': 'original-volume'}, {'Type': 'bind', 'Source': '/security'}]}
+        responses = [json.dumps([inspected]).encode(), b'original logs', b'original', b'foreign-volume\n']
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(FIXTURE, 'run', side_effect=responses) as run:
+            self.assertEqual(FIXTURE.cleanup_owned_container(Path(directory), 'server', 'original', 'owned'), 1)
+            self.assertEqual(run.call_args_list, [mock.call(['docker', 'inspect', 'original']),
+                mock.call(['docker', 'logs', 'original']), mock.call(['docker', 'rm', '-f', '-v', 'original']),
+                mock.call(['docker', 'volume', 'ls', '-q'])])
+        for change in ['ownership', 'identity', 'remaining-volume']:
+            invalid = copy.deepcopy(inspected)
+            if change == 'ownership':
+                invalid['Config']['Labels']['nyadb.zookeeper.fixture'] = 'foreign'
+            elif change == 'identity':
+                invalid['Id'] = 'replacement'
+            responses = [json.dumps([invalid]).encode(), b'logs', b'original', b'original-volume\n']
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as directory, mock.patch.object(FIXTURE, 'run', side_effect=responses) as run:
+                with self.assertRaises(RuntimeError):
+                    FIXTURE.cleanup_owned_container(Path(directory), 'server', 'original', 'owned')
+                if change != 'remaining-volume':
+                    run.assert_called_once_with(['docker', 'inspect', 'original'])
+
+    def test_ensemble_restart_requires_original_ports_members_and_real_roles(self):
+        topology = {'endpoints': ['127.0.0.1:12001','127.0.0.1:12002','127.0.0.1:12003'], 'containers': ['member1','member2','member3'], 'token': 'owned'}
+        observed = [{'Id': cid, 'Config': {'Labels': {'nyadb.zookeeper.fixture': 'owned'}}, 'State': {'Running': True},
+            'NetworkSettings': {'Ports': {'2181/tcp': [{'HostIp': '127.0.0.1', 'HostPort': str(12001+i)}]}}} for i,cid in enumerate(topology['containers'])]
+        roles = ['leader','follower','follower']
+        FIXTURE.verify_ensemble_observations(topology, observed, roles)
+        for change in ['port','member','ownership','stopped','quorum']:
+            with self.subTest(change=change):
+                invalid = copy.deepcopy(observed)
+                new_roles = list(roles)
+                if change == 'port':
+                    invalid[0]['NetworkSettings']['Ports']['2181/tcp'][0]['HostPort'] = '12004'
+                elif change == 'member':
+                    invalid[0]['Id'] = 'replacement'
+                elif change == 'ownership':
+                    invalid[0]['Config']['Labels']['nyadb.zookeeper.fixture'] = 'foreign'
+                elif change == 'stopped':
+                    invalid[0]['State']['Running'] = False
+                else:
+                    new_roles[0] = 'standalone'
+                with self.assertRaises(RuntimeError):
+                    FIXTURE.verify_ensemble_observations(topology, invalid, new_roles)
+
+    def topology_receipt_fixture(self, base):
+        records = self.security_receipt_fixture(base)
+        combined = {}
+        for mode in ['digest-tls', 'digest-mtls', 'sasl-tls', 'sasl-mtls']:
+            data = copy.deepcopy(records['sasl'])
+            data.pop('rejected')
+            data['wrong_ca_rejected'] = True
+            if mode.endswith('mtls'):
+                data['missing_client_rejected'] = True
+            if mode.startswith('digest'):
+                data['denied'] = copy.deepcopy(records['digest']['denied'][0])
+            else:
+                data['rejected'] = {'original_process_starts': 1, 'test_deadline_expired': False, 'error': 'original secure authentication rejected'}
+            combined[mode] = data
+        ensemble = copy.deepcopy(records['sasl'])
+        ensemble.pop('read')
+        ensemble.pop('rejected')
+        ensemble.update({'root': copy.deepcopy(records['sasl']['read']), 'created': copy.deepcopy(ensemble['write']),
+            'before': copy.deepcopy(ensemble['verified']), 'after': copy.deepcopy(ensemble['verified']),
+            'closed': copy.deepcopy(ensemble['verified']), 'ephemeral_owner': 17948111111,
+            'original_pid': 4411, 'failed_member': 0, 'surviving_member': 2,
+            'original_process_starts_during_failover': 0, 'root_identity': '/nyadb_ensemble/ns'})
+        for name in ['before', 'after']:
+            ensemble[name]['Result']['ZNode']['Reply']['Node']['Stat']['ephemeralOwner'] = ensemble['ephemeral_owner']
+        ensemble['closed']['Result']['ZNode']['Reply']['Found'] = False
+        for data in [ensemble, *combined.values()]:
+            data['verified']['Result']['ZNode']['Reply']['Node']['Stat']['version'] = 0
+        combined['ensemble'] = ensemble
+        # Fixture envelopes carry the same original get fields as their typed
+        # projections. Alterations below must not invent a new native receipt.
+        for data in combined.values():
+            for receipt in data.values():
+                if not isinstance(receipt, dict) or 'Result' not in receipt or receipt['Result']['Request']['Method'] != 'kv_get' or receipt['Result']['Code'] != 'OK':
+                    continue
+                result = receipt['Result']
+                reply = result['ZNode']['Reply']
+                native = json.loads(base64.b64decode(receipt['NativeBytes']))
+                native['result']['found'] = reply['Found']
+                if reply['Found']:
+                    native['result']['value']['data'] = reply['Node']['Value']
+                    native['result']['metadata'] = copy.deepcopy(reply['Node']['Stat'])
+                else:
+                    native['result']['value'], native['result']['metadata'] = None, None
+                raw = json.dumps(native).encode()
+                receipt['NativeBytes'], receipt['NativeSHA256'], result['JSON'] = base64.b64encode(raw).decode(), FIXTURE.digest(raw), json.dumps(native['result'])
+        for mode,data in combined.items():
+            (base / f'topology-{mode}-receipts.json').write_text(json.dumps(data))
+        return combined
+
+    def test_security_and_foundation_tests_cannot_accept_topology(self):
+        required = FIXTURE.acceptance_requirements(topology=True)
+        self.assertEqual(len(required), 17)
+        self.assertTrue(set(FIXTURE.SECURITY_REQUIRED).issubset(required))
+        output = '\n'.join('--- PASS: ' + name + ' (0.01s)' for name in FIXTURE.acceptance_requirements(security=True))
+        with self.assertRaises(RuntimeError):
+            FIXTURE.verify_acceptance(output, required)
+        output = '\n'.join('--- PASS: ' + name + ' (0.01s)' for name in required)
+        FIXTURE.verify_acceptance(output, required)
+        for name in FIXTURE.TOPOLOGY_REQUIRED:
+            with self.subTest(skipped=name), self.assertRaises(RuntimeError):
+                FIXTURE.verify_acceptance(output.replace('--- PASS: ' + name, '--- SKIP: ' + name), required)
+
+    def test_topology_receipts_require_all_real_combinations_and_original_failover(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            self.topology_receipt_fixture(base)
+            self.assertEqual(len(FIXTURE.verify_topology_receipts(base)), 5)
+            (base / 'topology-sasl-mtls-receipts.json').unlink()
+            with self.assertRaises(FileNotFoundError):
+                FIXTURE.verify_topology_receipts(base)
+
+    def test_topology_receipts_reject_replaced_sessions_replayed_writes_and_false_close(self):
+        for change in ['owner', 'same-member', 'replacement-process', 'qualified-root', 'replay-version', 'not-closed', 'missing-native']:
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as directory:
+                base = Path(directory)
+                records = self.topology_receipt_fixture(base)
+                ensemble = records['ensemble']
+                if change == 'owner':
+                    ensemble['after']['Result']['ZNode']['Reply']['Node']['Stat']['ephemeralOwner'] += 1
+                elif change == 'same-member':
+                    ensemble['surviving_member'] = ensemble['failed_member']
+                elif change == 'replacement-process':
+                    ensemble['original_process_starts_during_failover'] = 1
+                elif change == 'qualified-root':
+                    ensemble['root_identity'] = '/unrelated'
+                elif change == 'replay-version':
+                    ensemble['verified']['Result']['ZNode']['Reply']['Node']['Stat']['version'] = 1
+                elif change == 'not-closed':
+                    ensemble['closed']['Result']['ZNode']['Reply']['Found'] = True
+                else:
+                    del ensemble['after']['NativeBytes']
+                (base / 'topology-ensemble-receipts.json').write_text(json.dumps(ensemble))
+                with self.assertRaises(RuntimeError):
+                    FIXTURE.verify_topology_receipts(base)
+
+    def test_topology_receipts_reject_unproven_secure_authentication(self):
+        for change in ['wrong-ca', 'missing-client', 'digest-acl', 'sasl-deadline']:
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as directory:
+                base = Path(directory)
+                records = self.topology_receipt_fixture(base)
+                mode = 'digest-mtls' if change != 'sasl-deadline' else 'sasl-tls'
+                data = records[mode]
+                if change == 'wrong-ca':
+                    data['wrong_ca_rejected'] = False
+                elif change == 'missing-client':
+                    data['missing_client_rejected'] = False
+                elif change == 'digest-acl':
+                    del data['denied']
+                else:
+                    data['rejected']['test_deadline_expired'] = True
+                (base / f'topology-{mode}-receipts.json').write_text(json.dumps(data))
+                with self.assertRaises(RuntimeError):
+                    FIXTURE.verify_topology_receipts(base)
+
+    def test_topology_images_require_all_stages_locales_and_sizes(self):
+        from PIL import Image
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            strip = Image.new('RGB', (32, 1))
+            strip.putdata([(i * 7, i * 3, i * 5) for i in range(32)])
+            for language in ['zh-Hans', 'en']:
+                for width, height in [(1280, 800), (720, 520)]:
+                    for stage in ['ensemble-failover', 'digest-tls', 'digest-mtls', 'sasl-tls', 'sasl-mtls']:
+                        strip.resize((width,height)).save(base / f'{language}-{width}x{height}-security-{stage}.png')
+            self.assertEqual(len(FIXTURE.verify_topology_images(base)), 20)
+            (base / 'en-720x520-security-ensemble-failover.png').unlink()
+            with self.assertRaises(FileNotFoundError):
+                FIXTURE.verify_topology_images(base)
+
     def security_image_fixture(self, base):
         from PIL import Image
         strip = Image.new('RGB', (32, 1))
@@ -28,13 +203,13 @@ class ZooKeeperAcceptanceEvidenceTests(unittest.TestCase):
     def security_receipt_fixture(self, base):
         def receipt(method, denied=False, value=b'fixture'):
             envelope = {'jsonrpc': '2.0', 'id': 7}
-            envelope['error' if denied else 'result'] = {'code': -1, 'message': 'zk: not authenticated'} if denied else {'ok': True}
+            envelope['error' if denied else 'result'] = {'code': -1, 'message': 'zk: not authenticated'} if denied else {'found': True, 'key': '/fixture', 'value': {'encoding': 'base64', 'data': base64.b64encode(value).decode()}, 'metadata': {'version': 1, 'ephemeralOwner': 0}} if method == 'kv_get' else {'ok': True}
             raw = json.dumps(envelope).encode()
             result = {'Request': {'Method': method}, 'Attempted': True, 'Completed': not denied,
                 'WriteOutcomeUnknown': denied and method == 'kv_put', 'Code': 'NativeError' if denied else 'OK',
                 'ProjectionError': '', 'JSON': '' if denied else json.dumps(envelope['result']),
                 'ZNode': {'Captured': True, 'Acknowledged': True, 'ErrorCode': -1 if denied else None,
-                    'Reply': {'Node': {'Value': base64.b64encode(value).decode(), 'Stat': {'version': 1}}}}}
+                    'Reply': {'Found': True, 'Node': {'Value': base64.b64encode(value).decode(), 'Stat': {'version': 1, 'ephemeralOwner': 0}}}}}
             return {'Result': result, 'NativeBytes': base64.b64encode(raw).decode(), 'NativeSHA256': FIXTURE.digest(raw)}
         records = {}
         for mode in ['digest', 'tls', 'mtls', 'sasl']:
