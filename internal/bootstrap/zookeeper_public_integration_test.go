@@ -187,7 +187,7 @@ func TestZooKeeperNativePublicBootstrapEditorImportVaultTestAndLiveSession(t *te
 	if s.Error() != "" || m.Generation(p.ID) != generation || !m.IsConnected(p.ID) || f.Starts.Load() != before+1 {
 		t.Fatal("isolated editor test changed original publication or process", s.Error())
 	}
-	plan, err := lease.Prepare(contract.KVRequest{Method: "kv_list_prefix", JSON: `{"prefix":"/","recursive":false,"limit":1}`})
+	plan, err := lease.Prepare(contract.KVRequest{Method: "kv_get", JSON: `{"key":"/"}`})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,11 +6,14 @@ accepts injected provider/document/workspace workflows. --public-runtime also
 verifies the real builtin provider with persisted URI settings and original
 document isolation/recovery. --public additionally accepts the real
 chooser/editor/shell workflow, including localized UI and lost-write recovery.
-Foundation modes never accept the public entry. Advanced security and topology
-capabilities remain separately unverified even after public-entry acceptance.
+--security additionally verifies digest ACLs, TLS/mTLS, mandatory SASL Digest
+(server FIPS mode disabled), secure editor checks and original receipt recovery.
+Foundation modes never accept the public entry. Topology, SSH routes, Kerberos
+and other server versions remain separately unverified.
 Requires Linux, Docker, Go and the complete original source in temp/dbx.
 """
 import argparse
+import base64
 import hashlib
 import json
 import math
@@ -21,6 +24,7 @@ import re
 import secrets
 import signal
 import socket
+import ssl
 import subprocess
 import time
 import zipfile
@@ -48,6 +52,12 @@ PUBLIC_REQUIRED = [
     'TestZooKeeperNativePublicShellChooserNavigationDocumentsFilesAndRecovery',
     'TestZooKeeperNativePublicWorkspaceLostReplyDisconnectRecoveryAndNoReplay',
 ]
+SECURITY_REQUIRED = [
+    'TestZooKeeperNativePublicDigestACLIsolationAndDeniedWriteReceipt',
+    'TestZooKeeperNativePublicTLSMutualTLSCapturedTrustAndRecovery',
+    'TestZooKeeperNativePublicSASLRequiredAuthenticationAndOriginalReceipt',
+    'TestZooKeeperNativePublicEditorSecurityFilesVaultTestAndCancellation',
+]
 EDITOR_CONTROLS = {
     'general': ['ZooKeeper Chroot', 'ZooKeeper Namespace', 'ZooKeeper 驱动包', '导入驱动包', '连接密码'],
     'advanced': ['ZooKeeper 其他服务器', 'ZooKeeper 会话超时（毫秒）', 'ZooKeeper 连接超时（毫秒）', 'ZooKeeper 文档连接上限'],
@@ -55,15 +65,123 @@ EDITOR_CONTROLS = {
 }
 
 
-def acceptance_requirements(provider=False, public_runtime=False, public=False):
+def acceptance_requirements(provider=False, public_runtime=False, public=False, security=False):
     required = list(REQUIRED)
-    if provider or public_runtime or public:
+    if provider or public_runtime or public or security:
         required += PROVIDER_REQUIRED
-    if public_runtime or public:
+    if public_runtime or public or security:
         required += PUBLIC_RUNTIME_REQUIRED
-    if public:
+    if public or security:
         required += PUBLIC_REQUIRED
+    if security:
+        required += SECURITY_REQUIRED
     return required
+
+
+def prepare_security_material(base):
+    directory = base / 'security'
+    directory.mkdir()
+    for name in ['ca', 'wrong-ca']:
+        run(['openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '2',
+             '-keyout', str(directory / (name + '.key')), '-out', str(directory / (name + '.pem')),
+             '-addext', 'basicConstraints=critical,CA:TRUE', '-addext', 'keyUsage=critical,keyCertSign,cRLSign',
+             '-subj', '/CN=owned-zookeeper-fixture-' + name])
+    for name, issuer, usage in [('server', 'ca', 'serverAuth'), ('client', 'ca', 'clientAuth'), ('wrong-client', 'wrong-ca', 'clientAuth')]:
+        run(['openssl', 'req', '-new', '-newkey', 'rsa:2048', '-nodes', '-keyout', str(directory / (name + '.key')),
+             '-out', str(directory / (name + '.csr')), '-subj', '/CN=owned-zookeeper-fixture-' + name])
+        extension = directory / (name + '.ext')
+        extension.write_text('basicConstraints=CA:FALSE\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=' + usage + '\n' + ('subjectAltName=IP:127.0.0.1\n' if name == 'server' else ''))
+        run(['openssl', 'x509', '-req', '-days', '2', '-in', str(directory / (name + '.csr')),
+             '-CA', str(directory / (issuer + '.pem')), '-CAkey', str(directory / (issuer + '.key')), '-CAcreateserial',
+             '-out', str(directory / (name + '.pem')), '-extfile', str(extension)])
+    password = 'owned-fixture-keystore-password'
+    run(['openssl', 'pkcs12', '-export', '-name', 'server', '-inkey', str(directory / 'server.key'),
+         '-in', str(directory / 'server.pem'), '-certfile', str(directory / 'ca.pem'),
+         '-out', str(directory / 'server.p12'), '-passout', 'pass:' + password])
+    run(['keytool', '-importcert', '-noprompt', '-alias', 'fixture-ca', '-file', str(directory / 'ca.pem'),
+         '-keystore', str(directory / 'trust.p12'), '-storetype', 'PKCS12', '-storepass', password])
+    # Only disposable fixture material is mounted. Java runs under the image's
+    # own user, which needs read access to the generated files.
+    for path in directory.iterdir():
+        path.chmod(0o644)
+    return directory, password
+
+
+def prepare_security_servers(base, token, containers):
+    directory, password = prepare_security_material(base)
+    username, digest_secret, sasl_secret = 'fixtureuser', 'owned-digest-secret', 'owned-sasl-secret'
+    jaas = directory / 'jaas.conf'
+    jaas.write_text('Server { org.apache.zookeeper.server.auth.DigestLoginModule required user_fixtureuser="' + sasl_secret + '"; };\nClient { org.apache.zookeeper.server.auth.DigestLoginModule required username="' + username + '" password="' + sasl_secret + '"; };\n')
+    endpoints = {}
+    for mode in ['tls', 'mtls', 'sasl']:
+        config = directory / (mode + '.cfg')
+        text = 'tickTime=500\ndataDir=/data\nclientPort=2181\nadmin.enableServer=false\n4lw.commands.whitelist=srvr,ruok\n'
+        if mode in ['tls', 'mtls']:
+            text += 'secureClientPort=2281\nserverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory\nssl.enabledProtocols=TLSv1.3,TLSv1.2\nssl.keyStore.location=/security/server.p12\nssl.keyStore.type=PKCS12\nssl.keyStore.password=' + password + '\nssl.trustStore.location=/security/trust.p12\nssl.trustStore.type=PKCS12\nssl.trustStore.password=' + password + '\nssl.clientAuth=' + ('need' if mode == 'mtls' else 'none') + '\n'
+        else:
+            text += 'authProvider.1=org.apache.zookeeper.server.auth.SASLAuthenticationProvider\nenforce.auth.enabled=true\nenforce.auth.schemes=sasl\n'
+        if mode == 'mtls':
+            text += 'ssl.clientHostnameVerification=false\n'
+        config.write_text(text)
+        internal = '2281' if mode != 'sasl' else '2181'
+        cid = run(['docker', 'create', '--name', 'nyadb-zookeeper-' + token + '-' + mode,
+                   '--label', 'nyadb.zookeeper.fixture=' + token, '-p', '127.0.0.1::' + internal,
+                   '-v', str(directory) + ':/security:ro',
+                   '-e', 'SERVER_JVMFLAGS=' + ('-Djava.security.auth.login.config=/security/jaas.conf -Dzookeeper.fips-mode=false' if mode == 'sasl' else ''),
+                   '-e', 'CLIENT_JVMFLAGS=' + ('-Djava.security.auth.login.config=/security/jaas.conf -Dzookeeper.fips-mode=false' if mode == 'sasl' else '-Dzookeeper.sasl.client=false'),
+                   IMAGE, 'zkServer.sh', 'start-foreground', '/security/' + mode + '.cfg']).decode().strip()
+        containers.append((mode, cid))
+        run(['docker', 'start', cid])
+        inspect = json.loads(run(['docker', 'inspect', cid]))[0]
+        (base / (mode + '-container.json')).write_text(json.dumps(inspect, indent=2))
+        port = int(inspect['NetworkSettings']['Ports'][internal + '/tcp'][0]['HostPort'])
+        endpoint = '127.0.0.1:' + str(port)
+        deadline = time.monotonic() + 60
+        last_error = ''
+        while True:
+            try:
+                with socket.create_connection(('127.0.0.1', port), timeout=1) as conn:
+                    if mode != 'sasl':
+                        context = ssl.create_default_context(cafile=str(directory / 'ca.pem'))
+                        if mode == 'mtls':
+                            context.load_cert_chain(str(directory / 'client.pem'), str(directory / 'client.key'))
+                        conn = context.wrap_socket(conn, server_hostname='127.0.0.1')
+                    conn.sendall(b'ruok')
+                    if conn.recv(32) == b'imok':
+                        break
+            except OSError as error:
+                last_error = str(error)
+            if time.monotonic() >= deadline:
+                raise RuntimeError('Owned ' + mode + ' ZooKeeper did not become ready: ' + last_error)
+            time.sleep(.2)
+        endpoints[mode] = endpoint
+        # Real Java client authors protected fixture nodes; native agent tests
+        # independently prove both permitted and denied operations.
+        acl = 'sasl:' + username + ':cdrwa' if mode == 'sasl' else 'world:anyone:cdrwa'
+        commands = 'create /nyadb_secure fixture ' + acl + '\nget /nyadb_secure\nquit\n'
+        completed = subprocess.run(['docker', 'exec', '-i', cid, 'zkCli.sh', '-server', '127.0.0.1:2181'],
+            input=commands.encode(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
+        output = completed.stdout.decode(errors='replace')
+        if completed.returncode or 'Created /nyadb_secure' not in output or 'fixture' not in output:
+            raise RuntimeError('Real Java secure fixture authoring failed: ' + mode + '\n' + output[-4000:])
+        (base / (mode + '-seed.log')).write_text(output)
+    return {'tls_endpoint': endpoints['tls'], 'mtls_endpoint': endpoints['mtls'], 'sasl_endpoint': endpoints['sasl'],
+            'ca_file': str(directory / 'ca.pem'), 'wrong_ca_file': str(directory / 'wrong-ca.pem'),
+            'client_cert_file': str(directory / 'client.pem'), 'client_key_file': str(directory / 'client.key'),
+            'wrong_client_cert_file': str(directory / 'wrong-client.pem'), 'wrong_client_key_file': str(directory / 'wrong-client.key'),
+            'username': username, 'digest_secret': digest_secret, 'sasl_secret': sasl_secret}
+
+
+def seed_digest_acl(base, container, security):
+    credential = security['username'] + ':' + security['digest_secret']
+    identity = security['username'] + ':' + base64.b64encode(hashlib.sha1(credential.encode()).digest()).decode()
+    commands = 'create /nyadb_digest fixture digest:' + identity + ':cdrwa\nquit\n'
+    completed = subprocess.run(['docker', 'exec', '-i', container, 'zkCli.sh', '-server', '127.0.0.1:2181'],
+        input=commands.encode(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
+    output = completed.stdout.decode(errors='replace')
+    if completed.returncode or 'Created /nyadb_digest' not in output or security['digest_secret'] in output:
+        raise RuntimeError('Real Java digest ACL fixture authoring failed')
+    (base / 'digest-seed.log').write_text(output)
 
 
 def verify_public_images(base):
@@ -95,6 +213,23 @@ def verify_public_images(base):
             for stage in ['confirmation', 'receipt', 'recovery']:
                 images.append((f'{language}-{width}x{height}-public-shell-{stage}.png', (width, height)))
             images.append((f'{language}-{width}x{height}-public-unknown-write.png', (width, height)))
+    return verify_images(base, images)
+
+
+def verify_security_images(base):
+    images = []
+    for language in ['zh-Hans', 'en']:
+        for width, height in [(920, 780), (720, 520)]:
+            for mode in ['tls', 'mtls', 'sasl']:
+                images.append((f'{language}-{width}x{height}-security-editor-{mode}.png', (width, height)))
+        for width, height in [(1280, 800), (720, 520)]:
+            for stage in ['digest-denied-write', 'tls-recovery', 'mtls-recovery', 'sasl-receipt']:
+                images.append((f'{language}-{width}x{height}-security-{stage}.png', (width, height)))
+    return verify_images(base, images)
+
+
+def verify_images(base, images):
+    from PIL import Image
     evidence = []
     for name, dimensions in dict(images).items():
         path = base / name
@@ -106,6 +241,87 @@ def verify_public_images(base):
             if colors is not None:
                 raise RuntimeError('Public screenshot lacks rendered UI pixels: ' + name)
         evidence.append({'path': name, 'sha256': digest(path.read_bytes())})
+    return evidence
+
+
+def verify_security_receipt(receipt, method, denied=False):
+    if not isinstance(receipt, dict) or not isinstance(receipt.get('NativeBytes'), str):
+        raise RuntimeError('Security receipt missing original native bytes')
+    try:
+        raw = base64.b64decode(receipt['NativeBytes'], validate=True)
+        native = json.loads(raw)
+    except (ValueError, UnicodeError) as error:
+        raise RuntimeError('Security receipt has malformed native bytes') from error
+    if not raw or receipt.get('NativeSHA256') != digest(raw):
+        raise RuntimeError('Security receipt original byte hash differs')
+    if not isinstance(native, dict) or native.get('jsonrpc') != '2.0' or type(native.get('id')) is not int:
+        raise RuntimeError('Security receipt original JSON-RPC envelope missing')
+    for secret in [b'owned-digest-secret', b'owned-sasl-secret']:
+        if secret in raw:
+            raise RuntimeError('Security receipt exposed fixture credentials')
+    result = receipt.get('Result', {})
+    znode = result.get('ZNode') or {}
+    if result.get('Request', {}).get('Method') != method or result.get('Attempted') is not True or znode.get('Captured') is not True or znode.get('Acknowledged') is not True:
+        raise RuntimeError('Security receipt original acknowledgement missing')
+    if denied:
+        error = native.get('error')
+        if not isinstance(error, dict) or 'result' in native or 'not authenticated' not in str(error.get('message')) or type(error.get('code')) is not int or error['code'] != znode.get('ErrorCode'):
+            raise RuntimeError('Security receipt missing original ACL denial')
+        if result.get('Completed') is not False or result.get('Code') != 'NativeError' or result.get('WriteOutcomeUnknown') is not (method == 'kv_put'):
+            raise RuntimeError('Security receipt lost independent denied write outcome')
+    else:
+        if result.get('Completed') is not True or result.get('WriteOutcomeUnknown') is not False or result.get('Code') != 'OK' or result.get('ProjectionError') != '' or znode.get('ErrorCode') is not None or 'error' in native or 'result' not in native:
+            raise RuntimeError('Security receipt missing successful original result')
+        try:
+            projected = json.loads(result.get('JSON', ''))
+        except (ValueError, TypeError) as error:
+            raise RuntimeError('Security receipt missing original result JSON') from error
+        if projected != native['result']:
+            raise RuntimeError('Security receipt result differs from original native envelope')
+    return raw
+
+
+def verify_security_receipts(base):
+    evidence = []
+    for mode in ['digest', 'tls', 'mtls', 'sasl']:
+        path = base / f'security-{mode}-receipts.json'
+        raw = path.read_bytes()
+        records = json.loads(raw)
+        if not isinstance(records, dict):
+            raise RuntimeError('Security receipt records missing: ' + mode)
+        for secret in [b'owned-digest-secret', b'owned-sasl-secret']:
+            if secret in raw:
+                raise RuntimeError('Security evidence exposed fixture credentials')
+        for name, method in [('read', 'kv_get'), ('write', 'kv_put'), ('verified', 'kv_get')]:
+            verify_security_receipt(records.get(name), method)
+        if mode == 'digest':
+            denied = records.get('denied')
+            if not isinstance(denied, list) or len(denied) != 4:
+                raise RuntimeError('Security digest evidence missing each denied read/write')
+            for index, receipt in enumerate(denied):
+                verify_security_receipt(receipt, 'kv_put' if index % 2 else 'kv_get', denied=True)
+            node = records['verified']['Result']['ZNode']['Reply']['Node']
+            if node.get('Value') != base64.b64encode(b'original-authenticated-value').decode() or node.get('Stat', {}).get('version') != 1:
+                raise RuntimeError('Security digest independent data/version verification differs')
+        else:
+            node = records['verified']['Result']['ZNode']['Reply']['Node']
+            if node.get('Value') != base64.b64encode(bytes([0, 255, 128])).decode():
+                raise RuntimeError('Security binary value verification differs: ' + mode)
+            if type(records.get('generation')) is not int or records['generation'] <= 0:
+                raise RuntimeError('Security original generation missing: ' + mode)
+        if mode in ['tls', 'mtls']:
+            original = verify_security_receipt(records.get('original'), 'kv_get')
+            recovered = verify_security_receipt(records.get('recovered'), 'kv_get')
+            if original != recovered:
+                raise RuntimeError('Security recovery replaced original receipt bytes: ' + mode)
+        if mode == 'sasl':
+            rejected = records.get('rejected')
+            if not isinstance(rejected, list) or [probe.get('mode') for probe in rejected] != ['wrong-secret', 'none', 'digest']:
+                raise RuntimeError('Security SASL negative probes missing')
+            for probe in rejected:
+                if not isinstance(probe.get('error'), str) or not probe['error'] or probe.get('original_process_starts') != 1 or probe.get('test_deadline_expired') is not False:
+                    raise RuntimeError('Security SASL rejection lacks original process evidence')
+        evidence.append({'path': path.name, 'sha256': digest(raw)})
     return evidence
 
 
@@ -243,7 +459,10 @@ def main():
     parser.add_argument('--provider', action='store_true')
     parser.add_argument('--public-runtime', action='store_true')
     parser.add_argument('--public', action='store_true')
+    parser.add_argument('--security', action='store_true')
     args = parser.parse_args()
+    if args.security:
+        args.public = True
     if args.public:
         args.public_runtime = True
     if args.public_runtime:
@@ -260,19 +479,22 @@ def main():
     before = source_snapshot()
     (base / 'accepted-original-source.json').write_text(json.dumps(before, indent=2))
     archive, archive_digest, version = build_bundle(base, before)
-    required = acceptance_requirements(args.provider, args.public_runtime, args.public)
-    result = {'scope': 'public-native-workflow' if args.public else 'public-runtime-profile-foundation' if args.public_runtime else 'private-native-provider-workspace' if args.provider else 'managed-native-protocol-foundation', 'public_entry_accepted': False,
+    required = acceptance_requirements(args.provider, args.public_runtime, args.public, args.security)
+    result = {'scope': 'public-native-security-workflow' if args.security else 'public-native-workflow' if args.public else 'public-runtime-profile-foundation' if args.public_runtime else 'private-native-provider-workspace' if args.provider else 'managed-native-protocol-foundation', 'public_entry_accepted': False,
               'public_runtime_accepted': False,
+              'security_accepted': False,
               'product': 'ZooKeeper', 'server_version': '3.9.4', 'image': IMAGE,
               'race': args.race, 'driver_sha256': archive_digest,
               'passed_tests': [], 'unverified': ([] if args.public else ['public editor/chooser/navigation/shell workflow' if args.public_runtime else 'public runtime/editor/chooser/URI' if args.provider else 'public provider/editor/chooser/URI/KV workspace']) + [
                   'TLS/mTLS', 'digest ACL enforcement', 'SASL authentication', 'ensemble failover', 'SSH routes', 'other server versions']}
     container = None
+    containers = []
     try:
         container = run(['docker', 'run', '-d', '--name', 'nyadb-zookeeper-' + token,
             '--label', 'nyadb.zookeeper.fixture=' + token, '-p', '127.0.0.1::2181',
             '-e', 'ZOO_TICK_TIME=500', '-e', 'ZOO_4LW_COMMANDS_WHITELIST=srvr,ruok',
             IMAGE]).decode().strip()
+        containers.append(('server', container))
         inspect = json.loads(run(['docker', 'inspect', container]))[0]
         (base / 'container.json').write_text(json.dumps(inspect, indent=2))
         port = int(inspect['NetworkSettings']['Ports']['2181/tcp'][0]['HostPort'])
@@ -290,12 +512,17 @@ def main():
                 raise RuntimeError('Owned ZooKeeper did not become ready')
             time.sleep(.2)
         fixture = base / 'fixture.json'
+        security = prepare_security_servers(base, token, containers) if args.security else None
+        if security:
+            seed_digest_acl(base, container, security)
         fixture.write_text(json.dumps({'archive': str(archive), 'sha256': archive_digest,
-            'version': version, 'directory': str(base), 'endpoint': endpoint}, indent=2))
+            'version': version, 'directory': str(base), 'endpoint': endpoint, 'security': security}, indent=2))
+        fixture.chmod(0o600)
         env = dict(os.environ, CGO_ENABLED='1' if args.race else '0',
             NYADB_ZOOKEEPER_PROVIDER_IT='1' if args.provider else '0',
             NYADB_ZOOKEEPER_PUBLIC_RUNTIME_IT='1' if args.public_runtime else '0',
             NYADB_ZOOKEEPER_PUBLIC_IT='1' if args.public else '0',
+            NYADB_ZOOKEEPER_SECURITY_IT='1' if args.security else '0',
             NYADB_AGENT_ZOOKEEPER_IT='1', NYADB_AGENT_ZOOKEEPER_FIXTURE_FILE=str(fixture))
         command = ['go', 'test', '-count=1', '-v', '-timeout=10m' if args.public else '-timeout=5m']
         if args.race:
@@ -316,6 +543,13 @@ def main():
         result['passed_tests'] = required
         if args.public:
             result['public_images'] = verify_public_images(base)
+        if args.security:
+            result['security_images'] = verify_security_images(base)
+            result['security_receipts'] = verify_security_receipts(base)
+            result['security_policies'] = {'digest': 'real protected node ACL; denied reads/writes',
+                'tls': 'trusted CA and server IP SAN verification; TLS 1.2/1.3 allowed by server',
+                'mtls': 'mandatory trusted client certificate; client hostname check disabled on server; server identity verified by client',
+                'sasl': 'mandatory SASL DIGEST-MD5; ZooKeeper server/client JVM FIPS mode disabled'}
         if source_snapshot() != before:
             raise RuntimeError('Original source changed during acceptance')
         result['original_source_unchanged'] = True
@@ -324,11 +558,15 @@ def main():
         result['nyadb_source_unchanged'] = True
         result['public_runtime_accepted'] = args.public_runtime
         result['public_entry_accepted'] = args.public
+        result['security_accepted'] = args.security
+        if args.security:
+            result['unverified'] = ['ensemble failover', 'SSH routes', 'other server versions', 'SASL Kerberos/GSSAPI', 'SASL Digest with server FIPS mode enabled']
         result['status'] = 'passed'
     except Exception as error:
         result['status'] = 'failed'
         result['public_runtime_accepted'] = False
         result['public_entry_accepted'] = False
+        result['security_accepted'] = False
         result['error'] = str(error)
         raise
     finally:
@@ -339,23 +577,27 @@ def main():
                 cleanup_errors.append('Acceptance required forced native process cleanup')
         except Exception as error:
             cleanup_errors.append('Original process cleanup failed: ' + str(error))
-        if container:
+        for mode, owned in containers:
             try:
-                labels = json.loads(run(['docker', 'inspect', container]))[0]['Config']['Labels']
+                labels = json.loads(run(['docker', 'inspect', owned]))[0]['Config']['Labels']
                 if labels.get('nyadb.zookeeper.fixture') != token:
                     raise RuntimeError('Fixture container ownership changed')
-                (base / 'server.log').write_bytes(run(['docker', 'logs', container]))
-                run(['docker', 'rm', '-f', container])
-                remaining = run(['docker', 'ps', '-aq', '--filter', 'label=nyadb.zookeeper.fixture=' + token]).decode().strip()
-                if remaining:
-                    raise RuntimeError('Owned ZooKeeper fixture remained after cleanup')
-                result['container_removed'] = True
+                (base / (mode + '.log')).write_bytes(run(['docker', 'logs', owned]))
+                run(['docker', 'rm', '-f', owned])
             except Exception as error:
-                cleanup_errors.append('Owned container cleanup failed: ' + str(error))
+                cleanup_errors.append('Owned ' + mode + ' container cleanup failed: ' + str(error))
+        if containers:
+            remaining = run(['docker', 'ps', '-aq', '--filter', 'label=nyadb.zookeeper.fixture=' + token]).decode().strip()
+            if remaining:
+                cleanup_errors.append('Owned ZooKeeper fixture remained after cleanup')
+            else:
+                result['container_removed'] = True
+                result['containers_removed'] = len(containers)
         if cleanup_errors:
             result['status'] = 'failed'
             result['public_runtime_accepted'] = False
             result['public_entry_accepted'] = False
+            result['security_accepted'] = False
             result['error'] = '\n'.join(filter(None, [result.get('error'), *cleanup_errors]))
         (base / 'verification.json').write_text(json.dumps(result, indent=2))
         if cleanup_errors:

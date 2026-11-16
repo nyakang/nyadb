@@ -51,7 +51,14 @@ func (p Provider) Open(ctx context.Context, profile connections.Profile, secret 
 			if started == nil {
 				started = driverstore.RuntimeObserver(ctx)
 			}
-			return OpenNativeSession(ctx, profile.ID, c, secret, Options{Driver: d, MaxDocuments: a.MaxDocuments, Started: started})
+			session, err := OpenNativeSession(ctx, profile.ID, c, secret, Options{Driver: d, MaxDocuments: a.MaxDocuments, Started: started})
+			if err != nil {
+				// A typed nil *Session becomes a non-nil contract.Session. Failed
+				// opens must return a nil interface so runtime cleanup never closes
+				// a nonexistent session after trust rejection or cancellation.
+				return nil, err
+			}
+			return session, nil
 		}
 	}
 	return nil, ErrInvalid

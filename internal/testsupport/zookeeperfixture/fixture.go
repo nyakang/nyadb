@@ -23,6 +23,40 @@ import (
 type Fixture struct {
 	Archive, SHA256, Version, Directory, Endpoint string
 	Starts                                        atomic.Int32
+	Security                                      *Security
+}
+
+type Security struct {
+	TLSEndpoint         string `json:"tls_endpoint"`
+	MTLSEndpoint        string `json:"mtls_endpoint"`
+	SASLEndpoint        string `json:"sasl_endpoint"`
+	CAFile              string `json:"ca_file"`
+	WrongCAFile         string `json:"wrong_ca_file"`
+	ClientCertFile      string `json:"client_cert_file"`
+	ClientKeyFile       string `json:"client_key_file"`
+	WrongClientCertFile string `json:"wrong_client_cert_file"`
+	WrongClientKeyFile  string `json:"wrong_client_key_file"`
+	Username            string `json:"username"`
+	DigestSecret        string `json:"digest_secret"`
+	SASLSecret          string `json:"sasl_secret"`
+}
+
+func ReadSecurity(t *testing.T) *Fixture {
+	t.Helper()
+	if os.Getenv("NYADB_ZOOKEEPER_SECURITY_IT") != "1" {
+		t.Skip("requires owned ZooKeeper security acceptance")
+	}
+	f := Read(t)
+	if f.Security == nil || f.Security.CAFile == "" || f.Security.Username == "" || f.Security.DigestSecret == "" || f.Security.SASLSecret == "" {
+		t.Fatal("owned security fixture unavailable")
+	}
+	for _, endpoint := range []string{f.Security.TLSEndpoint, f.Security.MTLSEndpoint, f.Security.SASLEndpoint} {
+		host, _, err := net.SplitHostPort(endpoint)
+		if err != nil || !net.ParseIP(host).IsLoopback() {
+			t.Fatal("owned security endpoint unavailable")
+		}
+	}
+	return f
 }
 
 func Read(t *testing.T) *Fixture {
@@ -97,12 +131,16 @@ func (f *Fixture) Install(t *testing.T) (*driverstore.Store, connections.Managed
 }
 
 func (f *Fixture) Profile(t *testing.T, d connections.ManagedDriver, id int64) connections.Profile {
+	return f.EndpointProfile(t, d, id, f.Endpoint)
+}
+
+func (f *Fixture) EndpointProfile(t *testing.T, d connections.ManagedDriver, id int64, endpoint string) connections.Profile {
 	t.Helper()
 	p, err := connections.Defaults(connections.ZooKeeper)
 	if err != nil {
 		t.Fatal(err)
 	}
-	host, port, err := net.SplitHostPort(f.Endpoint)
+	host, port, err := net.SplitHostPort(endpoint)
 	if err != nil {
 		t.Fatal(err)
 	}
