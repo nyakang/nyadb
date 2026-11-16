@@ -91,6 +91,9 @@ func connectionEditorTabNames(kind connections.Kind) []string {
 }
 
 func (s *State) connectionTabNames() []string {
+	if s.connectionDraft.Kind == connections.Trino && s.connectionDraft.TrinoOptions.Mode == "jdbc" {
+		return []string{"常规", "高级", "SSL", "备注"}
+	}
 	if s.connectionDraft.Kind.IsMySQLFamily() && s.mysqlCompatibilityVisible {
 		return []string{"常规", "高级", "数据库", "SSL", "SSH", "HTTP", "兼容性", "备注"}
 	}
@@ -247,6 +250,7 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 			return
 		}
 		if p.Kind == connections.Trino {
+			s.trinoDriverFields(c, fieldWidth)
 			s.editorInputRow(c, "默认 Catalog：", "Trino 默认 Catalog", &p.Database, labelWidth, fieldWidth)
 			s.editorInputRow(c, "默认 Schema：", "Trino 默认 Schema", &p.TrinoOptions.DefaultSchema, labelWidth, fieldWidth)
 		}

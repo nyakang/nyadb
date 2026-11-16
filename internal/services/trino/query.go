@@ -32,6 +32,16 @@ func (s *Session) ReserveQuery(doc uint64) (contract.QueryLease, error) {
 	if s.closed {
 		return nil, contract.ErrRevoked
 	}
+	if s.managed != nil {
+		if !s.managed.runtime.Client.Alive() {
+			return nil, contract.ErrRevoked
+		}
+		lease, err := s.managed.queries.ReserveQuery(doc)
+		if err != nil {
+			return nil, err
+		}
+		return &managedQueryLease{owner: s, original: lease, document: doc}, nil
+	}
 	if doc == 0 || len(s.leases) >= 64 {
 		return nil, connections.ErrInvalid
 	}

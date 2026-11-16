@@ -21,10 +21,16 @@ type Session struct {
 	closed     bool
 	work       sync.WaitGroup
 	leases     map[*queryLease]bool
+	managed    *managedBinding
+	closeOnce  sync.Once
+	closeErr   error
 	namespaces map[string]contract.NamespaceRef
 }
 
 func OpenSession(ctx context.Context, p connections.Profile, password string) (contract.Session, error) {
+	return (Provider{}).Open(ctx, p, password)
+}
+func openHTTPSession(ctx context.Context, p connections.Profile, password string) (contract.Session, error) {
 	p, err := connections.NormalizeProfile(p)
 	if err != nil {
 		return nil, err
@@ -52,13 +58,21 @@ func (s *Session) Capabilities() contract.Capabilities {
 	d, _ := connections.Describe(connections.Trino)
 	return d.Capabilities
 }
-func (s *Session) Alive() bool { s.mu.Lock(); defer s.mu.Unlock(); return !s.closed }
+func (s *Session) Alive() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return !s.closed && (s.managed == nil || s.managed.runtime.Client.Alive())
+}
 func (s *Session) Close() error {
+	s.closeOnce.Do(func() { s.close() })
+	return s.closeErr
+}
+func (s *Session) close() {
 	s.mu.Lock()
 	if s.closed {
 		s.mu.Unlock()
 		s.work.Wait()
-		return nil
+		return
 	}
 	s.closed = true
 	s.cancel()
@@ -72,13 +86,19 @@ func (s *Session) Close() error {
 	for _, l := range leases {
 		l.Release()
 	}
+	if s.managed != nil && s.managed.queries != nil {
+		s.managed.queries.Close()
+	}
 	s.work.Wait()
-	return nil
+	if s.managed != nil {
+		s.closeErr = s.managed.runtime.Close()
+		s.managed.params = nil
+	}
 }
 func (s *Session) request(ctx context.Context) (context.Context, func(), error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.closed {
+	if s.closed || s.managed != nil && !s.managed.runtime.Client.Alive() {
 		return nil, nil, contract.ErrRevoked
 	}
 	s.work.Add(1)

@@ -2,7 +2,6 @@ package trino
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"strconv"
 	"strings"
@@ -11,18 +10,17 @@ import (
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
-func metadataRows(ctx context.Context, c *Client, q string) ([][]contract.Cell, error) {
+func metadataRows(ctx context.Context, c rowReader, q string) ([][]contract.Cell, error) {
 	var rows [][]contract.Cell
 	budget := 16 << 20
-	_, err := c.Run(ctx, q, func(cols []Column, raw []json.RawMessage) error {
+	err := c.Read(ctx, q, func(cols []contract.Column, raw []contract.Cell) error {
 		if len(rows) >= 10000 {
 			return ErrBounds
 		}
 		row := make([]contract.Cell, len(raw))
-		for i, v := range raw {
-			cell, err := nativeCell(v, cols[i].Type)
-			if err != nil {
-				return err
+		for i, cell := range raw {
+			if cell.Truncated {
+				return ErrBounds
 			}
 			budget -= len(cell.Text) + len(cell.Bytes) + 64
 			if budget < 0 {
@@ -41,7 +39,7 @@ func (s *Session) Namespaces(ctx context.Context) ([]contract.Namespace, error) 
 		return nil, err
 	}
 	defer done()
-	c, err := s.open(ctx)
+	c, err := s.reader(ctx, true)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +96,7 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 		return nil, err
 	}
 	defer done()
-	c, err := s.open(ctx)
+	c, err := s.reader(ctx, true)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +120,7 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 	}
 	return out, nil
 }
-func tableMetadata(ctx context.Context, c *Client, o contract.ObjectRef) (*contract.TableStructure, error) {
+func tableMetadata(ctx context.Context, c rowReader, o contract.ObjectRef) (*contract.TableStructure, error) {
 	rows, err := metadataRows(ctx, c, "SELECT table_type FROM "+quoteName(o.Catalog)+".information_schema.tables WHERE table_schema="+quoteText(o.Schema)+" AND table_name="+quoteText(o.Name))
 	if err != nil {
 		return nil, err
@@ -186,7 +184,7 @@ func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*con
 		return nil, err
 	}
 	defer done()
-	c, err := s.open(ctx)
+	c, err := s.reader(ctx, true)
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +210,7 @@ func (s *Session) resolve(ctx context.Context, id int64, db, table string, o con
 		return nil, err
 	}
 	defer done()
-	c, err := s.open(ctx)
+	c, err := s.reader(ctx, true)
 	if err != nil {
 		return nil, err
 	}

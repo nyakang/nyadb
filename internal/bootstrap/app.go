@@ -314,6 +314,13 @@ func Run() error {
 				title = locales.Text("选择 H2 数据库文件")
 				filters = []mygo.FileFilter{{Name: "H2 databases", Extensions: []string{"mv.db", "h2.db"}}}
 			}
+			if kind == shell.TrinoDriverPackageFile {
+				title = locales.Text("导入 Trino 驱动包")
+				filters = []mygo.FileFilter{{Name: "NyaDB driver packages", Extensions: []string{"zip"}}}
+			}
+			if kind == shell.TrinoCAFile {
+				title = locales.Text("选择 Trino CA 证书")
+			}
 			if kind == shell.H2DriverPackageFile {
 				title = locales.Text("导入 H2 驱动包")
 				filters = []mygo.FileFilter{{Name: "NyaDB driver packages", Extensions: []string{"zip"}}}

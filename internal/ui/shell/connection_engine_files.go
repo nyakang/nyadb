@@ -5,6 +5,8 @@ import "github.com/nyakang/nyadb/internal/ui/connectioneditor"
 type EngineFile = connectioneditor.EngineFile
 
 const (
+	TrinoDriverPackageFile    = connectioneditor.TrinoDriverPackageFile
+	TrinoCAFile               = connectioneditor.TrinoCAFile
 	RQLiteCAFile              = connectioneditor.RQLiteCAFile
 	RQLiteCertificateFile     = connectioneditor.RQLiteCertificateFile
 	RQLiteKeyFile             = connectioneditor.RQLiteKeyFile

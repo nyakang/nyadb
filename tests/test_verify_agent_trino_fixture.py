@@ -1,6 +1,9 @@
 import importlib.util
 from pathlib import Path
 import unittest
+import json
+import tempfile
+from PIL import Image
 
 
 SPEC = importlib.util.spec_from_file_location(
@@ -30,6 +33,88 @@ class TrinoAgentAcceptanceEvidenceTests(unittest.TestCase):
         for prefix, suffix in [("--- SKIP: ", ""), ("--- PASS: ", "Fake"), ("--- PASS: ", "/subtest")]:
             with self.subTest(prefix=prefix, suffix=suffix), self.assertRaises(RuntimeError):
                 FIXTURE.verify_acceptance("\n".join(prefix + name + suffix + " (1.00s)" for name in FIXTURE.REQUIRED) + "\nPASS")
+
+
+class TrinoWorkbenchEvidenceScopeTests(unittest.TestCase):
+    def evidence(self, base):
+        for log, names in [('acceptance', FIXTURE.REQUIRED), ('provider-acceptance', FIXTURE.PROVIDER_REQUIRED)]:
+            (base / (log + '.log')).write_text('\n'.join('--- PASS: ' + name + ' (1s)' for name in names))
+        for log, name in FIXTURE.UI_REQUIRED.items():
+            (base / (log + '-acceptance.log')).write_text('--- PASS: ' + name + ' (1s)')
+        editor = base / 'editor-screenshots'
+        shell = base / 'shell-screenshots'
+        editor.mkdir()
+        shell.mkdir()
+        controls = {}
+        for language in ['zh-Hans', 'en']:
+            for size, width in [('wide', 920), ('narrow', 720)]:
+                for tab, labels in FIXTURE.EDITOR_CONTROLS.items():
+                    name = language + '-' + size + '-' + tab + '.png'
+                    Image.new('RGB', (width, 780)).save(editor / name)
+                    controls[name] = {label: {'X': 10, 'Y': 20, 'W': 100, 'H': 30} for label in labels}
+        (editor / 'controls.json').write_text(json.dumps(controls))
+        for name in FIXTURE.SHELL_IMAGES:
+            Image.new('RGB', (1280, 800)).save(shell / ('trino-managed-' + name + '.png'))
+
+    def test_provider_only_and_bridge_cannot_claim_public_workbench(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            self.evidence(base)
+            for scope in ['bridge', 'provider']:
+                self.assertFalse(FIXTURE.verify_scope_evidence(base, scope)['public_managed_provider'])
+            result = FIXTURE.verify_scope_evidence(base, 'workbench')
+            self.assertTrue(result['public_managed_provider'])
+            self.assertEqual(len(result['screenshots']), 17)
+
+    def test_every_native_provider_and_public_ui_pass_is_required(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            self.evidence(base)
+            files = ['provider-acceptance.log', 'editor-acceptance.log', 'shell-acceptance.log']
+            for name in files:
+                file = base / name
+                original = file.read_text()
+                file.write_text('--- SKIP: required test (0s)\nPASS')
+                with self.subTest(name=name), self.assertRaises(RuntimeError):
+                    FIXTURE.verify_scope_evidence(base, 'workbench')
+                file.write_text(original)
+
+    def test_provider_tls_requires_actual_password_trust_and_hostname_failures(self):
+        lines = ['--- PASS: ' + name + ' (1s)' for name in FIXTURE.PROVIDER_REQUIRED]
+        cases = ['--- PASS: TestTrinoManagedNativeAuthenticationAndExplicitRecovery/' + name + ' (1s)' for name in ['wrong-password', 'untrusted-certificate', 'wrong-hostname']]
+        FIXTURE.verify_provider_acceptance('\n'.join(lines + cases), tls=True)
+        for missing in cases:
+            with self.subTest(missing=missing), self.assertRaises(RuntimeError):
+                FIXTURE.verify_provider_acceptance('\n'.join(lines + [line for line in cases if line != missing]), tls=True)
+
+    def test_missing_clipped_and_corrupt_screenshots_fail(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            self.evidence(base)
+            for image in list((base / 'editor-screenshots').glob('*.png')) + list((base / 'shell-screenshots').glob('*.png')):
+                original = image.read_bytes()
+                image.unlink()
+                with self.subTest(missing=image.name), self.assertRaises(FileNotFoundError):
+                    FIXTURE.verify_workbench_images(base)
+                image.write_bytes(original)
+            manifest = base / 'editor-screenshots/controls.json'
+            original = manifest.read_text()
+            data = json.loads(original)
+            image_name = next(iter(data))
+            label = next(iter(data[image_name]))
+            for replacement in [{}, {'X': 900, 'Y': 0, 'W': 100, 'H': 30}, {'X': 0, 'Y': float('nan'), 'W': 100, 'H': 30}]:
+                data[image_name][label] = replacement
+                manifest.write_text(json.dumps(data))
+                with self.subTest(box=replacement), self.assertRaises(RuntimeError):
+                    FIXTURE.verify_workbench_images(base)
+            manifest.write_text(original)
+            image = base / 'shell-screenshots/trino-managed-grid.png'
+            Image.new('RGB', (1280, 10)).save(image)
+            with self.assertRaises(RuntimeError):
+                FIXTURE.verify_workbench_images(base)
+            image.write_bytes(b'not an image')
+            with self.assertRaises(OSError):
+                FIXTURE.verify_workbench_images(base)
 
 
 if __name__ == "__main__":

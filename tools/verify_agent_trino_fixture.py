@@ -3,7 +3,9 @@
 
 Requires Linux, Docker, Go, an existing JDK 21+, and the pinned Trino image.
 Builds a complete private driverstore bundle, including a linked JRE. This
-acceptance does not publish a public managed Trino provider or editable grid.
+acceptance supports bridge, adapter-only provider, and complete public workbench
+scopes. Only workbench evidence validates public managed JDBC integration; the
+shared Trino grid remains read-only.
 """
 import argparse
 import importlib.util
@@ -36,13 +38,87 @@ REQUIRED = [
     'TestTrinoAgentNativeOriginalProcessFailureKeepsUnknownWriteReceipt',
     'TestTrinoAgentNativeAuthenticationAndTrust',
 ]
+PROVIDER_REQUIRED = [
+    'TestTrinoManagedNativeProviderQualifiedReadsOriginalValuesAndSQL',
+    'TestTrinoManagedNativePoolReserveCancellationAndOriginalReceipts',
+    'TestTrinoManagedNativeAuthenticationAndExplicitRecovery',
+    'TestTrinoNativeWorkspaceMetadataPagingTypesExportAndRecovery',
+    'TestTrinoNativeAuthenticationTypesAndSessionState',
+    'TestTrinoNativeCancellationAcknowledgement',
+    'TestTrinoNativeDistributedEstimatedPlansFixture',
+    'TestTrinoNativeCommittedWriteLostReplyNeverReplays',
+    'TestTrinoNativeCloseReleasesOriginalTransaction',
+]
+
+def verify_named_acceptance(output, required):
+    for name in required:
+        if not re.search(r'^\s*--- PASS: ' + re.escape(name) + r' \(', output, re.MULTILINE):
+            raise RuntimeError('Required native acceptance is missing: ' + name)
 
 
 def verify_acceptance(output, tls=False):
     required = REQUIRED + (['TestTrinoAgentNativeAuthenticationAndTrust/' + case for case in ['wrong-password', 'untrusted-certificate']] if tls else [])
-    for name in required:
-        if not re.search(r'^\s*--- PASS: ' + re.escape(name) + r' \(', output, re.MULTILINE):
-            raise RuntimeError('Original Trino acceptance is missing: ' + name)
+    verify_named_acceptance(output, required)
+
+
+def verify_provider_acceptance(output, tls=False):
+    verify_named_acceptance(output, PROVIDER_REQUIRED)
+    if tls:
+        verify_named_acceptance(output, ['TestTrinoManagedNativeAuthenticationAndExplicitRecovery/' + case for case in ['wrong-password', 'untrusted-certificate', 'wrong-hostname']])
+
+
+EDITOR_CONTROLS = {
+    'general': ['Trino 连接方式', 'Trino 驱动包', '导入驱动包', '刷新驱动包', '密码'],
+    'advanced': ['连接超时（秒）', '查询超时（秒）', '连接池等待（毫秒）', '最大连接数', '元数据预留连接数', 'SQL 会话上限'],
+    'ssl': ['Trino TLS 模式', 'Trino CA 证书', '选择 Trino CA 证书', '证书服务器名'],
+}
+UI_REQUIRED = {
+    'editor': 'TestTrinoManagedNativeEditorImportPersistenceCredentialsAndRevocation',
+    'shell': 'TestTrinoManagedNativePublicChooserQualifiedGridSQLAndRecovery',
+}
+SHELL_IMAGES = ['grid', 'structure', 'sql', 'plan', 'recovery']
+
+
+def verify_workbench_images(base):
+    import math
+    from PIL import Image
+    editor = base / 'editor-screenshots'
+    controls = json.loads((editor / 'controls.json').read_text())
+    images = []
+    for language in ['zh-Hans', 'en']:
+        for size, width in [('wide', 920), ('narrow', 720)]:
+            for tab, labels in EDITOR_CONTROLS.items():
+                name = language + '-' + size + '-' + tab + '.png'
+                images.append((editor / name, (width, 780)))
+                for label in labels:
+                    box = controls.get(name, {}).get(label, {})
+                    coordinates = [box.get(key) for key in ['X', 'Y', 'W', 'H']]
+                    if any(not isinstance(n, (int, float)) or not math.isfinite(n) for n in coordinates):
+                        raise RuntimeError('Localized Trino control evidence missing: ' + name + ':' + label)
+                    x, y, w, h = coordinates
+                    if x < 0 or y < 0 or w <= 0 or h <= 0 or x + w > width + 1 or y + h > 781:
+                        raise RuntimeError('Localized Trino control clipped: ' + name + ':' + label)
+    images += [(base / 'shell-screenshots' / ('trino-managed-' + name + '.png'), (1280, 800)) for name in SHELL_IMAGES]
+    for path, dimensions in images:
+        with Image.open(path) as img:
+            if img.format != 'PNG' or img.size != dimensions:
+                raise RuntimeError('Trino screenshot dimensions differ: ' + str(path))
+            img.verify()
+    return [str(path.relative_to(base)) for path, _ in images]
+
+
+def verify_scope_evidence(base, scope, tls=False):
+    if scope not in ['bridge', 'provider', 'workbench']:
+        raise RuntimeError('Unknown Trino evidence scope')
+    if scope != 'provider':
+        verify_acceptance((base / 'acceptance.log').read_text(), tls)
+    if scope in ['provider', 'workbench']:
+        verify_provider_acceptance((base / 'provider-acceptance.log').read_text(), tls)
+    if scope == 'workbench':
+        for log, name in UI_REQUIRED.items():
+            verify_named_acceptance((base / (log + '-acceptance.log')).read_text(), [name])
+        return {'public_managed_provider': True, 'screenshots': verify_workbench_images(base)}
+    return {'public_managed_provider': False, 'screenshots': []}
 
 
 def build_bundle(dbx, java, base, nonce):
@@ -126,6 +202,7 @@ def main():
     parser.add_argument('--java', default=shutil.which('java'))
     parser.add_argument('--plain', action='store_true')
     parser.add_argument('--race', action='store_true')
+    parser.add_argument('--scope', choices=['bridge', 'provider', 'workbench'], default='bridge', help='provider is adapter-only evidence; workbench also requires public editor and shell acceptance')
     args = parser.parse_args()
     if sys.platform != 'linux' or not args.java:
         parser.error('Requires Linux and an existing JDK 21+')
@@ -139,7 +216,7 @@ def main():
     private.mkdir(mode=0o700, parents=True)
     owner = {'owner': nonce, 'purpose': 'nyadb-trino-native-agent-fixture'}
     (private / 'owner.json').write_text(json.dumps(owner))
-    state = dict(owner, status='building', evidence=str(base), race=args.race, tls=not args.plain, public_managed_provider=False, grid_writes=False, full_goal_complete=False)
+    state = dict(owner, status='building', evidence=str(base), race=args.race, tls=not args.plain, scope=args.scope, public_managed_provider=False, grid_writes=False, full_goal_complete=False)
     state_file = base / 'current-fixture.json'
     state_file.write_text(json.dumps(state, indent=2) + '\n')
     server = None
@@ -203,11 +280,27 @@ def main():
         snapshot = {'base_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(), 'files': {name: HELPERS.sha(ROOT / name) for name in sorted(set(paths)) if name and (ROOT / name).is_file()}}
         (base / 'nyadb-source-snapshot.json').write_text(json.dumps(snapshot, indent=2) + '\n')
         command = ['go', 'test', '-count=1', '-v', '-timeout=15m', *(['-race'] if args.race else []), '-run=TestTrinoAgentNative', './internal/services/agentbridge']
-        with (base / 'acceptance.log').open('w') as log:
-            subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=930)
-        verify_acceptance((base / 'acceptance.log').read_text(), tls=not args.plain)
+        if args.scope != 'provider':
+            with (base / 'acceptance.log').open('w') as log:
+                subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=930)
+            verify_acceptance((base / 'acceptance.log').read_text(), tls=not args.plain)
+        if args.scope in ['provider', 'workbench']:
+            native_env = dict(env, NYADB_TRINO_MANAGED_IT='1', NYADB_TRINO_IT='1', NYADB_TRINO_CONFIG=str(config_path))
+            native_command = command[:-2] + ['-run=TestTrinoManagedNative|TestTrinoNative', './internal/services/trino']
+            with (base / 'provider-acceptance.log').open('w') as log:
+                subprocess.run(native_command, cwd=ROOT, env=native_env, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=930)
+            verify_provider_acceptance((base / 'provider-acceptance.log').read_text(), tls=not args.plain)
+            state['managed_provider_verified'] = True
+            if args.scope == 'workbench':
+                ui_env = dict(native_env, NYADB_AGENT_TRINO_EDITOR_IT='1', NYADB_AGENT_TRINO_SHELL_IT='1', NYADB_TRINO_EDITOR_SCREENSHOTS=str(base / 'editor-screenshots'), NYADB_TRINO_MANAGED_SHELL_SCREENSHOTS=str(base / 'shell-screenshots'))
+                for package, name, log_name in [('connectioneditor', 'TestTrinoManagedNativeEditorImportPersistenceCredentialsAndRevocation', 'editor'), ('shell', 'TestTrinoManagedNativePublicChooserQualifiedGridSQLAndRecovery', 'shell')]:
+                    ui_command = command[:-2] + ['-run=^' + name + '$', './internal/ui/' + package]
+                    with (base / (log_name + '-acceptance.log')).open('w') as log:
+                        subprocess.run(ui_command, cwd=ROOT, env=ui_env, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=930)
+                    verify_named_acceptance((base / (log_name + '-acceptance.log')).read_text(), [name])
+        state.update(verify_scope_evidence(base, args.scope, tls=not args.plain))
         passed = True
-        print('Original Trino JDBC managed runtime, values, metadata, isolation, receipts, cursors, cancellation and recovery passed', flush=True)
+        print('Original Trino JDBC acceptance passed; scope=' + args.scope, flush=True)
     finally:
         journal = private / 'processes.jsonl'
         records = [json.loads(line) for line in journal.read_text().splitlines()] if journal.exists() else []

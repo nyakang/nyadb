@@ -188,7 +188,7 @@ func (s *Session) page(ctx context.Context, id int64, db, table string, o contra
 		return nil, err
 	}
 	defer done()
-	c, err := s.open(ctx)
+	c, err := s.reader(ctx, false)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +200,7 @@ func (s *Session) page(ctx context.Context, id int64, db, table string, o contra
 		p.ColumnKinds = append(p.ColumnKinds, col.Type)
 	}
 	budget := previewBytes
-	_, err = c.Run(ctx, bindQuery(q, args), func(cols []Column, row []json.RawMessage) error {
+	err = c.Read(ctx, bindQuery(q, args), func(cols []contract.Column, row []contract.Cell) error {
 		if len(cols) != len(t.Columns) {
 			return ErrProtocol
 		}
@@ -210,10 +210,7 @@ func (s *Session) page(ctx context.Context, id int64, db, table string, o contra
 			if cols[i].Name != t.Columns[i].Name {
 				return ErrProtocol
 			}
-			value, e := nativeCell(v, cols[i].Type)
-			if e != nil {
-				return e
-			}
+			value := v.Clone()
 			value = preview(value)
 			cells[i] = contract.DataCell{Value: &value, Text: value.Display(), Null: value.Kind == contract.Null, Truncated: value.Truncated}
 			size += len(value.Text) + len(value.Bytes)
@@ -246,7 +243,7 @@ func (s *Session) count(ctx context.Context, id int64, db, table string) (int64,
 		return 0, err
 	}
 	defer done()
-	c, err := s.open(ctx)
+	c, err := s.reader(ctx, false)
 	if err != nil {
 		return 0, err
 	}
@@ -284,17 +281,17 @@ func (s *Session) export(ctx context.Context, id int64, db, table string, o cont
 		return err
 	}
 	defer done()
-	c, err := s.open(ctx)
+	c, err := s.reader(ctx, false)
 	if err != nil {
 		return err
 	}
 	defer c.Close()
-	_, err = c.Run(ctx, bindQuery(q, args), func(cols []Column, row []json.RawMessage) error {
+	err = c.Read(ctx, bindQuery(q, args), func(cols []contract.Column, row []contract.Cell) error {
 		values := make([]contract.DataValue, len(row))
 		for i, v := range row {
-			cell, e := nativeCell(v, cols[i].Type)
-			if e != nil {
-				return e
+			cell := v.Clone()
+			if cell.Truncated {
+				return ErrIncompleteJDBC
 			}
 			values[i] = contract.DataValue{Kind: cell.Kind, Text: cell.Text, Bytes: cell.Bytes, Null: cell.Kind == contract.Null, Binary: cell.Kind == contract.Binary}
 		}
@@ -314,18 +311,18 @@ func (s *Session) jsonl(ctx context.Context, o contract.ObjectRef, w io.Writer) 
 		return err
 	}
 	defer done()
-	c, err := s.open(ctx)
+	c, err := s.reader(ctx, false)
 	if err != nil {
 		return err
 	}
 	defer c.Close()
 	encoder := json.NewEncoder(w)
-	_, err = c.Run(ctx, "SELECT * FROM "+qualified(o), func(cols []Column, row []json.RawMessage) error {
+	err = c.Read(ctx, "SELECT * FROM "+qualified(o), func(cols []contract.Column, row []contract.Cell) error {
 		values := make([]contract.Cell, len(row))
 		for i, v := range row {
-			cell, e := nativeCell(v, cols[i].Type)
-			if e != nil {
-				return e
+			cell := v.Clone()
+			if cell.Truncated {
+				return ErrIncompleteJDBC
 			}
 			values[i] = cell
 		}
@@ -333,7 +330,7 @@ func (s *Session) jsonl(ctx context.Context, o contract.ObjectRef, w io.Writer) 
 			Object  contract.ObjectRef `json:"object"`
 			Columns []contract.Column  `json:"columns"`
 			Values  []contract.Cell    `json:"values"`
-		}{o, nativeColumns(cols), values})
+		}{o, cols, values})
 	})
 	return err
 }

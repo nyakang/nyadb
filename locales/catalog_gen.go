@@ -44129,3 +44129,103 @@ func TdengineDataMutationDelete() string { return In(i18n.Locale()).TdengineData
 func (msgs Messages) TdengineDataMutationDelete() string {
 	return Catalog.Format(msgs.locale, "tdengineDataMutationDelete", nil)
 }
+
+// TrinoManagedJDBC says "受管 JDBC"
+// in the language the app shows.
+func TrinoManagedJDBC() string { return In(i18n.Locale()).TrinoManagedJDBC() }
+
+// TrinoManagedJDBC says "受管 JDBC"
+// in the language of msgs.
+func (msgs Messages) TrinoManagedJDBC() string {
+	return Catalog.Format(msgs.locale, "trinoManagedJDBC", nil)
+}
+
+// TrinoConnectionMethod says "Trino 连接方式"
+// in the language the app shows.
+func TrinoConnectionMethod() string { return In(i18n.Locale()).TrinoConnectionMethod() }
+
+// TrinoConnectionMethod says "Trino 连接方式"
+// in the language of msgs.
+func (msgs Messages) TrinoConnectionMethod() string {
+	return Catalog.Format(msgs.locale, "trinoConnectionMethod", nil)
+}
+
+// TrinoDriverPackage says "Trino 驱动包"
+// in the language the app shows.
+func TrinoDriverPackage() string { return In(i18n.Locale()).TrinoDriverPackage() }
+
+// TrinoDriverPackage says "Trino 驱动包"
+// in the language of msgs.
+func (msgs Messages) TrinoDriverPackage() string {
+	return Catalog.Format(msgs.locale, "trinoDriverPackage", nil)
+}
+
+// TrinoJDBCIncompleteValues says "JDBC 的部分二进制、复合和时间值可能不完整；HTTP 模式保留原始类型。"
+// in the language the app shows.
+func TrinoJDBCIncompleteValues() string { return In(i18n.Locale()).TrinoJDBCIncompleteValues() }
+
+// TrinoJDBCIncompleteValues says "JDBC 的部分二进制、复合和时间值可能不完整；HTTP 模式保留原始类型。"
+// in the language of msgs.
+func (msgs Messages) TrinoJDBCIncompleteValues() string {
+	return Catalog.Format(msgs.locale, "trinoJDBCIncompleteValues", nil)
+}
+
+// TrinoDriverUnsupported says "驱动包不包含 Trino 驱动。"
+// in the language the app shows.
+func TrinoDriverUnsupported() string { return In(i18n.Locale()).TrinoDriverUnsupported() }
+
+// TrinoDriverUnsupported says "驱动包不包含 Trino 驱动。"
+// in the language of msgs.
+func (msgs Messages) TrinoDriverUnsupported() string {
+	return Catalog.Format(msgs.locale, "trinoDriverUnsupported", nil)
+}
+
+// TrinoPoolSettingsInvalid says "请检查 Trino 超时、连接池和 SQL 会话上限"
+// in the language the app shows.
+func TrinoPoolSettingsInvalid() string { return In(i18n.Locale()).TrinoPoolSettingsInvalid() }
+
+// TrinoPoolSettingsInvalid says "请检查 Trino 超时、连接池和 SQL 会话上限"
+// in the language of msgs.
+func (msgs Messages) TrinoPoolSettingsInvalid() string {
+	return Catalog.Format(msgs.locale, "trinoPoolSettingsInvalid", nil)
+}
+
+// TrinoDriverRequired says "请选择或导入已安装的 Trino 驱动包"
+// in the language the app shows.
+func TrinoDriverRequired() string { return In(i18n.Locale()).TrinoDriverRequired() }
+
+// TrinoDriverRequired says "请选择或导入已安装的 Trino 驱动包"
+// in the language of msgs.
+func (msgs Messages) TrinoDriverRequired() string {
+	return Catalog.Format(msgs.locale, "trinoDriverRequired", nil)
+}
+
+// TrinoImportDriver says "导入 Trino 驱动包"
+// in the language the app shows.
+func TrinoImportDriver() string { return In(i18n.Locale()).TrinoImportDriver() }
+
+// TrinoImportDriver says "导入 Trino 驱动包"
+// in the language of msgs.
+func (msgs Messages) TrinoImportDriver() string {
+	return Catalog.Format(msgs.locale, "trinoImportDriver", nil)
+}
+
+// TrinoSelectCA says "选择 Trino CA 证书"
+// in the language the app shows.
+func TrinoSelectCA() string { return In(i18n.Locale()).TrinoSelectCA() }
+
+// TrinoSelectCA says "选择 Trino CA 证书"
+// in the language of msgs.
+func (msgs Messages) TrinoSelectCA() string {
+	return Catalog.Format(msgs.locale, "trinoSelectCA", nil)
+}
+
+// TrinoHTTPTransport says "HTTP / HTTPS"
+// in the language the app shows.
+func TrinoHTTPTransport() string { return In(i18n.Locale()).TrinoHTTPTransport() }
+
+// TrinoHTTPTransport says "HTTP / HTTPS"
+// in the language of msgs.
+func (msgs Messages) TrinoHTTPTransport() string {
+	return Catalog.Format(msgs.locale, "trinoHTTPTransport", nil)
+}

@@ -41,6 +41,8 @@ type Dependencies struct {
 // State is owned by the UI thread. Background tests return immutable results;
 // native picker completions are guarded by the editing session's version.
 type State struct {
+	trinoNumbers                                               [6]string
+	trinoModeChoice, trinoDriverChoice                         string
 	rqliteNumbers                                              [8]string
 	rqliteAuthChoice, rqliteTLSChoice, rqliteConsistencyChoice string
 	driverPackages                                             DriverPackages
@@ -208,6 +210,9 @@ func (s *State) OpenProfile(profile connections.Profile) {
 }
 
 func (s *State) initializeInputs() {
+	if s.connectionDraft.Kind == connections.Trino {
+		s.initializeTrinoInputs()
+	}
 	if s.connectionDraft.Kind == connections.TDengine {
 		s.initializeTDengineInputs()
 	}
@@ -275,6 +280,8 @@ func (s *State) Close() {
 	s.driverWork.packages = nil
 	s.driverWork.message = ""
 	s.h2Numbers = [6]string{}
+	s.trinoNumbers = [6]string{}
+	s.trinoModeChoice, s.trinoDriverChoice = "", ""
 	s.h2ModeChoice, s.h2ProfileChoice, s.h2DriverChoice = "", "", ""
 	s.h2CustomBase, s.h2CustomClass, s.h2CustomPaths = "", "", nil
 	s.etcdAuthChoice, s.etcdPrefixChoice, s.etcdTLSChoice = "", "", ""

@@ -62,6 +62,12 @@ func (s *State) ImportURI(raw string) error {
 		s.connectionDraft.GroupName, s.connectionDraft.Starred = original.GroupName, original.Starred
 		s.connectionDraft.Notes, s.connectionDraft.Color = original.Notes, original.Color
 		s.connectionDraft.CreatedAt, s.connectionDraft.UpdatedAt = original.CreatedAt, original.UpdatedAt
+		if original.Kind == connections.Trino && parsed.Profile.Kind == connections.Trino {
+			s.connectionDraft.TrinoOptions.Mode = original.TrinoOptions.Mode
+			s.connectionDraft.TrinoOptions.DriverVersion = original.TrinoOptions.DriverVersion
+			s.connectionDraft.TrinoOptions.DriverSHA256 = original.TrinoOptions.DriverSHA256
+			s.connectionDraft.TrinoOptions.DriverDirectory = original.TrinoOptions.DriverDirectory
+		}
 		if original.Kind == connections.H2 && parsed.Profile.Kind == connections.H2 {
 			s.h2CustomBase, s.h2CustomClass, s.h2CustomPaths = customBase, customClass, customPaths
 			// A URI changes connection parameters, not the explicit installed

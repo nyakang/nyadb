@@ -10,10 +10,13 @@ import (
 
 func managedDriverPackages() connectioneditor.DriverPackages {
 	resolve := func(kind connections.Kind, directory string) (*driverstore.Store, driverstore.Product, error) {
-		if kind != connections.H2 {
+		if kind != connections.H2 && kind != connections.Trino {
 			return nil, driverstore.Product{}, connections.ErrInvalid
 		}
 		product := driverstore.Product{Key: "h2", Runtime: "java", MainClass: "com.dbx.agent.h2.H2Agent"}
+		if kind == connections.Trino {
+			product = driverstore.Product{Key: "trino", Runtime: "java", MainClass: "com.dbx.agent.trino.TrinoAgent"}
+		}
 		var store *driverstore.Store
 		var err error
 		if directory == "" {
@@ -43,7 +46,7 @@ func managedDriverPackages() connectioneditor.DriverPackages {
 			if err != nil {
 				return connections.ManagedDriver{}, err
 			}
-			if request.Profile != "h2-custom" {
+			if kind != connections.H2 || request.Profile != "h2-custom" {
 				return connections.ManagedDriver{}, connections.ErrInvalid
 			}
 			return store.ImportJDBC(ctx, product, request)

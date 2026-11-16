@@ -45,6 +45,8 @@ const (
 	RQLiteCAFile
 	RQLiteCertificateFile
 	RQLiteKeyFile
+	TrinoDriverPackageFile
+	TrinoCAFile
 )
 
 func (s *State) SetEngineFilePicker(pick func(EngineFile, int, uint64)) { s.engineFilePicker = pick }
@@ -53,6 +55,18 @@ func (s *State) EngineFileVersion() uint64 { return s.engineFileVersion }
 
 func (s *State) SelectEngineFile(kind EngineFile, row int, version uint64, path string) {
 	if !s.active || version != s.engineFileVersion || path == "" {
+		return
+	}
+	if kind == TrinoDriverPackageFile || kind == TrinoCAFile {
+		if s.connectionDraft.Kind != connections.Trino {
+			return
+		}
+		if kind == TrinoDriverPackageFile && s.connectionDraft.TrinoOptions.Mode == "jdbc" {
+			s.ImportDriverPackage(path)
+		} else if kind == TrinoCAFile && s.connectionDraft.TLSMode == "verify-full" {
+			s.cancelMySQLConnectionTest()
+			s.connectionDraft.TrinoOptions.CAFile = path
+		}
 		return
 	}
 	if kind >= RQLiteCAFile && kind <= RQLiteKeyFile {
@@ -307,6 +321,9 @@ func (s *State) initEngineOptionsInputs() {
 }
 
 func (s *State) advanceEngineOptions(p *connections.Profile) error {
+	if p.Kind == connections.Trino {
+		return s.advanceTrinoOptions(p)
+	}
 	if p.Kind == connections.TDengine {
 		return s.advanceTDengineOptions(p)
 	}
@@ -536,16 +553,30 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 		})
 		return true
 	case connections.Trino:
+		if tab == "高级" {
+			s.trinoAdvanced(c, formWidth)
+			return true
+		}
 		if tab != "SSL" {
 			return false
 		}
 		a := &s.connectionDraft.TrinoOptions
 		theme.Form(c, formWidth, func() {
 			ui.Text(c, locales.Text("Trino 通过 HTTP/HTTPS 连接；使用密码时必须启用 HTTPS。"))
+			oldTLS := s.connectionDraft.TLSMode
 			theme.Field(c, locales.Text("TLS 模式："), func() {
 				connectionFormSelect(c, &s.connectionDraft.TLSMode, []string{"verify-full", "disable"}, "Trino TLS 模式", fieldWidth, false)
 			})
-			s.editorInputRow(c, "CA 证书", "Trino CA 证书", &a.CAFile, labelWidth, fieldWidth)
+			if oldTLS != s.connectionDraft.TLSMode {
+				s.cancelMySQLConnectionTest()
+				s.engineFileVersion++
+			}
+			theme.Field(c, locales.Text("CA 证书"), func() {
+				ui.Row(c).Gap(connectionFormBrowseGap).Children(func() {
+					s.formTextInput(c, &a.CAFile, "Trino CA 证书", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, false)
+					connectionFormBrowse(c, "选择 Trino CA 证书", s.engineFilePicker == nil || s.connectionDraft.TLSMode == "disable", func() { s.engineFilePicker(TrinoCAFile, -1, s.engineFileVersion) })
+				})
+			})
 			s.editorInputRow(c, "证书服务器名", "证书服务器名", &a.ServerName, labelWidth, fieldWidth)
 		})
 		return true

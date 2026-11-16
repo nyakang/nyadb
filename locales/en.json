@@ -4330,5 +4330,15 @@
   "tdengineDataMutationHistory": "Confirmed TDengine data changes",
   "tdengineDataMutationInsert": "Insert or merge record",
   "tdengineDataMutationUpdate": "Merge record fields",
-  "tdengineDataMutationDelete": "Delete records at the selected timestamp"
+  "tdengineDataMutationDelete": "Delete records at the selected timestamp",
+  "trinoManagedJDBC": "Managed JDBC",
+  "trinoConnectionMethod": "Trino connection method",
+  "trinoDriverPackage": "Trino driver package",
+  "trinoJDBCIncompleteValues": "Some JDBC binary, composite and temporal values may be incomplete; HTTP retains native types.",
+  "trinoDriverUnsupported": "This package does not contain a Trino driver.",
+  "trinoPoolSettingsInvalid": "Check Trino timeouts, pool capacity and SQL session limits",
+  "trinoDriverRequired": "Select or import an installed Trino driver package",
+  "trinoImportDriver": "Import Trino driver package",
+  "trinoSelectCA": "Select Trino CA certificate",
+  "trinoHTTPTransport": "HTTP / HTTPS"
 }

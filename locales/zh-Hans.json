@@ -4330,5 +4330,15 @@
   "tdengineDataMutationHistory": "已确认的 TDengine 数据更改",
   "tdengineDataMutationInsert": "新增或合并记录",
   "tdengineDataMutationUpdate": "合并记录字段",
-  "tdengineDataMutationDelete": "删除所选时间戳记录"
+  "tdengineDataMutationDelete": "删除所选时间戳记录",
+  "trinoManagedJDBC": "受管 JDBC",
+  "trinoConnectionMethod": "Trino 连接方式",
+  "trinoDriverPackage": "Trino 驱动包",
+  "trinoJDBCIncompleteValues": "JDBC 的部分二进制、复合和时间值可能不完整；HTTP 模式保留原始类型。",
+  "trinoDriverUnsupported": "驱动包不包含 Trino 驱动。",
+  "trinoPoolSettingsInvalid": "请检查 Trino 超时、连接池和 SQL 会话上限",
+  "trinoDriverRequired": "请选择或导入已安装的 Trino 驱动包",
+  "trinoImportDriver": "导入 Trino 驱动包",
+  "trinoSelectCA": "选择 Trino CA 证书",
+  "trinoHTTPTransport": "HTTP / HTTPS"
 }

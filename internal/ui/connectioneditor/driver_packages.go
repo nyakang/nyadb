@@ -60,7 +60,7 @@ func (s *State) cancelDriverWork() {
 }
 
 func (s *State) startDriverWork(file string) {
-	if !s.active || s.uriOpen || s.connectionDraft.Kind != connections.H2 {
+	if !s.active || s.uriOpen || s.connectionDraft.Kind != connections.H2 && (s.connectionDraft.Kind != connections.Trino || s.connectionDraft.TrinoOptions.Mode != "jdbc") {
 		return
 	}
 	s.cancelDriverWork()
@@ -68,19 +68,20 @@ func (s *State) startDriverWork(file string) {
 	if file == "" && service.List == nil || file != "" && service.Import == nil {
 		return
 	}
-	a, kind := s.connectionDraft.H2Options, s.connectionDraft.Kind
+	_, _, directory, profile := s.currentDriverSelection()
+	kind := s.connectionDraft.Kind
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	results := make(chan driverWorkResult, 1)
 	s.driverWork.cancel, s.driverWork.results, s.driverWork.message = cancel, results, ""
 	generation := s.driverWork.generation
 	go func() {
 		defer cancel()
-		out := driverWorkResult{generation: generation, kind: kind, directory: a.DriverDirectory, profile: a.DriverProfile}
+		out := driverWorkResult{generation: generation, kind: kind, directory: directory, profile: profile}
 		if file == "" {
-			out.packages, out.err = service.List(ctx, kind, a.DriverDirectory)
+			out.packages, out.err = service.List(ctx, kind, directory)
 			out.packages = cloneDrivers(out.packages)
 		} else {
-			d, err := service.Import(ctx, kind, a.DriverDirectory, file)
+			d, err := service.Import(ctx, kind, directory, file)
 			out.err = err
 			copy := cloneDrivers([]connections.ManagedDriver{d})[0]
 			out.imported = &copy
@@ -149,7 +150,8 @@ func (s *State) consumeDriverWork() {
 	select {
 	case out := <-s.driverWork.results:
 		s.driverWork.results, s.driverWork.cancel = nil, nil
-		if !s.active || out.generation != s.driverWork.generation || out.kind != s.connectionDraft.Kind || out.directory != s.connectionDraft.H2Options.DriverDirectory {
+		selectedVersion, selectedSHA, selectedDirectory, selectedProfile := s.currentDriverSelection()
+		if !s.active || out.generation != s.driverWork.generation || out.kind != s.connectionDraft.Kind || out.directory != selectedDirectory {
 			return
 		}
 		if out.jdbc != nil && (out.profile != s.connectionDraft.H2Options.DriverProfile || out.baseChoice != s.h2CustomBase || out.rawClass != s.h2CustomClass || out.pinVersion != s.connectionDraft.H2Options.DriverVersion || out.pinSHA256 != s.connectionDraft.H2Options.DriverSHA256 || !slices.Equal(out.jdbc.Paths, s.h2CustomPaths)) {
@@ -170,26 +172,33 @@ func (s *State) consumeDriverWork() {
 			if !found {
 				s.driverWork.packages = append(s.driverWork.packages, d)
 			}
-			if out.profile == s.connectionDraft.H2Options.DriverProfile {
-				if out.profile == "h2-custom" && !d.Supports("h2-custom") && out.jdbc == nil {
-					s.h2CustomBase = d.Version
+			if out.profile == selectedProfile {
+				if out.kind == connections.Trino {
+					s.selectTrinoDriver(d)
 				} else {
-					s.selectH2Driver(d)
+					if out.profile == "h2-custom" && !d.Supports("h2-custom") && out.jdbc == nil {
+						s.h2CustomBase = d.Version
+					} else {
+						s.selectH2Driver(d)
+					}
 				}
 			}
 		} else {
 			s.driverWork.packages = out.packages
 		}
-		selected := s.connectionDraft.H2Options
-		if selected.DriverVersion != "" {
+		selectedVersion, selectedSHA, _, selectedProfile = s.currentDriverSelection()
+		if selectedVersion != "" {
 			found := false
 			for _, d := range s.driverWork.packages {
-				if d.Version == selected.DriverVersion && d.SHA256 == selected.DriverSHA256 {
+				if d.Version == selectedVersion && d.SHA256 == selectedSHA {
 					found = true
-					if !d.Supports(selected.DriverProfile) {
+					if !d.Supports(selectedProfile) {
 						s.driverWork.message = "驱动包不包含当前 H2 版本，请选择匹配的版本。"
+						if out.kind == connections.Trino {
+							s.driverWork.message = "驱动包不包含 Trino 驱动。"
+						}
 					}
-					if selected.DriverProfile == "h2-custom" && d.JDBCClass != "" && len(s.h2CustomPaths) == 0 && s.h2CustomClass == "org.h2.Driver" {
+					if selectedProfile == "h2-custom" && d.JDBCClass != "" && len(s.h2CustomPaths) == 0 && s.h2CustomClass == "org.h2.Driver" {
 						s.h2CustomClass = d.JDBCClass
 					}
 				}
@@ -219,4 +228,13 @@ func (s *State) selectH2Driver(d connections.ManagedDriver) {
 	s.connectionDraft.H2Options = a
 	s.h2DriverChoice = d.Version
 	s.driverWork.message = ""
+}
+
+func (s *State) currentDriverSelection() (version, digest, directory, profile string) {
+	if s.connectionDraft.Kind == connections.Trino {
+		a := s.connectionDraft.TrinoOptions
+		return a.DriverVersion, a.DriverSHA256, a.DriverDirectory, "trino"
+	}
+	a := s.connectionDraft.H2Options
+	return a.DriverVersion, a.DriverSHA256, a.DriverDirectory, a.DriverProfile
 }
