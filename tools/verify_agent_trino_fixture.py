@@ -8,6 +8,7 @@ scopes. Only workbench evidence validates public managed JDBC integration; the
 native INSERT alignment additionally requires the PostgreSQL connector fixture.
 """
 import argparse
+import base64
 import importlib.util
 import json
 import os
@@ -39,6 +40,8 @@ REQUIRED = [
     'TestTrinoAgentNativeAuthenticationAndTrust',
 ]
 PROVIDER_REQUIRED = [
+    'TestTrinoNativeDataProjectionCompositePrecisionAndCompleteExport',
+    'TestTrinoManagedNativeDataProjectionCompositePrecisionAndCompleteExport',
     'TestTrinoManagedNativeProviderQualifiedReadsOriginalValuesAndSQL',
     'TestTrinoManagedNativePoolReserveCancellationAndOriginalReceipts',
     'TestTrinoManagedNativeAuthenticationAndExplicitRecovery',
@@ -118,6 +121,22 @@ def verify_workbench_images(base, writes=False):
     return [str(path.relative_to(base)) for path, _ in images]
 
 
+def verify_complete_grid_export(base):
+    records = [json.loads(line) for line in (base / 'shell-screenshots/complete-export.jsonl').read_text().splitlines()]
+    if len(records) != 1:
+        raise RuntimeError('Original complete grid export must contain its original row')
+    record = records[0]
+    columns, values = record.get('columns', []), record.get('values', [])
+    obj = record.get('object', {})
+    if len(columns) != 4 or len(values) != 4 or not obj.get('ProfileID') or obj.get('Catalog') != 'memory' or obj.get('Schema') != 'default':
+        raise RuntimeError('Complete grid export lost qualified original metadata')
+    if [c.get('Name') for c in columns] != ['id', 'note', 'payload', 'items'] or values[0].get('text') != '9007199254740993' or any(v.get('truncated') for v in values):
+        raise RuntimeError('Complete grid export lost exact values or stayed truncated')
+    if values[2].get('kind') != 'binary' or base64.b64decode(values[2].get('bytes', ''), validate=True) != b'\x00\xff' or values[3].get('kind') != 'json' or json.loads(values[3].get('text', 'null')) != [9007199254740993]:
+        raise RuntimeError('Complete grid export changed original binary/composite content')
+    return 'shell-screenshots/complete-export.jsonl'
+
+
 def verify_scope_evidence(base, scope, tls=False, writes=False):
     if scope not in ['bridge', 'provider', 'workbench']:
         raise RuntimeError('Unknown Trino evidence scope')
@@ -130,7 +149,7 @@ def verify_scope_evidence(base, scope, tls=False, writes=False):
             verify_named_acceptance((base / (log + '-acceptance.log')).read_text(), [name])
         if writes:
             verify_named_acceptance((base / 'http-shell-acceptance.log').read_text(), ['TestTrinoNativeShellFixture'])
-        return {'public_managed_provider': True, 'grid_writes':writes, 'screenshots': verify_workbench_images(base,writes)}
+        return {'public_managed_provider': True, 'grid_writes':writes, 'complete_grid_export':verify_complete_grid_export(base), 'screenshots': verify_workbench_images(base,writes)}
     return {'public_managed_provider': False, 'screenshots': []}
 
 

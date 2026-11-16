@@ -341,7 +341,9 @@ func (c *Client) run(ctx context.Context, source string, consume Consumer, attem
 					return result, c.interrupted(page.ID, next, ErrProtocol)
 				}
 				for _, v := range row {
-					if len(v) > 1<<20 {
+					// A complete 1 MiB binary or escaped string needs more than
+					// 1 MiB on the JSON wire. The response remains bounded to 16 MiB.
+					if len(v) > 8<<20 {
 						return result, c.interrupted(page.ID, next, ErrBounds)
 					}
 				}

@@ -14,7 +14,7 @@ import (
 )
 
 var jdbcTimestampPrecision = regexp.MustCompile(`^TIMESTAMP\(([0-9]+)\)`)
-var ErrIncompleteJDBC = errors.New("original Trino JDBC value is incomplete; use HTTP mode for a complete export")
+var ErrIncompleteJDBC = errors.New("original Trino JDBC value is incomplete; a verified native projection is required for complete export")
 
 // DecodeJDBCValue decodes the original TrinoAgent getObject().toString() wire
 // representation. It is separate from nativeCell: the HTTP protocol retains

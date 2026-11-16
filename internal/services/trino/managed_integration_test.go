@@ -162,9 +162,12 @@ func TestTrinoManagedNativeProviderQualifiedReadsOriginalValuesAndSQL(t *testing
 	if row[0].Value.Kind != contract.Integer || row[0].Value.Text != "9007199254740993" || row[1].Text != "中文" || row[2].Value.Text != "123456789012345678.12345678901234567890" {
 		t.Fatal("JDBC scalar grid values changed")
 	}
+	if row[3].Value == nil || !bytes.Equal(row[3].Value.Bytes, []byte{0, 255}) || row[4].Value == nil || row[4].Value.Kind != contract.JSON || row[4].Value.Text != "[9007199254740993]" || row[5].Value == nil || row[5].Value.Kind != contract.DateTime || row[5].Value.Text != "2026-11-16 01:02:03.123456789123" {
+		t.Fatal("original native grid projection lost binary/composite/temporal values")
+	}
 	for _, i := range []int{3, 4, 5} {
-		if !row[i].Truncated || row[i].Value == nil || !row[i].Value.Truncated {
-			t.Fatal("lossy JDBC value became complete grid data")
+		if row[i].Truncated || row[i].Value.Truncated {
+			t.Fatal("verified complete native grid projection stayed incomplete")
 		}
 	}
 	count, err := s.DataReads().Count(ctx, p.ID, label, table)
@@ -176,9 +179,10 @@ func TestTrinoManagedNativeProviderQualifiedReadsOriginalValuesAndSQL(t *testing
 	if err != nil || len(values) != 3 || values[2][0].Text != "9007199254740993" {
 		t.Fatal("complete selected-field export failed", err)
 	}
-	err = s.DataExports().Exporter(ctx, p.ID, label, table, contract.DataOptions{Object: object}, []string{"payload"}, func(v []contract.DataValue) error { return nil })
-	if !errors.Is(err, ErrIncompleteJDBC) {
-		t.Fatal("incomplete JDBC binary was exported as complete data", err)
+	values = nil
+	err = s.DataExports().Exporter(ctx, p.ID, label, table, contract.DataOptions{Object: object, SortColumn: "id", SortDescending: true}, []string{"payload", "items", "stamp"}, func(v []contract.DataValue) error { values = append(values, v); return nil })
+	if err != nil || len(values) != 3 || !bytes.Equal(values[0][0].Bytes, []byte{0, 255}) || values[0][1].Kind != contract.JSON || values[0][1].Text != "[9007199254740993]" || values[0][2].Text != "2026-11-16 01:02:03.123456789123" {
+		t.Fatal("complete original JDBC binary/composite/temporal export failed", err)
 	}
 	if _, err = s.DataReads().AdvancedLoader(ctx, p.ID, label, table, contract.DataOptions{Object: object, Limit: 2, UseKeyset: true}); !errors.Is(err, contract.ErrUnsupported) {
 		t.Fatal("unverified keyset identity was admitted")

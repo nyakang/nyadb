@@ -189,16 +189,21 @@ func (b *managedBinding) reader(ctx context.Context, metadata bool) (rowReader, 
 }
 
 type jdbcReader struct {
-	session *agentbridge.Session
-	release func()
-	timeout int
-	once    sync.Once
-	err     error
+	session  *agentbridge.Session
+	release  func()
+	timeout  int
+	pageSize int
+	once     sync.Once
+	err      error
 }
 
 func (r *jdbcReader) Read(ctx context.Context, source string, consume func([]contract.Column, []contract.Cell) error) (err error) {
 	// A captured cursor bounds memory and never reruns SQL between pages.
-	cursor, page, err := r.session.OpenQueryCursor(ctx, agentbridge.QueryCursorOptions{SQL: source, PageSize: 1000, MaxRows: math.MaxInt32, TimeoutSeconds: r.timeout, Decoder: DecodeJDBCValue})
+	pageSize := r.pageSize
+	if pageSize == 0 {
+		pageSize = 1000
+	}
+	cursor, page, err := r.session.OpenQueryCursor(ctx, agentbridge.QueryCursorOptions{SQL: source, PageSize: pageSize, MaxRows: math.MaxInt32, TimeoutSeconds: r.timeout, Decoder: DecodeJDBCValue})
 	if err != nil {
 		return managedError(err)
 	}
@@ -213,7 +218,7 @@ func (r *jdbcReader) Read(ctx context.Context, source string, consume func([]con
 		if !page.HasMore {
 			return nil
 		}
-		page, err = cursor.Fetch(ctx, 1000)
+		page, err = cursor.Fetch(ctx, pageSize)
 		if err != nil {
 			return managedError(err)
 		}

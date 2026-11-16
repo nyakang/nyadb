@@ -55,6 +55,8 @@ class TrinoWorkbenchEvidenceScopeTests(unittest.TestCase):
         (editor / 'controls.json').write_text(json.dumps(controls))
         for name in FIXTURE.SHELL_IMAGES:
             Image.new('RGB', (1280, 800)).save(shell / ('trino-managed-' + name + '.png'))
+        record = {'object': {'ProfileID': 1, 'Catalog': 'memory', 'Schema': 'default'}, 'columns': [{'Name': name} for name in ['id', 'note', 'payload', 'items']], 'values': [{'kind': 'integer', 'text': '9007199254740993'}, {'kind': 'text', 'text': 'native shared grid'}, {'kind': 'binary', 'bytes': 'AP8='}, {'kind': 'json', 'text': '[9007199254740993]'}]}
+        (shell / 'complete-export.jsonl').write_text(json.dumps(record) + '\n')
 
     def test_provider_only_and_bridge_cannot_claim_public_workbench(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -78,6 +80,27 @@ class TrinoWorkbenchEvidenceScopeTests(unittest.TestCase):
                 with self.subTest(name=name), self.assertRaises(RuntimeError):
                     FIXTURE.verify_scope_evidence(base, 'workbench')
                 file.write_text(original)
+
+    def test_complete_export_requires_original_binary_composite_and_qualified_identity(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            self.evidence(base)
+            path = base / 'shell-screenshots/complete-export.jsonl'
+            original = path.read_text()
+            record = json.loads(original)
+            for field, value in [('kind', 'text'), ('bytes', 'AP4='), ('truncated', True)]:
+                modified = json.loads(original)
+                modified['values'][2][field] = value
+                path.write_text(json.dumps(modified))
+                with self.subTest(field=field), self.assertRaises(RuntimeError):
+                    FIXTURE.verify_complete_grid_export(base)
+            record['object']['Schema'] = 'other'
+            path.write_text(json.dumps(record))
+            with self.assertRaises(RuntimeError):
+                FIXTURE.verify_complete_grid_export(base)
+            path.unlink()
+            with self.assertRaises(FileNotFoundError):
+                FIXTURE.verify_complete_grid_export(base)
 
     def test_provider_tls_requires_actual_password_trust_and_hostname_failures(self):
         lines = ['--- PASS: ' + name + ' (1s)' for name in FIXTURE.PROVIDER_REQUIRED]

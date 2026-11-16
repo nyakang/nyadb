@@ -58,6 +58,9 @@ func filterLiteral(value string, col contract.StructureColumn) (string, error) {
 	}
 }
 func dataQuery(t *contract.TableStructure, o contract.DataOptions, fields []string, paged bool) (string, []string, error) {
+	return dataQueryProjected(t, o, fields, paged, nil)
+}
+func dataQueryProjected(t *contract.TableStructure, o contract.DataOptions, fields []string, paged bool, projection *dataProjection) (string, []string, error) {
 	if o.UseKeyset || o.After != nil || o.Condition != nil {
 		return "", nil, contract.ErrUnsupported
 	}
@@ -80,7 +83,16 @@ func dataQuery(t *contract.TableStructure, o contract.DataOptions, fields []stri
 		}
 		selected[i] = quoteName(f)
 	}
+	if projection != nil {
+		if len(projection.selects) != len(selected) {
+			return "", nil, ErrProtocol
+		}
+		selected = projection.selects
+	}
 	q := "SELECT " + strings.Join(selected, ",") + " FROM " + qualified(t.Object)
+	if projection != nil {
+		q += ` AS "__nyadb_projection_source"`
+	}
 	filters := append([]contract.DataFilterRule(nil), o.Filters...)
 	if o.FilterColumn != "" {
 		filters = append(filters, contract.DataFilterRule{Column: o.FilterColumn, Mode: o.FilterMode, Value: o.FilterValue})
@@ -154,7 +166,13 @@ func dataQuery(t *contract.TableStructure, o contract.DataOptions, fields []stri
 		if r.Descending {
 			direction = " DESC"
 		}
-		order = append(order, quoteName(r.Column)+direction)
+		column := quoteName(r.Column)
+		if projection != nil {
+			// ORDER BY otherwise resolves the projected VARCHAR output alias
+			// and changes native numeric/temporal ordering into lexical ordering.
+			column = `"__nyadb_projection_source".` + column
+		}
+		order = append(order, column+direction)
 	}
 	if len(order) > 0 {
 		q += " ORDER BY " + strings.Join(order, ",")
@@ -179,7 +197,11 @@ func (s *Session) page(ctx context.Context, id int64, db, table string, o contra
 	if err != nil {
 		return nil, err
 	}
-	q, args, err := dataQuery(t, o, nil, true)
+	projection, err := s.dataProjection(t, nil, true)
+	if err != nil {
+		return nil, err
+	}
+	q, args, err := dataQueryProjected(t, o, nil, true, projection)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +222,7 @@ func (s *Session) page(ctx context.Context, id int64, db, table string, o contra
 		p.ColumnKinds = append(p.ColumnKinds, col.Type)
 	}
 	budget := previewBytes
-	err = c.Read(ctx, bindQuery(q, args), func(cols []contract.Column, row []contract.Cell) error {
+	err = readData(ctx, c, bindQuery(q, args), projection, func(cols []contract.Column, row []contract.Cell) error {
 		if len(cols) != len(t.Columns) {
 			return ErrProtocol
 		}
@@ -272,7 +294,11 @@ func (s *Session) export(ctx context.Context, id int64, db, table string, o cont
 	if err != nil {
 		return err
 	}
-	q, args, err := dataQuery(t, o, fields, false)
+	projection, err := s.dataProjection(t, fields, false)
+	if err != nil {
+		return err
+	}
+	q, args, err := dataQueryProjected(t, o, fields, false, projection)
 	if err != nil {
 		return err
 	}
@@ -286,7 +312,7 @@ func (s *Session) export(ctx context.Context, id int64, db, table string, o cont
 		return err
 	}
 	defer c.Close()
-	err = c.Read(ctx, bindQuery(q, args), func(cols []contract.Column, row []contract.Cell) error {
+	err = readData(ctx, c, bindQuery(q, args), projection, func(cols []contract.Column, row []contract.Cell) error {
 		values := make([]contract.DataValue, len(row))
 		for i, v := range row {
 			cell := v.Clone()
@@ -306,6 +332,18 @@ func (s *Session) jsonl(ctx context.Context, o contract.ObjectRef, w io.Writer) 
 	if err := s.checkObject(o); err != nil {
 		return err
 	}
+	t, err := s.TableMetadata(ctx, o)
+	if err != nil {
+		return err
+	}
+	projection, err := s.dataProjection(t, nil, false)
+	if err != nil {
+		return err
+	}
+	query, _, err := dataQueryProjected(t, contract.DataOptions{}, nil, false, projection)
+	if err != nil {
+		return err
+	}
 	ctx, done, err := s.request(ctx)
 	if err != nil {
 		return err
@@ -317,7 +355,7 @@ func (s *Session) jsonl(ctx context.Context, o contract.ObjectRef, w io.Writer) 
 	}
 	defer c.Close()
 	encoder := json.NewEncoder(w)
-	err = c.Read(ctx, "SELECT * FROM "+qualified(o), func(cols []contract.Column, row []contract.Cell) error {
+	err = readData(ctx, c, query, projection, func(cols []contract.Column, row []contract.Cell) error {
 		values := make([]contract.Cell, len(row))
 		for i, v := range row {
 			cell := v.Clone()

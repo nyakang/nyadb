@@ -193,7 +193,7 @@ func TestNativeMalformedPageAndBoundsRevokeSession(t *testing.T) {
 		`{"id":"foreign"}`,
 		fmt.Sprintf(`{"id":%q,"columns":%s,"data":[[1,2]]}`, testID, testColumns),
 		fmt.Sprintf(`{"id":%q,"columns":%s,"data":{"encoding":"json"}}`, testID, testColumns),
-		fmt.Sprintf(`{"id":%q,"columns":%s,"data":[[%q]]}`, testID, testColumns, strings.Repeat("x", (1<<20)+1)),
+		fmt.Sprintf(`{"id":%q,"columns":%s,"data":[[%q]]}`, testID, testColumns, strings.Repeat("x", (8<<20)+1)),
 	} {
 		t.Run(fmt.Sprint(len(body)), func(t *testing.T) {
 			c, _ := testClient(t, func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, body) })

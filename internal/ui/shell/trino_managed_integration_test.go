@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -19,7 +18,6 @@ import (
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/driverstore"
-	"github.com/nyakang/nyadb/internal/services/trino"
 	"github.com/nyakang/nyadb/internal/ui/connectioneditor"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/internal/ui/sessionbrowser"
@@ -267,8 +265,8 @@ func TestTrinoManagedNativePublicChooserQualifiedGridSQLAndRecovery(t *testing.T
 		t.Fatalf("native insert-capable grid failed: %s", dataTab.data.Error())
 	}
 	row := dataTab.data.Page().Rows[0]
-	if row[0].Text != "9007199254740993" || !row[2].Truncated || !row[3].Truncated {
-		t.Fatal("public grid lost exact scalar or fabricated complete JDBC values")
+	if row[0].Text != "9007199254740993" || row[2].Truncated || row[3].Truncated || row[2].Value == nil || !bytes.Equal(row[2].Value.Bytes, []byte{0, 255}) || row[3].Value == nil || row[3].Value.Kind != contract.JSON || row[3].Value.Text != "[9007199254740993]" {
+		t.Fatal("public grid lost original native projected values")
 	}
 	if dataTab.data.Database() != label {
 		t.Fatal("data document discarded its qualified namespace label")
@@ -284,8 +282,23 @@ func TestTrinoManagedNativePublicChooserQualifiedGridSQLAndRecovery(t *testing.T
 	wait(func() bool { return !dataTab.data.Busy() })
 	select {
 	case err := <-exportCompletion:
-		if !errors.Is(err, trino.ErrIncompleteJDBC) || exported.Len() != 0 || !tt.HasText(trino.ErrIncompleteJDBC.Error()) {
-			t.Fatal("incomplete JDBC export was not rejected and shown to the user", err, exported.Len())
+		if err != nil || bytes.Count(exported.Bytes(), []byte("\n")) != 1 || !strings.Contains(exported.String(), "9007199254740993") {
+			t.Fatal("public original JDBC complete JSONL export failed", err, exported.Len())
+		}
+		var record struct {
+			Columns []contract.Column `json:"columns"`
+			Values  []contract.Cell   `json:"values"`
+		}
+		if json.Unmarshal(exported.Bytes(), &record) != nil || len(record.Values) != 4 || len(record.Columns) != 4 || record.Values[2].Kind != contract.Binary || !bytes.Equal(record.Values[2].Bytes, []byte{0, 255}) || record.Values[2].Truncated || record.Values[3].Kind != contract.JSON || record.Values[3].Text != "[9007199254740993]" || record.Values[3].Truncated {
+			t.Fatal("public exported original complete binary/composite values changed")
+		}
+		if output := os.Getenv("NYADB_TRINO_MANAGED_SHELL_SCREENSHOTS"); output != "" {
+			if err := os.MkdirAll(output, 0755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(output, "complete-export.jsonl"), exported.Bytes(), 0600); err != nil {
+				t.Fatal(err)
+			}
 		}
 	default:
 		t.Fatal("public JSONL export did not execute its original request")
@@ -415,9 +428,26 @@ func TestTrinoManagedNativePublicChooserQualifiedGridSQLAndRecovery(t *testing.T
 	}
 	waitSQLUI(t, s, tt, sqlTab)
 	r := sqlTab.query.Result()
-	if r == nil || len(r.Sets) != 2 || r.Sets[0].Rows[0][0].Text != "9007199254740993" || !r.Sets[0].Rows[0][2].Truncated || !r.Sets[0].Rows[0][3].Truncated {
+	if r == nil || len(r.Sets) != 2 || len(r.Sets[0].Rows) != 2 {
 		t.Fatalf("native SQL result failed: %s (%+v)", sqlTab.query.Error(), r)
 	}
+	originalFound := false
+	for _, values := range r.Sets[0].Rows {
+		if len(values) != 4 || !values[2].Truncated || !values[3].Truncated {
+			t.Fatal("direct original SQL lost its incomplete binary/composite markers")
+		}
+		if values[0].Text == "9007199254740993" {
+			originalFound = values[1].Text == "native shared grid"
+		}
+	}
+	if !originalFound {
+		t.Fatal("unordered original SQL lost the exact original record")
+	}
+	originalSets, err := json.Marshal(r.Sets)
+	if err != nil {
+		t.Fatal(err)
+	}
+	originalNative := r.NativeJSON
 	if output := os.Getenv("NYADB_TRINO_MANAGED_SHELL_SCREENSHOTS"); output != "" {
 		writeDomainCapture(t, output, "trino-managed-sql", tt)
 	}
@@ -451,7 +481,8 @@ func TestTrinoManagedNativePublicChooserQualifiedGridSQLAndRecovery(t *testing.T
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if sqlTab.query.Result() != r || r.Sets[0].Rows[0][0].Text != "9007199254740993" {
+	restoredSets, err := json.Marshal(r.Sets)
+	if err != nil || sqlTab.query.Result() != r || !bytes.Equal(restoredSets, originalSets) || r.NativeJSON != originalNative {
 		t.Fatal("plan navigation lost ordinary multi-results")
 	}
 	if err = tt.Click("结构计划"); err != nil {
