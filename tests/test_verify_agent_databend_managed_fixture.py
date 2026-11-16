@@ -29,12 +29,30 @@ class DatabendManagedDiagnosticTests(unittest.TestCase):
             FIXTURE.verify_named_acceptance('--- PASS: TestDatabendPublicProvider (0.01s)')
 
     def test_private_provider_and_runtime_require_their_actual_named_cases(self):
-        names = FIXTURE.REQUIRED + FIXTURE.PROVIDER_REQUIRED + FIXTURE.RUNTIME_REQUIRED
+        names = FIXTURE.REQUIRED + FIXTURE.PROVIDER_REQUIRED + FIXTURE.RUNTIME_REQUIRED + FIXTURE.DATA_REQUIRED
         output = '\n'.join('--- PASS: ' + name + ' (0.01s)' for name in names)
         FIXTURE.verify_named_acceptance(output, names)
         for name in names:
             with self.subTest(name=name), self.assertRaises(RuntimeError):
                 FIXTURE.verify_named_acceptance(output.replace('PASS: ' + name, 'SKIP: ' + name), names)
+
+    def test_diagnostic_budget_preserves_original_group_cleanup_acknowledgement(self):
+        for timeout in [None, 1020]:
+            with self.subTest(timeout=timeout), tempfile.TemporaryDirectory() as directory:
+                process = mock.Mock(pid=731)
+                process.wait.side_effect = [FIXTURE.transport.subprocess.TimeoutExpired(['go', 'test'], 1),
+                                            FIXTURE.transport.subprocess.TimeoutExpired(['go', 'test'], 10), 0]
+                process.poll.return_value = None
+                with mock.patch.object(FIXTURE.transport.subprocess, 'Popen', return_value=process) as opened, \
+                        mock.patch.object(FIXTURE.transport.os, 'killpg') as killed, \
+                        self.assertRaises(FIXTURE.transport.subprocess.TimeoutExpired):
+                    options = {} if timeout is None else {'timeout': timeout}
+                    FIXTURE.transport.run_diagnostics(['go', 'test'], {}, Path(directory) / 'log', **options)
+                self.assertTrue(opened.call_args.kwargs['start_new_session'])
+                self.assertEqual(process.wait.call_args_list,
+                                 [mock.call(timeout=540 if timeout is None else timeout), mock.call(timeout=10), mock.call()])
+                self.assertEqual(killed.call_args_list,
+                                 [mock.call(731, FIXTURE.transport.signal.SIGTERM), mock.call(731, FIXTURE.transport.signal.SIGKILL)])
 
     def test_archive_requires_exact_complete_bytes_order_modes_and_timestamps(self):
         for change in ['none', 'bytes', 'missing', 'duplicate', 'mode', 'time', 'order']:

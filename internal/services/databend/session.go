@@ -25,12 +25,17 @@ type Provider struct {
 }
 
 type Session struct {
-	profile connections.Profile
-	process *ManagedProcess
-	queries *agentbridge.QueryPool
-	observe func(string, agentbridge.Receipt)
-	once    sync.Once
-	err     error
+	mu         sync.Mutex
+	ctx        context.Context
+	cancel     context.CancelFunc
+	closed     bool
+	dataLeases map[*dataLease]bool
+	profile    connections.Profile
+	process    *ManagedProcess
+	queries    *agentbridge.QueryPool
+	observe    func(string, agentbridge.Receipt)
+	once       sync.Once
+	err        error
 }
 
 func (p Provider) Open(ctx context.Context, profile connections.Profile, secret string) (contract.Session, error) {
@@ -64,6 +69,7 @@ func (p Provider) Open(ctx context.Context, profile connections.Profile, secret 
 		return nil, err
 	}
 	s := &Session{profile: profile, process: process, observe: p.Observe}
+	s.ctx, s.cancel = context.WithCancel(context.Background())
 	s.observed("handshake", process.StartupReceipt())
 	err = s.withMetadata(ctx, func(child context.Context, original *ManagedSession) error {
 		q, err := s.query(child, original, "SELECT version(), current_database()", 1)
@@ -138,8 +144,13 @@ func (s *Session) observed(method string, receipt agentbridge.Receipt) {
 }
 func (s *Session) ProfileID() int64   { return s.profile.ID }
 func (s *Session) Generation() uint64 { return 1 }
-func (s *Session) Alive() bool        { return s.process.Alive() }
-func (s *Session) PID() int           { return s.process.PID() }
+func (s *Session) Alive() bool {
+	s.mu.Lock()
+	closed := s.closed
+	s.mu.Unlock()
+	return !closed && s.process.Alive()
+}
+func (s *Session) PID() int { return s.process.PID() }
 func (s *Session) Namespace(database string) contract.NamespaceRef {
 	if database == "" {
 		database = s.profile.Database
@@ -147,7 +158,7 @@ func (s *Session) Namespace(database string) contract.NamespaceRef {
 	return contract.NamespaceRef{ProfileID: s.ProfileID(), Schema: database}
 }
 func (s *Session) Capabilities() contract.Capabilities {
-	return contract.Capabilities{Query: true, Metadata: true, Schemas: true}
+	return contract.Capabilities{Query: true, Metadata: true, Schemas: true, EditableTables: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
 }
 func (s *Session) ReserveQuery(document uint64) (contract.QueryLease, error) {
 	if !s.Alive() {
@@ -161,6 +172,17 @@ func (s *Session) ReserveQuery(document uint64) (contract.QueryLease, error) {
 }
 func (s *Session) Close() error {
 	s.once.Do(func() {
+		s.mu.Lock()
+		s.closed = true
+		s.cancel()
+		var documents []*dataLease
+		for l := range s.dataLeases {
+			documents = append(documents, l)
+		}
+		s.mu.Unlock()
+		for _, l := range documents {
+			_ = l.Close()
+		}
 		if s.queries != nil {
 			s.queries.Close()
 		}

@@ -31,6 +31,12 @@ PROVIDER_REQUIRED = [
     'TestDatabendProviderOriginalSQLCancellationWaitsForExecutorAndKeepsIndependentLease',
 ]
 RUNTIME_REQUIRED = ['TestDatabendRuntimeOriginalGenerationsIsolationAndLatePublication']
+DATA_REQUIRED = [
+    'TestDatabendDataOriginalTypedPagesChunksEditingAndStreamingExports',
+    'TestDatabendDataOriginalImmutableWritesConflictsAndUnsentSuffix',
+    'TestDatabendDataOriginalDroppedReplyKeepsUnknownWriteAndIndependentDocument',
+    'TestDatabendDataOriginalCancellationWaitsForExecutorAndCloseReleasesRequests',
+]
 
 
 def verify_named_acceptance(output, names=None):
@@ -247,6 +253,54 @@ def verify_provider_receipts(directory, database):
             'public_provider_registered': False}
 
 
+def verify_data_receipts(directory):
+    records = [json.loads(line, parse_float=Decimal) for line in
+               (directory / 'original-receipts.jsonl').read_text().splitlines()]
+    for record in records:
+        transport.verify_receipt(record)
+    for name in DATA_REQUIRED:
+        methods = {r['method'] for r in records if r['test'] == name}
+        if {'provider-handshake', 'provider-data-open', 'provider-data-close',
+                'provider-data-cursor'} - methods:
+            raise RuntimeError('Native data diagnostic lacks original request/close receipts: ' + name)
+    reads = json.loads((directory / 'data-read.json').read_text())
+    if reads != {'page_rows': 205, 'unicode_units': 3600, 'binary_bytes': 2100,
+                 'json_null_distinct': True, 'export_bytes': 1200000, 'selected_rows': 2,
+                 'export_max_row_bytes': 8 << 20, 'editing_max_row_bytes': 1 << 20}:
+        raise RuntimeError('Native data paging/chunks/export evidence differs')
+    writes = json.loads((directory / 'data-writes.json').read_text())
+    if any(writes.get(k) is not True for k in ['native_insert_update_delete', 'exact_typed_values',
+                                              'duplicates_rejected', 'immutable_inputs', 'no_transaction_claim']):
+        raise RuntimeError('Native data write diagnostic is incomplete')
+    stale = writes['stale_receipt']
+    if (stale['Applied'] != 0 or stale['Incomplete'] is not True or stale['CommitUncertain'] or
+            [s['State'] for s in stale['Sequential']['Statements']] != ['not_sent', 'not_sent']):
+        raise RuntimeError('Stale original row dispatched a mutation')
+    unknown = json.loads((directory / 'data-unknown.json').read_text())
+    receipt = unknown['original_receipt']
+    if (unknown['dispatches'] != 3 or unknown['unknown_preserved'] is not True or
+            unknown['independent_document_survived'] is not True or receipt['Applied'] != 1 or
+            receipt['Incomplete'] is not True or receipt['CommitUncertain'] is not True or
+            [s['State'] for s in receipt['Sequential']['Statements']] != ['acknowledged', 'unknown', 'not_sent']):
+        raise RuntimeError('Dropped original write reply was replayed/settled or lost its suffix')
+    cancel = json.loads((directory / 'data-cancellation.json').read_text())
+    cancelled = [r['receipt'] for r in records if r['test'] == DATA_REQUIRED[3] and
+                 r['method'] == 'provider-data-cursor' and r['receipt']['CancellationRequested']]
+    if (len(cancelled) != 1 or not cancelled[0]['ExecutorAcknowledged'] or
+            cancelled[0]['ProcessExitConfirmed'] or cancel['submitted'] != 1 or
+            cancel['final_http_status'] != 200 or cancel['close_waited'] is not True or
+            cancel['independent_sql_survived'] is not True or cancel['native_kill_or_rollback_accepted']):
+        raise RuntimeError('Native data cancellation did not await original executor/final')
+    native_writes = [r['receipt'] for r in records if r['test'] == DATA_REQUIRED[1] and r['method'] == 'provider-data-write']
+    if (len(native_writes) != 3 or
+            [r['Result'].get('columns') for r in native_writes] !=
+            [['number of rows inserted'], ['number of rows updated'], ['number of rows deleted']] or
+            any(r['Result'].get('rows') != [[1]] or not r['ExecutorAcknowledged'] for r in native_writes)):
+        raise RuntimeError('Independent native insert/update/delete receipts differ')
+    return {'reads': reads, 'writes': True, 'unknown_preserved': True,
+            'cancel_waited': True, 'public_provider_registered': False}
+
+
 def verify_runtime_receipts(directory):
     records = [json.loads(line, parse_float=Decimal) for line in
                (directory / 'original-receipts.jsonl').read_text().splitlines()]
@@ -301,7 +355,9 @@ def main():
     parser.add_argument('--cache', type=Path, default=ROOT / 'build/databend/package-cache')
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--provider', action='store_true', help='Also verify private provider/config/SQL/metadata acceptance')
+    parser.add_argument('--data', action='store_true', help='Also verify private native data documents and independent writes')
     args = parser.parse_args()
+    args.provider = args.provider or args.data
     original, reproduced, dbx, cache = [p.resolve() for p in
                                        [args.build, args.reproduced_build, args.dbx, args.cache]]
     if original == reproduced:
@@ -313,7 +369,7 @@ def main():
     base = ROOT / 'build/databend' / ('managed-' + nonce)
     base.mkdir(parents=True, mode=0o700)
     print('Evidence: ' + str(base), flush=True)
-    result = {'scope': 'original_managed_linux_package_install_process_pool' + ('_private_provider' if args.provider else ''), 'status': 'running',
+    result = {'scope': 'original_managed_linux_package_install_process_pool' + ('_private_provider' if args.provider else '') + ('_private_data' if args.data else ''), 'status': 'running',
               'pins': pins, 'image': transport.IMAGE, 'race': args.race,
               'public_provider_registered': False, 'independent_builds_identical': True}
     secret, username = secrets.token_hex(24), 'nyadb_managed'
@@ -394,11 +450,12 @@ def main():
         fixture_file.write_text(json.dumps(fixture, indent=2))
         env = os.environ.copy()
         env.update(NYADB_DATABEND_MANAGED_IT='1', NYADB_DATABEND_MANAGED_FIXTURE=str(fixture_file))
-        command = ['go', 'test', '-count=1', '-v', '-timeout=8m']
+        command = ['go', 'test', '-count=1', '-v', '-timeout=15m' if args.data else '-timeout=8m']
         if args.race:
             command.append('-race')
-        command += ['-run', '^TestDatabend(ManagedOriginal|ProviderOriginal)' if args.provider else '^TestDatabendManagedOriginal', './internal/services/databend']
-        if transport.run_diagnostics(command, env, base / 'go-test.log'):
+        pattern = '^TestDatabend(ManagedOriginal|ProviderOriginal|DataOriginal)' if args.data else '^TestDatabend(ManagedOriginal|ProviderOriginal)' if args.provider else '^TestDatabendManagedOriginal'
+        command += ['-run', pattern, './internal/services/databend']
+        if transport.run_diagnostics(command, env, base / 'go-test.log', timeout=1020 if args.data else 540):
             raise RuntimeError('Original managed diagnostics failed; inspect ' + str(base / 'go-test.log'))
         if args.provider:
             runtime_command = ['go', 'test', '-count=1', '-v', '-timeout=8m']
@@ -408,15 +465,17 @@ def main():
             if transport.run_diagnostics(runtime_command, env, base / 'runtime-go-test.log'):
                 raise RuntimeError('Original runtime diagnostics failed; inspect ' + str(base / 'runtime-go-test.log'))
             verify_named_acceptance((base / 'runtime-go-test.log').read_text(), RUNTIME_REQUIRED)
-        required = REQUIRED + (PROVIDER_REQUIRED if args.provider else [])
+        required = REQUIRED + (PROVIDER_REQUIRED if args.provider else []) + (DATA_REQUIRED if args.data else [])
         verify_named_acceptance((base / 'go-test.log').read_text(), required)
         result['original_executor_receipts'] = verify_receipts(base)
         result['writes'] = verify_independent_writes(base)
         if args.provider:
             result['private_provider'] = verify_provider_receipts(base, database)
             result['private_runtime'] = verify_runtime_receipts(base)
+        if args.data:
+            result['private_data'] = verify_data_receipts(base)
         result['original_processes_exited'] = transport.verify_processes(base)
-        if result['original_processes_exited'] != (15 if args.provider else 5):
+        if result['original_processes_exited'] != (19 if args.data else 15 if args.provider else 5):
             raise RuntimeError('Original independent process lifecycle coverage differs')
         if verify_build(original, dbx, cache) != pins or verify_build(reproduced, dbx, cache) != pins:
             raise RuntimeError('Original managed artifacts/sources changed during product verification')

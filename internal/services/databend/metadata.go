@@ -132,6 +132,9 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) (out []co
 
 func nativeKind(declaration string) contract.CellKind {
 	t := strings.ToUpper(strings.TrimSpace(declaration))
+	for strings.HasPrefix(t, "NULLABLE(") && strings.HasSuffix(t, ")") {
+		t = strings.TrimSpace(t[len("NULLABLE(") : len(t)-1])
+	}
 	switch {
 	case t == "VARIANT" || strings.HasPrefix(t, "ARRAY(") || strings.HasPrefix(t, "MAP("):
 		return contract.JSON
@@ -165,6 +168,17 @@ func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (out 
 		return nil, contract.ErrUnsupported
 	}
 	err = s.withMetadata(ctx, func(child context.Context, original *ManagedSession) error {
+		out, err = s.readTableMetadata(child, original, o)
+		return err
+	})
+	return
+}
+
+// Data operations read metadata on their captured connection so a request
+// holding the final metadata slot never waits for a second slot.
+func (s *Session) readTableMetadata(child context.Context, original *ManagedSession, o contract.ObjectRef) (*contract.TableStructure, error) {
+	var out *contract.TableStructure
+	err := func() error {
 		name := quoteName(o.Schema) + "." + quoteName(o.Name)
 		q, err := s.query(child, original, "DESCRIBE "+name, 513)
 		if err != nil {
@@ -221,8 +235,8 @@ func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (out 
 		v.Definition = ddl.Sets[0].Rows[0][1].Text
 		out = v
 		return nil
-	})
-	return
+	}()
+	return out, err
 }
 
 var _ contract.MetadataProvider = (*Session)(nil)

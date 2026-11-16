@@ -206,11 +206,11 @@ def verify_processes(directory):
     return len(records)
 
 
-def run_diagnostics(command, env, logfile):
+def run_diagnostics(command, env, logfile, timeout=540):
     with logfile.open('w') as log:
         process = subprocess.Popen(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
         try:
-            return process.wait(timeout=540)
+            return process.wait(timeout=timeout)
         except BaseException:
             if process.poll() is None:
                 os.killpg(process.pid, signal.SIGTERM)
