@@ -10,12 +10,15 @@ import (
 
 func managedDriverPackages() connectioneditor.DriverPackages {
 	resolve := func(kind connections.Kind, directory string) (*driverstore.Store, driverstore.Product, error) {
-		if kind != connections.H2 && kind != connections.Trino {
+		if kind != connections.H2 && kind != connections.Trino && kind != connections.ZooKeeper {
 			return nil, driverstore.Product{}, connections.ErrInvalid
 		}
 		product := driverstore.Product{Key: "h2", Runtime: "java", MainClass: "com.dbx.agent.h2.H2Agent"}
 		if kind == connections.Trino {
 			product = driverstore.Product{Key: "trino", Runtime: "java", MainClass: "com.dbx.agent.trino.TrinoAgent"}
+		}
+		if kind == connections.ZooKeeper {
+			product = driverstore.Product{Key: "zookeeper", Runtime: "native"}
 		}
 		var store *driverstore.Store
 		var err error

@@ -22,6 +22,8 @@ func Describe(kind Kind) (Descriptor, bool) {
 		return Descriptor{kind, "H2", "h2", "h2", "h2", 9092, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Count: true, FieldChunks: true, Export: true, JSONL: true}}, true
 	case Consul:
 		return Descriptor{kind, "Consul", "consul", "server", "", 8500, contract.Capabilities{KeyValues: true, Metadata: true, EditableTables: true, Keyset: true, Count: true, FieldChunks: true, Export: true}}, true
+	case ZooKeeper:
+		return Descriptor{kind, "ZooKeeper", "zookeeper", "server", "", 2181, contract.Capabilities{KeyValues: true, Export: true}}, true
 	case Etcd:
 		return Descriptor{kind, "etcd", "etcd", "server", "", 2379, contract.Capabilities{KeyValues: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, EditableTables: true, Export: true}}, true
 	case Neo4j:

@@ -2,13 +2,18 @@
 """Verify the original DBX v1 agent against an owned official ZooKeeper 3.9.4.
 
 By default this accepts the managed native protocol foundation. --provider also
-accepts injected provider/document/workspace workflows. Neither mode publishes
-or accepts a public connection card, runtime provider, URI or editor.
+accepts injected provider/document/workspace workflows. --public-runtime also
+verifies the real builtin provider with persisted URI settings and original
+document isolation/recovery. --public additionally accepts the real
+chooser/editor/shell workflow, including localized UI and lost-write recovery.
+Foundation modes never accept the public entry. Advanced security and topology
+capabilities remain separately unverified even after public-entry acceptance.
 Requires Linux, Docker, Go and the complete original source in temp/dbx.
 """
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import platform
@@ -35,6 +40,73 @@ PROVIDER_REQUIRED = [
     'TestZooKeeperNativeWorkspaceConfirmationParkedReceiptFilesAndUnknownRecovery',
     'TestZooKeeperNativeWorkspaceCommittedLostReplyCancellationRecoveryAndNoReplay',
 ]
+PUBLIC_RUNTIME_REQUIRED = [
+    'TestZooKeeperNativePublicRuntimeURIStoragePinnedDriverIsolationAndRecovery',
+]
+PUBLIC_REQUIRED = [
+    'TestZooKeeperNativePublicBootstrapEditorImportVaultTestAndLiveSession',
+    'TestZooKeeperNativePublicShellChooserNavigationDocumentsFilesAndRecovery',
+    'TestZooKeeperNativePublicWorkspaceLostReplyDisconnectRecoveryAndNoReplay',
+]
+EDITOR_CONTROLS = {
+    'general': ['ZooKeeper Chroot', 'ZooKeeper Namespace', 'ZooKeeper 驱动包', '导入驱动包', '连接密码'],
+    'advanced': ['ZooKeeper 其他服务器', 'ZooKeeper 会话超时（毫秒）', 'ZooKeeper 连接超时（毫秒）', 'ZooKeeper 文档连接上限'],
+    'ssl': ['ZooKeeper TLS 模式', 'ZooKeeper CA 证书', '选择 ZooKeeper CA 证书', 'ZooKeeper 客户端证书', 'ZooKeeper 客户端私钥'],
+}
+
+
+def acceptance_requirements(provider=False, public_runtime=False, public=False):
+    required = list(REQUIRED)
+    if provider or public_runtime or public:
+        required += PROVIDER_REQUIRED
+    if public_runtime or public:
+        required += PUBLIC_RUNTIME_REQUIRED
+    if public:
+        required += PUBLIC_REQUIRED
+    return required
+
+
+def verify_public_images(base):
+    from PIL import Image
+    controls = json.loads((base / 'public-editor-controls.json').read_text())
+    images = []
+    for language in ['zh-Hans', 'en']:
+        for width, height in [(920, 780), (720, 520)]:
+            for tab, labels in EDITOR_CONTROLS.items():
+                name = f'{language}-{width}x{height}-public-editor-{tab}'
+                images.append((name + '.png', (width, height)))
+                for label in labels:
+                    box = controls.get(name, {}).get(label, {})
+                    coordinates = [box.get(key) for key in ['X', 'Y', 'W', 'H']]
+                    if any(type(n) not in [int, float] or not math.isfinite(n) for n in coordinates):
+                        raise RuntimeError('Localized public control evidence missing: ' + name + ':' + label)
+                    x, y, w, h = coordinates
+                    expected = controls.get(f'{language}-920x780-public-editor-{tab}', {}).get(label, {}).get('H')
+                    if type(expected) not in [int, float] or not math.isfinite(expected) or expected < 12 or box.get('ExpectedHeight') != expected:
+                        raise RuntimeError('Localized full control height missing: ' + name + ':' + label)
+                    if x < 0 or y < 29 or w <= 0 or h < expected or x + w > width + 1 or y + h > height - 45:
+                        raise RuntimeError('Localized public control clipped: ' + name + ':' + label)
+                    screenshot = box.get('Screenshot')
+                    if not isinstance(screenshot, str) or Path(screenshot).name != screenshot or not screenshot.startswith(name) or not screenshot.endswith('.png'):
+                        raise RuntimeError('Localized control screenshot missing: ' + name + ':' + label)
+                    images.append((screenshot, (width, height)))
+            images.append((f'{language}-{width}x{height}-public-chooser.png', (width, height)))
+        for width, height in [(1280, 800), (720, 520)]:
+            for stage in ['confirmation', 'receipt', 'recovery']:
+                images.append((f'{language}-{width}x{height}-public-shell-{stage}.png', (width, height)))
+            images.append((f'{language}-{width}x{height}-public-unknown-write.png', (width, height)))
+    evidence = []
+    for name, dimensions in dict(images).items():
+        path = base / name
+        with Image.open(path) as img:
+            if img.format != 'PNG' or img.size != dimensions:
+                raise RuntimeError('Public screenshot dimensions differ: ' + name)
+            img.load()
+            colors = img.convert('RGB').getcolors(maxcolors=16)
+            if colors is not None:
+                raise RuntimeError('Public screenshot lacks rendered UI pixels: ' + name)
+        evidence.append({'path': name, 'sha256': digest(path.read_bytes())})
+    return evidence
 
 
 def digest(raw):
@@ -169,7 +241,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--provider', action='store_true')
+    parser.add_argument('--public-runtime', action='store_true')
+    parser.add_argument('--public', action='store_true')
     args = parser.parse_args()
+    if args.public:
+        args.public_runtime = True
+    if args.public_runtime:
+        args.provider = True
     if platform.system() != 'Linux' or platform.machine() not in ['x86_64', 'amd64']:
         raise RuntimeError('This pinned acceptance requires Linux amd64')
     token = secrets.token_hex(8)
@@ -182,12 +260,13 @@ def main():
     before = source_snapshot()
     (base / 'accepted-original-source.json').write_text(json.dumps(before, indent=2))
     archive, archive_digest, version = build_bundle(base, before)
-    required = REQUIRED + PROVIDER_REQUIRED if args.provider else REQUIRED
-    result = {'scope': 'private-native-provider-workspace' if args.provider else 'managed-native-protocol-foundation', 'public_entry_accepted': False,
+    required = acceptance_requirements(args.provider, args.public_runtime, args.public)
+    result = {'scope': 'public-native-workflow' if args.public else 'public-runtime-profile-foundation' if args.public_runtime else 'private-native-provider-workspace' if args.provider else 'managed-native-protocol-foundation', 'public_entry_accepted': False,
+              'public_runtime_accepted': False,
               'product': 'ZooKeeper', 'server_version': '3.9.4', 'image': IMAGE,
               'race': args.race, 'driver_sha256': archive_digest,
-              'passed_tests': [], 'unverified': ['public runtime/editor/chooser/URI' if args.provider else 'public provider/editor/chooser/URI/KV workspace',
-                  'TLS/mTLS', 'digest ACL enforcement', 'SASL authentication', 'ensemble failover', 'SSH routes']}
+              'passed_tests': [], 'unverified': ([] if args.public else ['public editor/chooser/navigation/shell workflow' if args.public_runtime else 'public runtime/editor/chooser/URI' if args.provider else 'public provider/editor/chooser/URI/KV workspace']) + [
+                  'TLS/mTLS', 'digest ACL enforcement', 'SASL authentication', 'ensemble failover', 'SSH routes', 'other server versions']}
     container = None
     try:
         container = run(['docker', 'run', '-d', '--name', 'nyadb-zookeeper-' + token,
@@ -215,51 +294,72 @@ def main():
             'version': version, 'directory': str(base), 'endpoint': endpoint}, indent=2))
         env = dict(os.environ, CGO_ENABLED='1' if args.race else '0',
             NYADB_ZOOKEEPER_PROVIDER_IT='1' if args.provider else '0',
+            NYADB_ZOOKEEPER_PUBLIC_RUNTIME_IT='1' if args.public_runtime else '0',
+            NYADB_ZOOKEEPER_PUBLIC_IT='1' if args.public else '0',
             NYADB_AGENT_ZOOKEEPER_IT='1', NYADB_AGENT_ZOOKEEPER_FIXTURE_FILE=str(fixture))
-        command = ['go', 'test', '-count=1', '-v', '-timeout=5m']
+        command = ['go', 'test', '-count=1', '-v', '-timeout=10m' if args.public else '-timeout=5m']
         if args.race:
             command += ['-race']
         command += ['./internal/services/agentbridge']
         if args.provider:
             command += ['./internal/ui/kvworkspace']
+        if args.public:
+            command += ['./internal/bootstrap', './internal/ui/shell']
         command += ['-run', '^TestZooKeeper(AgentNative|Native)']
         completed = subprocess.run(command, cwd=ROOT, env=env, stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT, timeout=360)
+                                   stderr=subprocess.STDOUT, timeout=660 if args.public else 360)
         output = completed.stdout.decode(errors='replace')
         (base / 'acceptance.log').write_text(output)
         if completed.returncode:
             raise RuntimeError('Original ZooKeeper acceptance failed:\n' + output[-16000:])
         verify_acceptance(output, required)
         result['passed_tests'] = required
+        if args.public:
+            result['public_images'] = verify_public_images(base)
         if source_snapshot() != before:
             raise RuntimeError('Original source changed during acceptance')
         result['original_source_unchanged'] = True
         if nyadb_snapshot() != nyadb_before:
             raise RuntimeError('NyaDB source changed during native acceptance')
         result['nyadb_source_unchanged'] = True
+        result['public_runtime_accepted'] = args.public_runtime
+        result['public_entry_accepted'] = args.public
         result['status'] = 'passed'
     except Exception as error:
         result['status'] = 'failed'
+        result['public_runtime_accepted'] = False
+        result['public_entry_accepted'] = False
         result['error'] = str(error)
         raise
     finally:
-        result['process_cleanup'] = cleanup_processes(base)
-        if result['process_cleanup']['forced_cleanup']:
-            result['status'] = 'failed'
-            result['error'] = 'Acceptance required forced native process cleanup'
+        cleanup_errors = []
+        try:
+            result['process_cleanup'] = cleanup_processes(base)
+            if result['process_cleanup']['forced_cleanup'] or not result['process_cleanup']['all_original_processes_exited']:
+                cleanup_errors.append('Acceptance required forced native process cleanup')
+        except Exception as error:
+            cleanup_errors.append('Original process cleanup failed: ' + str(error))
         if container:
-            labels = json.loads(run(['docker', 'inspect', container]))[0]['Config']['Labels']
-            if labels.get('nyadb.zookeeper.fixture') != token:
-                raise RuntimeError('Fixture container ownership changed')
-            (base / 'server.log').write_bytes(run(['docker', 'logs', container]))
-            run(['docker', 'rm', '-f', container])
-            remaining = run(['docker', 'ps', '-aq', '--filter', 'label=nyadb.zookeeper.fixture=' + token]).decode().strip()
-            if remaining:
-                raise RuntimeError('Owned ZooKeeper fixture remained after cleanup')
-            result['container_removed'] = True
+            try:
+                labels = json.loads(run(['docker', 'inspect', container]))[0]['Config']['Labels']
+                if labels.get('nyadb.zookeeper.fixture') != token:
+                    raise RuntimeError('Fixture container ownership changed')
+                (base / 'server.log').write_bytes(run(['docker', 'logs', container]))
+                run(['docker', 'rm', '-f', container])
+                remaining = run(['docker', 'ps', '-aq', '--filter', 'label=nyadb.zookeeper.fixture=' + token]).decode().strip()
+                if remaining:
+                    raise RuntimeError('Owned ZooKeeper fixture remained after cleanup')
+                result['container_removed'] = True
+            except Exception as error:
+                cleanup_errors.append('Owned container cleanup failed: ' + str(error))
+        if cleanup_errors:
+            result['status'] = 'failed'
+            result['public_runtime_accepted'] = False
+            result['public_entry_accepted'] = False
+            result['error'] = '\n'.join(filter(None, [result.get('error'), *cleanup_errors]))
         (base / 'verification.json').write_text(json.dumps(result, indent=2))
-    if result['process_cleanup']['forced_cleanup']:
-        raise RuntimeError('Acceptance required forced native process cleanup')
+        if cleanup_errors:
+            raise RuntimeError('\n'.join(cleanup_errors))
     print(json.dumps(result, indent=2), flush=True)
 
 

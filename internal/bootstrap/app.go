@@ -318,6 +318,10 @@ func Run() error {
 				title = locales.Text("导入 Trino 驱动包")
 				filters = []mygo.FileFilter{{Name: "NyaDB driver packages", Extensions: []string{"zip"}}}
 			}
+			if kind == shell.ZooKeeperDriverPackageFile {
+				title = locales.Text("导入 ZooKeeper 驱动包")
+				filters = []mygo.FileFilter{{Name: "NyaDB driver packages", Extensions: []string{"zip"}}}
+			}
 			if kind == shell.TrinoCAFile {
 				title = locales.Text("选择 Trino CA 证书")
 			}
@@ -329,6 +333,12 @@ func Run() error {
 				title = locales.Text("选择 H2 TLS CA 证书")
 			}
 			switch kind {
+			case shell.ZooKeeperCAFile:
+				title = locales.Text("选择 ZooKeeper CA 证书")
+			case shell.ZooKeeperCertificateFile:
+				title = locales.Text("选择 ZooKeeper 客户端证书")
+			case shell.ZooKeeperKeyFile:
+				title = locales.Text("选择 ZooKeeper 客户端私钥")
 			case shell.RQLiteCAFile:
 				title = locales.Text("选择 RQLite CA 证书")
 			case shell.RQLiteCertificateFile:

@@ -126,6 +126,8 @@ func (s *State) connectEngine(p connections.Profile, invalidate func()) {
 		var metaErr error
 		if e == nil && ctx.Err() == nil {
 			published = session.Generation()
+		}
+		if e == nil && ctx.Err() == nil && session.Capabilities().Metadata {
 			provider, err := contract.Require[contract.MetadataProvider](session)
 			if err != nil {
 				metaErr = err
@@ -217,6 +219,9 @@ func (s *State) engineLabel(w *Workspace) string {
 	}
 	if w.Kind == connections.Consul {
 		return "Consul"
+	}
+	if w.Kind == connections.ZooKeeper {
+		return "ZooKeeper"
 	}
 	if w.Kind == connections.Etcd {
 		return "etcd"

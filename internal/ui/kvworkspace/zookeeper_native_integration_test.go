@@ -26,6 +26,7 @@ import (
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/agentbridge"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/services/dbruntime"
 	"github.com/nyakang/nyadb/internal/services/driverstore"
 	"github.com/nyakang/nyadb/internal/services/zookeeper"
 	"github.com/nyakang/nyadb/internal/ui/theme"
@@ -536,15 +537,53 @@ func (r *nativeZooDropRelay) serve(down net.Conn) {
 }
 
 func TestZooKeeperNativeWorkspaceCommittedLostReplyCancellationRecoveryAndNoReplay(t *testing.T) {
+	testZooKeeperCommittedLostReply(t, false)
+}
+
+func TestZooKeeperNativePublicWorkspaceLostReplyDisconnectRecoveryAndNoReplay(t *testing.T) {
+	if os.Getenv("NYADB_ZOOKEEPER_PUBLIC_IT") != "1" {
+		t.Skip("requires full owned public ZooKeeper acceptance")
+	}
+	testZooKeeperCommittedLostReply(t, true)
+}
+
+func testZooKeeperCommittedLostReply(t *testing.T, public bool) {
 	f := nativeZooSetup(t)
 	observer := nativeZooLease(t, nativeZooSession(t, f, zookeeper.Config{}), 99)
 	root := "/nyadb_provider_lost_" + rand.Text()
 	nativeZooCall(t, observer, "kv_put", nativeZooPut(root, nil, "persistent"))
 	t.Cleanup(func() { nativeZooCall(t, observer, "kv_delete", map[string]any{"key": root, "recursive": true}) })
 	relay := newNativeZooDropRelay(t, f.Endpoint)
-	p := nativeZooSession(t, f, zookeeper.Config{ConnectString: relay.listener.Addr().String()})
+	var p contract.KVRequestsProvider
+	var manager *dbruntime.Manager
+	var publicProfile connections.Profile
+	var alive func() bool
+	providerFor := func(int64) (contract.KVRequestsProvider, error) { return p, nil }
+	if public {
+		manager = dbruntime.New()
+		dbruntime.RegisterBuiltins(manager, nil)
+		t.Cleanup(func() { manager.Close() })
+		parsed, err := connections.ParseURI("zookeeper://" + relay.listener.Addr().String() + "?session_timeout=2000&connect_timeout=5000")
+		if err != nil {
+			t.Fatal(err)
+		}
+		publicProfile = parsed.Profile
+		publicProfile.ID = 7
+		a := &publicProfile.ZooKeeperOptions
+		a.DriverVersion, a.DriverSHA256, a.DriverDirectory = f.options.Driver.Version, f.options.Driver.SHA256, f.options.Driver.Directory
+		if _, err := manager.ConnectSession(driverstore.WithRuntimeObserver(context.Background(), f.options.Started), publicProfile, ""); err != nil {
+			t.Fatal("public original session", err)
+		}
+		p, _ = manager.KVRequests(7)
+		providerFor = manager.KVRequests
+		alive = func() bool { return manager.IsConnected(7) }
+	} else {
+		original := nativeZooSession(t, f, zookeeper.Config{ConnectString: relay.listener.Addr().String()})
+		p = original
+		alive = original.Alive
+	}
 	var active uint64 = 1
-	s := New(Dependencies{ProviderFor: func(int64) (contract.KVRequestsProvider, error) { return p, nil }, Active: func(d *Document) bool { return d.ID() == active }})
+	s := New(Dependencies{ProviderFor: providerFor, Active: func(d *Document) bool { return d.ID() == active }})
 	t.Cleanup(s.CloseAll)
 	d, other := s.Open(1, 7, contract.KVRequest{}), s.Open(2, 7, contract.KVRequest{})
 	s.Preconnect(d)
@@ -576,7 +615,7 @@ func TestZooKeeperNativeWorkspaceCommittedLostReplyCancellationRecoveryAndNoRepl
 		t.Fatal("original executor/process did not settle cancellation")
 	}
 	s.Consume()
-	if d.unknown != nil || !d.Busy() || other.last != nil || !p.Alive() {
+	if d.unknown != nil || !d.Busy() || other.last != nil || !alive() {
 		t.Fatal("parked cancellation consumed by another document or root session lost")
 	}
 	active = d.ID()
@@ -584,7 +623,11 @@ func TestZooKeeperNativeWorkspaceCommittedLostReplyCancellationRecoveryAndNoRepl
 	if d.unknown == nil || !d.unknown.Result.WriteOutcomeUnknown || !d.unknown.Result.ZNode.ProcessExitConfirmed || d.unknown.Result.ZNode.Acknowledged || !d.NeedsRecovery() {
 		t.Fatal("committed lost reply became rollback or acknowledgment")
 	}
-	nativeZooScreenshot(t, f, s, d, "unknown-write")
+	stage := "unknown-write"
+	if public {
+		stage = "public-unknown-write"
+	}
+	nativeZooScreenshot(t, f, s, d, stage)
 	before := f.processes.Load()
 	s.Recover(d)
 	nativeZooConsume(t, s, d)
@@ -597,6 +640,27 @@ func TestZooKeeperNativeWorkspaceCommittedLostReplyCancellationRecoveryAndNoRepl
 	nativeZooConsume(t, s, d)
 	if d.last == nil || !d.last.Result.Completed || d.last.Result.ZNode.Reply.Node.Stat.Version != 0 || d.unknown == nil || relay.creates.Load() != 1 {
 		t.Fatal("recovery read replayed original Create or overwrote uncertainty")
+	}
+	if public {
+		unknown := bytes.Clone(d.unknown.Result.ZNode.Native)
+		last := bytes.Clone(d.last.Result.ZNode.Native)
+		draft := d.Request()
+		if err := manager.Disconnect(7); err != nil {
+			t.Fatal(err)
+		}
+		s.DisconnectProfile(7)
+		if !d.NeedsRecovery() || d.Request() != draft || !bytes.Equal(d.unknown.Result.ZNode.Native, unknown) {
+			t.Fatal("public disconnect lost original unknown receipt")
+		}
+		if _, err := manager.ConnectSession(driverstore.WithRuntimeObserver(context.Background(), f.options.Started), publicProfile, ""); err != nil {
+			t.Fatal(err)
+		}
+		before := f.processes.Load()
+		s.Recover(d)
+		nativeZooConsume(t, s, d)
+		if d.NeedsRecovery() || d.Scope().Generation != manager.Generation(7) || d.Request() != draft || !bytes.Equal(d.unknown.Result.ZNode.Native, unknown) || !bytes.Equal(d.last.Result.ZNode.Native, last) || f.processes.Load() != before || relay.creates.Load() != 1 {
+			t.Fatal("public generation recovery replayed or changed original independent receipts", d.Error())
+		}
 	}
 	s.SetMethod(d, "kv_put")
 	d.Editor.Buffer.Set(string(body))

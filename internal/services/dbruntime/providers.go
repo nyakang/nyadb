@@ -31,9 +31,11 @@ import (
 	"github.com/nyakang/nyadb/internal/services/starrocks"
 	"github.com/nyakang/nyadb/internal/services/tdengine"
 	"github.com/nyakang/nyadb/internal/services/trino"
+	"github.com/nyakang/nyadb/internal/services/zookeeper"
 )
 
 func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
+	m.Register(connections.ZooKeeper, ProviderFunc(zookeeper.OpenSession))
 	m.Register(connections.TDengine, ProviderFunc(tdengine.OpenSession))
 	m.Register(connections.QuestDB, ProviderFunc(questdb.OpenSession))
 	m.Register(connections.RQLite, ProviderFunc(rqlite.OpenSession))

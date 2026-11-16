@@ -238,7 +238,11 @@ func (s *session) Capabilities() contract.Capabilities {
 	caps.Analysis = caps.Analysis && (r.Analyzer != nil || documents.Analysis)
 	caps.Import = caps.Import && (r.Importer != nil || r.StreamImporter != nil || r.PreviewGraphImport != nil && r.SubmitGraphImport != nil || documents.Import)
 	caps.JSONL = caps.JSONL && (r.JSONL != nil || documents.JSONL)
-	caps.Export = caps.Export && (r.Exporter != nil || r.JSONL != nil || r.ExportGraph != nil || documents.Export)
+	// Native request documents export their complete original receipts through
+	// the shared workspace; they do not need a relational data exporter.
+	_, nativeRequestErr := contract.Require[contract.KVRequestsProvider](s.raw)
+	nativeReceiptExport := caps.KeyValues && nativeRequestErr == nil
+	caps.Export = caps.Export && (r.Exporter != nil || r.JSONL != nil || r.ExportGraph != nil || documents.Export || nativeReceiptExport)
 	caps.GraphExchange = caps.GraphExchange && caps.Import && caps.Export && (r.PreviewGraphImport != nil && r.SubmitGraphImport != nil && r.ExportGraph != nil || documents.GraphExchange)
 	return s.managementCapabilities(caps)
 }

@@ -12,6 +12,7 @@ import (
 // Keep the existing column and MySQL JSON format. Other engines use an
 // explicit versioned envelope; older empty records receive engine defaults.
 type engineOptionsEnvelope struct {
+	ZooKeeper     *connections.ZooKeeperOptions     `json:"zookeeper,omitempty"`
 	TDengine      *connections.TDengineOptions      `json:"tdengine,omitempty"`
 	QuestDB       *connections.QuestDBOptions       `json:"questdb,omitempty"`
 	RQLite        *connections.RQLiteOptions        `json:"rqlite,omitempty"`
@@ -46,6 +47,8 @@ type engineOptionsEnvelope struct {
 func encodeProfileOptions(p connections.Profile) (string, error) {
 	var value any
 	switch p.Kind {
+	case connections.ZooKeeper:
+		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, ZooKeeper: &p.ZooKeeperOptions}
 	case connections.TDengine:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, TDengine: &p.TDengineOptions}
 	case connections.QuestDB:
@@ -111,6 +114,9 @@ func encodeProfileOptions(p connections.Profile) (string, error) {
 	return string(raw), err
 }
 func decodeEngineOptions(p *connections.Profile, raw string) error {
+	if p.Kind == connections.ZooKeeper {
+		return decodeZooKeeperSavedOptions(p, raw)
+	}
 	if p.Kind == connections.TDengine {
 		var envelope engineOptionsEnvelope
 		var fields map[string]json.RawMessage
@@ -143,7 +149,7 @@ func decodeEngineOptions(p *connections.Profile, raw string) error {
 			return connections.ErrInvalid
 		}
 		for key := range fields {
-			if strings.EqualFold(key, "questdb") || strings.EqualFold(key, "tdengine") {
+			if strings.EqualFold(key, "questdb") || strings.EqualFold(key, "tdengine") || strings.EqualFold(key, "zookeeper") {
 				return connections.ErrInvalid
 			}
 		}

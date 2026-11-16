@@ -64,13 +64,14 @@ var databaseCatalog = []catalogEntry{
 	{"Neo4j", "Neo4j", "", "全部", "database", "#008cc1", connections.Neo4j},
 	{"etcd", "etcd", "", "全部", "database", "#419eda", connections.Etcd},
 	{"Consul", "Consul", "", "全部", "database", "#ca2171", connections.Consul},
+	{"ZooKeeper", "ZooKeeper", "", "全部", "database", "#e96c25", connections.ZooKeeper},
 	{"H2", "H2", "", "全部", "database", "#156aa3", connections.H2},
 	{"RQLite", "RQLite", "", "全部", "database", "#007fca", connections.RQLite},
 	{"TDengine", "TDengine", "", "全部", "database", "#0089d0", connections.TDengine},
 	{"QuestDB", "QuestDB", "", "全部", "database", "#e43957", connections.QuestDB},
 }
 
-var catalogEngines = []string{"MySQL", "PostgreSQL", "Apache Cloudberry", "OpenTenBase", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "Apache Doris", "SelectDB", "StarRocks", "Trino", "MariaDB", "TiDB", "TDSQL", "PolarDB", "GreatSQL", "Dolt", "OceanBase", "CockroachDB", "openGauss", "GaussDB", "KingbaseES", "达梦", "MongoDB", "Redis", "Elasticsearch", "Easysearch", "Apache Solr", "Apache Cassandra", "Apache CouchDB", "Meilisearch", "Qdrant", "Neo4j", "etcd", "Consul", "Snowflake", "H2", "RQLite", "QuestDB", "TDengine"}
+var catalogEngines = []string{"MySQL", "PostgreSQL", "Apache Cloudberry", "OpenTenBase", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "Apache Doris", "SelectDB", "StarRocks", "Trino", "MariaDB", "TiDB", "TDSQL", "PolarDB", "GreatSQL", "Dolt", "OceanBase", "CockroachDB", "openGauss", "GaussDB", "KingbaseES", "达梦", "MongoDB", "Redis", "Elasticsearch", "Easysearch", "Apache Solr", "Apache Cassandra", "Apache CouchDB", "Meilisearch", "Qdrant", "Neo4j", "etcd", "Consul", "ZooKeeper", "Snowflake", "H2", "RQLite", "QuestDB", "TDengine"}
 var catalogVendors = catalogTreeVendorOrder
 
 func catalogMatch(e catalogEntry, query string, engines, vendors map[string]bool) bool {

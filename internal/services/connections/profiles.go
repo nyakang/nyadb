@@ -10,6 +10,7 @@ import (
 type Kind string
 
 const (
+	ZooKeeper     Kind = "zookeeper"
 	TDengine      Kind = "tdengine"
 	QuestDB       Kind = "questdb"
 	RQLite        Kind = "rqlite"
@@ -64,7 +65,7 @@ func (k Kind) IsMySQLFamily() bool {
 }
 
 // IsNativeKV selects the native request document rather than a SQL editor.
-func (k Kind) IsNativeKV() bool { return k == Etcd || k == Consul }
+func (k Kind) IsNativeKV() bool { return k == Etcd || k == Consul || k == ZooKeeper }
 
 // IsPostgreSQLFamily identifies products sharing PostgreSQL wire transport and options.
 func (k Kind) IsPostgreSQLFamily() bool {
@@ -104,6 +105,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	ZooKeeperOptions     ZooKeeperOptions
 	TDengineOptions      TDengineOptions
 	QuestDBOptions       QuestDBOptions
 	RQLiteOptions        RQLiteOptions

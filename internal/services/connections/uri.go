@@ -37,6 +37,9 @@ func ParseURI(raw string) (URIImport, error) {
 	if strings.HasPrefix(strings.ToLower(raw), "jdbc:h2:") {
 		return parseH2URI(raw)
 	}
+	if strings.HasPrefix(strings.ToLower(raw), "zookeeper://") {
+		return ParseZooKeeperURI("zookeeper://" + raw[len("zookeeper://"):])
+	}
 	for _, prefix := range []string{"jdbc:taos-ws://", "jdbc:taos-rs://"} {
 		if strings.HasPrefix(strings.ToLower(raw), prefix) {
 			raw = "tdengine://" + raw[len(prefix):]

@@ -44279,3 +44279,293 @@ func TrinoDataReadScope() string { return In(i18n.Locale()).TrinoDataReadScope()
 func (msgs Messages) TrinoDataReadScope() string {
 	return Catalog.Format(msgs.locale, "trinoDataReadScope", nil)
 }
+
+// ZookeeperSessionTimeout says "ZooKeeper 会话超时（毫秒）"
+// in the language the app shows.
+func ZookeeperSessionTimeout() string { return In(i18n.Locale()).ZookeeperSessionTimeout() }
+
+// ZookeeperSessionTimeout says "ZooKeeper 会话超时（毫秒）"
+// in the language of msgs.
+func (msgs Messages) ZookeeperSessionTimeout() string {
+	return Catalog.Format(msgs.locale, "zookeeperSessionTimeout", nil)
+}
+
+// ZookeeperConnectTimeout says "ZooKeeper 连接超时（毫秒）"
+// in the language the app shows.
+func ZookeeperConnectTimeout() string { return In(i18n.Locale()).ZookeeperConnectTimeout() }
+
+// ZookeeperConnectTimeout says "ZooKeeper 连接超时（毫秒）"
+// in the language of msgs.
+func (msgs Messages) ZookeeperConnectTimeout() string {
+	return Catalog.Format(msgs.locale, "zookeeperConnectTimeout", nil)
+}
+
+// ZookeeperBufferSize says "ZooKeeper 缓冲区（字节）"
+// in the language the app shows.
+func ZookeeperBufferSize() string { return In(i18n.Locale()).ZookeeperBufferSize() }
+
+// ZookeeperBufferSize says "ZooKeeper 缓冲区（字节）"
+// in the language of msgs.
+func (msgs Messages) ZookeeperBufferSize() string {
+	return Catalog.Format(msgs.locale, "zookeeperBufferSize", nil)
+}
+
+// ZookeeperDocumentLimit says "ZooKeeper 文档连接上限"
+// in the language the app shows.
+func ZookeeperDocumentLimit() string { return In(i18n.Locale()).ZookeeperDocumentLimit() }
+
+// ZookeeperDocumentLimit says "ZooKeeper 文档连接上限"
+// in the language of msgs.
+func (msgs Messages) ZookeeperDocumentLimit() string {
+	return Catalog.Format(msgs.locale, "zookeeperDocumentLimit", nil)
+}
+
+// ZookeeperChroot says "ZooKeeper Chroot"
+// in the language the app shows.
+func ZookeeperChroot() string { return In(i18n.Locale()).ZookeeperChroot() }
+
+// ZookeeperChroot says "ZooKeeper Chroot"
+// in the language of msgs.
+func (msgs Messages) ZookeeperChroot() string {
+	return Catalog.Format(msgs.locale, "zookeeperChroot", nil)
+}
+
+// ZookeeperNamespace says "ZooKeeper Namespace"
+// in the language the app shows.
+func ZookeeperNamespace() string { return In(i18n.Locale()).ZookeeperNamespace() }
+
+// ZookeeperNamespace says "ZooKeeper Namespace"
+// in the language of msgs.
+func (msgs Messages) ZookeeperNamespace() string {
+	return Catalog.Format(msgs.locale, "zookeeperNamespace", nil)
+}
+
+// ZookeeperPrefix says "ZooKeeper 键前缀"
+// in the language the app shows.
+func ZookeeperPrefix() string { return In(i18n.Locale()).ZookeeperPrefix() }
+
+// ZookeeperPrefix says "ZooKeeper 键前缀"
+// in the language of msgs.
+func (msgs Messages) ZookeeperPrefix() string {
+	return Catalog.Format(msgs.locale, "zookeeperPrefix", nil)
+}
+
+// ZookeeperAuth says "ZooKeeper 认证方式"
+// in the language the app shows.
+func ZookeeperAuth() string { return In(i18n.Locale()).ZookeeperAuth() }
+
+// ZookeeperAuth says "ZooKeeper 认证方式"
+// in the language of msgs.
+func (msgs Messages) ZookeeperAuth() string {
+	return Catalog.Format(msgs.locale, "zookeeperAuth", nil)
+}
+
+// ZookeeperDriverPackage says "ZooKeeper 驱动包"
+// in the language the app shows.
+func ZookeeperDriverPackage() string { return In(i18n.Locale()).ZookeeperDriverPackage() }
+
+// ZookeeperDriverPackage says "ZooKeeper 驱动包"
+// in the language of msgs.
+func (msgs Messages) ZookeeperDriverPackage() string {
+	return Catalog.Format(msgs.locale, "zookeeperDriverPackage", nil)
+}
+
+// ZookeeperDriverUnsupported says "驱动包不包含 ZooKeeper 原生驱动。"
+// in the language the app shows.
+func ZookeeperDriverUnsupported() string { return In(i18n.Locale()).ZookeeperDriverUnsupported() }
+
+// ZookeeperDriverUnsupported says "驱动包不包含 ZooKeeper 原生驱动。"
+// in the language of msgs.
+func (msgs Messages) ZookeeperDriverUnsupported() string {
+	return Catalog.Format(msgs.locale, "zookeeperDriverUnsupported", nil)
+}
+
+// ZookeeperOtherServers says "ZooKeeper 其他服务器"
+// in the language the app shows.
+func ZookeeperOtherServers() string { return In(i18n.Locale()).ZookeeperOtherServers() }
+
+// ZookeeperOtherServers says "ZooKeeper 其他服务器"
+// in the language of msgs.
+func (msgs Messages) ZookeeperOtherServers() string {
+	return Catalog.Format(msgs.locale, "zookeeperOtherServers", nil)
+}
+
+// OtherServersLabel says "其他服务器："
+// in the language the app shows.
+func OtherServersLabel() string { return In(i18n.Locale()).OtherServersLabel() }
+
+// OtherServersLabel says "其他服务器："
+// in the language of msgs.
+func (msgs Messages) OtherServersLabel() string {
+	return Catalog.Format(msgs.locale, "otherServersLabel", nil)
+}
+
+// ZookeeperSessionTimeoutLabel says "会话超时（毫秒）"
+// in the language the app shows.
+func ZookeeperSessionTimeoutLabel() string { return In(i18n.Locale()).ZookeeperSessionTimeoutLabel() }
+
+// ZookeeperSessionTimeoutLabel says "会话超时（毫秒）"
+// in the language of msgs.
+func (msgs Messages) ZookeeperSessionTimeoutLabel() string {
+	return Catalog.Format(msgs.locale, "zookeeperSessionTimeoutLabel", nil)
+}
+
+// ZookeeperConnectTimeoutLabel says "连接超时（毫秒）"
+// in the language the app shows.
+func ZookeeperConnectTimeoutLabel() string { return In(i18n.Locale()).ZookeeperConnectTimeoutLabel() }
+
+// ZookeeperConnectTimeoutLabel says "连接超时（毫秒）"
+// in the language of msgs.
+func (msgs Messages) ZookeeperConnectTimeoutLabel() string {
+	return Catalog.Format(msgs.locale, "zookeeperConnectTimeoutLabel", nil)
+}
+
+// ZookeeperBufferSizeLabel says "缓冲区（字节）"
+// in the language the app shows.
+func ZookeeperBufferSizeLabel() string { return In(i18n.Locale()).ZookeeperBufferSizeLabel() }
+
+// ZookeeperBufferSizeLabel says "缓冲区（字节）"
+// in the language of msgs.
+func (msgs Messages) ZookeeperBufferSizeLabel() string {
+	return Catalog.Format(msgs.locale, "zookeeperBufferSizeLabel", nil)
+}
+
+// ZookeeperDocumentLimitLabel says "文档连接上限"
+// in the language the app shows.
+func ZookeeperDocumentLimitLabel() string { return In(i18n.Locale()).ZookeeperDocumentLimitLabel() }
+
+// ZookeeperDocumentLimitLabel says "文档连接上限"
+// in the language of msgs.
+func (msgs Messages) ZookeeperDocumentLimitLabel() string {
+	return Catalog.Format(msgs.locale, "zookeeperDocumentLimitLabel", nil)
+}
+
+// ZookeeperTLS says "ZooKeeper TLS 模式"
+// in the language the app shows.
+func ZookeeperTLS() string { return In(i18n.Locale()).ZookeeperTLS() }
+
+// ZookeeperTLS says "ZooKeeper TLS 模式"
+// in the language of msgs.
+func (msgs Messages) ZookeeperTLS() string {
+	return Catalog.Format(msgs.locale, "zookeeperTLS", nil)
+}
+
+// ZookeeperCA says "ZooKeeper CA 证书"
+// in the language the app shows.
+func ZookeeperCA() string { return In(i18n.Locale()).ZookeeperCA() }
+
+// ZookeeperCA says "ZooKeeper CA 证书"
+// in the language of msgs.
+func (msgs Messages) ZookeeperCA() string {
+	return Catalog.Format(msgs.locale, "zookeeperCA", nil)
+}
+
+// ZookeeperCertificate says "ZooKeeper 客户端证书"
+// in the language the app shows.
+func ZookeeperCertificate() string { return In(i18n.Locale()).ZookeeperCertificate() }
+
+// ZookeeperCertificate says "ZooKeeper 客户端证书"
+// in the language of msgs.
+func (msgs Messages) ZookeeperCertificate() string {
+	return Catalog.Format(msgs.locale, "zookeeperCertificate", nil)
+}
+
+// ZookeeperKey says "ZooKeeper 客户端私钥"
+// in the language the app shows.
+func ZookeeperKey() string { return In(i18n.Locale()).ZookeeperKey() }
+
+// ZookeeperKey says "ZooKeeper 客户端私钥"
+// in the language of msgs.
+func (msgs Messages) ZookeeperKey() string {
+	return Catalog.Format(msgs.locale, "zookeeperKey", nil)
+}
+
+// ZookeeperSelectCA says "选择 ZooKeeper CA 证书"
+// in the language the app shows.
+func ZookeeperSelectCA() string { return In(i18n.Locale()).ZookeeperSelectCA() }
+
+// ZookeeperSelectCA says "选择 ZooKeeper CA 证书"
+// in the language of msgs.
+func (msgs Messages) ZookeeperSelectCA() string {
+	return Catalog.Format(msgs.locale, "zookeeperSelectCA", nil)
+}
+
+// ZookeeperSelectCertificate says "选择 ZooKeeper 客户端证书"
+// in the language the app shows.
+func ZookeeperSelectCertificate() string { return In(i18n.Locale()).ZookeeperSelectCertificate() }
+
+// ZookeeperSelectCertificate says "选择 ZooKeeper 客户端证书"
+// in the language of msgs.
+func (msgs Messages) ZookeeperSelectCertificate() string {
+	return Catalog.Format(msgs.locale, "zookeeperSelectCertificate", nil)
+}
+
+// ZookeeperSelectKey says "选择 ZooKeeper 客户端私钥"
+// in the language the app shows.
+func ZookeeperSelectKey() string { return In(i18n.Locale()).ZookeeperSelectKey() }
+
+// ZookeeperSelectKey says "选择 ZooKeeper 客户端私钥"
+// in the language of msgs.
+func (msgs Messages) ZookeeperSelectKey() string {
+	return Catalog.Format(msgs.locale, "zookeeperSelectKey", nil)
+}
+
+// ZookeeperNumbersInvalid says "请检查 ZooKeeper 超时、缓冲区和文档上限"
+// in the language the app shows.
+func ZookeeperNumbersInvalid() string { return In(i18n.Locale()).ZookeeperNumbersInvalid() }
+
+// ZookeeperNumbersInvalid says "请检查 ZooKeeper 超时、缓冲区和文档上限"
+// in the language of msgs.
+func (msgs Messages) ZookeeperNumbersInvalid() string {
+	return Catalog.Format(msgs.locale, "zookeeperNumbersInvalid", nil)
+}
+
+// ZookeeperDriverRequired says "请选择或导入已安装的 ZooKeeper 驱动包"
+// in the language the app shows.
+func ZookeeperDriverRequired() string { return In(i18n.Locale()).ZookeeperDriverRequired() }
+
+// ZookeeperDriverRequired says "请选择或导入已安装的 ZooKeeper 驱动包"
+// in the language of msgs.
+func (msgs Messages) ZookeeperDriverRequired() string {
+	return Catalog.Format(msgs.locale, "zookeeperDriverRequired", nil)
+}
+
+// ZookeeperProfileInvalid says "请检查 ZooKeeper 服务器、命名空间和 TLS 设置"
+// in the language the app shows.
+func ZookeeperProfileInvalid() string { return In(i18n.Locale()).ZookeeperProfileInvalid() }
+
+// ZookeeperProfileInvalid says "请检查 ZooKeeper 服务器、命名空间和 TLS 设置"
+// in the language of msgs.
+func (msgs Messages) ZookeeperProfileInvalid() string {
+	return Catalog.Format(msgs.locale, "zookeeperProfileInvalid", nil)
+}
+
+// ZookeeperCredentialInvalid says "请检查 ZooKeeper 凭据"
+// in the language the app shows.
+func ZookeeperCredentialInvalid() string { return In(i18n.Locale()).ZookeeperCredentialInvalid() }
+
+// ZookeeperCredentialInvalid says "请检查 ZooKeeper 凭据"
+// in the language of msgs.
+func (msgs Messages) ZookeeperCredentialInvalid() string {
+	return Catalog.Format(msgs.locale, "zookeeperCredentialInvalid", nil)
+}
+
+// ZookeeperImportDriver says "导入 ZooKeeper 驱动包"
+// in the language the app shows.
+func ZookeeperImportDriver() string { return In(i18n.Locale()).ZookeeperImportDriver() }
+
+// ZookeeperImportDriver says "导入 ZooKeeper 驱动包"
+// in the language of msgs.
+func (msgs Messages) ZookeeperImportDriver() string {
+	return Catalog.Format(msgs.locale, "zookeeperImportDriver", nil)
+}
+
+// ConnectionPasswordLabel says "连接密码"
+// in the language the app shows.
+func ConnectionPasswordLabel() string { return In(i18n.Locale()).ConnectionPasswordLabel() }
+
+// ConnectionPasswordLabel says "连接密码"
+// in the language of msgs.
+func (msgs Messages) ConnectionPasswordLabel() string {
+	return Catalog.Format(msgs.locale, "connectionPasswordLabel", nil)
+}

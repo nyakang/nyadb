@@ -63,7 +63,7 @@ func (s *session) bindKV(raw contract.KVRequestLease, document uint64) (contract
 	}
 	scope := raw.Scope().Clone()
 	expected := s.KVScope()
-	if scope.Namespace.ProfileID != s.id || scope.Namespace != expected.Namespace || scope.Generation != s.raw.Generation() || !bytes.Equal(scope.Prefix, expected.Prefix) || scope.Header != expected.Header || scope.HTTP != expected.HTTP || scope.Version != expected.Version || !s.alive() {
+	if scope.Namespace.ProfileID != s.id || scope.Namespace != expected.Namespace || scope.Generation != s.raw.Generation() || !bytes.Equal(scope.Prefix, expected.Prefix) || scope.Header != expected.Header || scope.HTTP != expected.HTTP || scope.ZNode != expected.ZNode || scope.Version != expected.Version || !s.alive() {
 		return nil, errors.Join(contract.ErrRevoked, raw.Close())
 	}
 	scope.Generation = s.generation
@@ -107,7 +107,7 @@ func (s *session) RecoverKV(previous contract.KVRequestLease) (contract.KVRecove
 		return contract.KVRecovery{}, err
 	}
 	current := s.KVScope()
-	if old.scope.Namespace != current.Namespace || !bytes.Equal(old.scope.Prefix, current.Prefix) || old.scope.Header.ClusterID != current.Header.ClusterID || old.scope.Header.MemberID != current.Header.MemberID || old.scope.HTTP != current.HTTP || old.scope.Version != current.Version {
+	if old.scope.Namespace != current.Namespace || !bytes.Equal(old.scope.Prefix, current.Prefix) || old.scope.Header.ClusterID != current.Header.ClusterID || old.scope.Header.MemberID != current.Header.MemberID || old.scope.HTTP != current.HTTP || old.scope.ZNode != current.ZNode || old.scope.Version != current.Version {
 		return contract.KVRecovery{}, contract.ErrRevoked
 	}
 	// Revoke the original wrapper immediately; the raw provider waits for its

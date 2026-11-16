@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
@@ -39,6 +40,16 @@ func scanProfile(scan func(...any) error) (connections.Profile, error) {
 	}
 	p.Port = uint16(port)
 	if p.Kind.IsMySQLFamily() {
+		// MySQL retains its legacy decoder, but must not silently discard a
+		// native product envelope, including case variants or null options.
+		var fields map[string]json.RawMessage
+		if advancedJSON != "" && json.Unmarshal([]byte(advancedJSON), &fields) == nil {
+			for key := range fields {
+				if strings.EqualFold(key, "zookeeper") {
+					return connections.Profile{}, connections.ErrInvalid
+				}
+			}
+		}
 		if advancedJSON == "" {
 			p.MySQLAdvanced = connections.DefaultMySQLAdvanced()
 		} else if err := json.Unmarshal([]byte(advancedJSON), &p.MySQLAdvanced); err != nil {

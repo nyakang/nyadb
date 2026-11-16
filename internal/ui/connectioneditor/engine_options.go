@@ -47,6 +47,10 @@ const (
 	RQLiteKeyFile
 	TrinoDriverPackageFile
 	TrinoCAFile
+	ZooKeeperDriverPackageFile
+	ZooKeeperCAFile
+	ZooKeeperCertificateFile
+	ZooKeeperKeyFile
 )
 
 func (s *State) SetEngineFilePicker(pick func(EngineFile, int, uint64)) { s.engineFilePicker = pick }
@@ -55,6 +59,28 @@ func (s *State) EngineFileVersion() uint64 { return s.engineFileVersion }
 
 func (s *State) SelectEngineFile(kind EngineFile, row int, version uint64, path string) {
 	if !s.active || version != s.engineFileVersion || path == "" {
+		return
+	}
+	if kind >= ZooKeeperDriverPackageFile && kind <= ZooKeeperKeyFile {
+		if s.connectionDraft.Kind != connections.ZooKeeper {
+			return
+		}
+		if kind == ZooKeeperDriverPackageFile {
+			s.ImportDriverPackage(path)
+			return
+		}
+		if s.connectionDraft.TLSMode != "verify-full" {
+			return
+		}
+		s.cancelMySQLConnectionTest()
+		switch kind {
+		case ZooKeeperCAFile:
+			s.connectionDraft.ZooKeeperOptions.CAFile = path
+		case ZooKeeperCertificateFile:
+			s.connectionDraft.ZooKeeperOptions.ClientCertFile = path
+		case ZooKeeperKeyFile:
+			s.connectionDraft.ZooKeeperOptions.ClientKeyFile = path
+		}
 		return
 	}
 	if kind == TrinoDriverPackageFile || kind == TrinoCAFile {
@@ -236,6 +262,9 @@ func (s *State) EngineFilePickerError(version uint64) {
 }
 
 func (s *State) initEngineOptionsInputs() {
+	if s.connectionDraft.Kind == connections.ZooKeeper {
+		s.initializeZooKeeperInputs()
+	}
 	if s.connectionDraft.Kind == connections.Consul {
 		a := s.connectionDraft.ConsulOptions
 		s.engineNumbers[0], s.engineNumbers[1] = strconv.Itoa(a.ConnectTimeoutSeconds), strconv.Itoa(a.RequestTimeoutSeconds)
@@ -321,6 +350,9 @@ func (s *State) initEngineOptionsInputs() {
 }
 
 func (s *State) advanceEngineOptions(p *connections.Profile) error {
+	if p.Kind == connections.ZooKeeper {
+		return s.advanceZooKeeperOptions(p)
+	}
 	if p.Kind == connections.Trino {
 		return s.advanceTrinoOptions(p)
 	}
@@ -469,6 +501,8 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 	formWidth := connectionScaledFormWidth(c, width)
 	labelWidth, fieldWidth := connectionFormLabelWidth, formWidth-connectionFormLabelWidth
 	switch s.connectionDraft.Kind {
+	case connections.ZooKeeper:
+		return s.zookeeperOptions(c, width, tab)
 	case connections.TDengine:
 		return s.tdengineOptions(c, width, tab)
 	case connections.QuestDB:

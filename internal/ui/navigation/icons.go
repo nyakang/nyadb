@@ -28,6 +28,8 @@ func profileBrand(kind connections.Kind, p theme.Palette) (asset, fallback strin
 		return "", "database", ui.Hex("#2d8cff")
 	case connections.Consul:
 		return "", "database", ui.Hex("#ca2171")
+	case connections.ZooKeeper:
+		return "", "database", ui.Hex("#e96c25")
 	case connections.Etcd:
 		return "", "database", ui.Hex("#419eda")
 	case connections.Neo4j:

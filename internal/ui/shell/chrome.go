@@ -475,7 +475,7 @@ func (s *State) toolBar(c *ui.Context) {
 // Disabled commands keep their place in the native toolbar and its overflow
 // menu, but never announce a successful operation for an unsupported feature.
 func (s *State) toolbarActionAvailable(action string) bool {
-	if p, ok := s.currentProfile(); s.profileMode && ok && p.Kind == connections.Consul {
+	if p, ok := s.currentProfile(); s.profileMode && ok && (p.Kind == connections.Consul || p.Kind == connections.ZooKeeper) {
 		switch action {
 		case "连接", "信息", "新建 KV 请求":
 		case "键":

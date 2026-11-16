@@ -51,6 +51,8 @@ func (s *Service) Duplicate(ctx context.Context, id int64, name string) (Profile
 // Defaults are UI-independent initial values, not connection attempts.
 func Defaults(kind Kind) (Profile, error) {
 	switch kind {
+	case ZooKeeper:
+		return Profile{Kind: ZooKeeper, Host: "localhost", Port: 2181, TLSMode: "disable", ZooKeeperOptions: DefaultZooKeeperOptions()}, nil
 	case TDengine:
 		return Profile{Kind: TDengine, Host: "localhost", Port: 6041, Username: "root", TLSMode: "disable", TDengineOptions: DefaultTDengineOptions()}, nil
 	case QuestDB:
