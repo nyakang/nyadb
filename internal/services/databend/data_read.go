@@ -211,6 +211,7 @@ func (l *dataLease) row(ctx context.Context, id int64, db, table string, ref con
 		if err != nil {
 			return err
 		}
+		p.rawJSON = true
 		query := "SELECT " + strings.Join(p.selects, ",") + " FROM " + source + " WHERE " + quoteName(dataReadAlias) + `."_row_id"=` + g.RowID + " LIMIT 2"
 		rows := 0
 		err = l.readRows(child, original, query, p, func(cells []contract.Cell, digests []*string, _ []int64, rowid string) error {
@@ -221,12 +222,20 @@ func (l *dataLease) row(ctx context.Context, id int64, db, table string, ref con
 			if err := validateDataGrant(g, m, digests, rowid); err != nil {
 				return err
 			}
-			s, err := l.snapshot(m, cells, digests, rowid)
+			preview, complete, err := dataRowProjections(cells)
 			if err != nil {
 				return err
 			}
-			result = &contract.DataRow{Columns: slices.Clone(m.Columns), Values: map[string]contract.DataValue{}, Snapshot: s}
-			for i, c := range cells {
+			observed, err := l.snapshot(m, preview, digests, rowid)
+			if err != nil {
+				return err
+			}
+			s, err := l.snapshot(m, complete, digests, rowid)
+			if err != nil {
+				return err
+			}
+			result = &contract.DataRow{Columns: slices.Clone(m.Columns), Values: map[string]contract.DataValue{}, Snapshot: s, PreviewSnapshot: observed}
+			for i, c := range complete {
 				result.Values[m.Columns[i].Name] = contract.DataValue{Kind: c.Kind, Text: c.Text, Bytes: bytes.Clone(c.Bytes), Null: c.Kind == contract.Null, Binary: c.Kind == contract.Binary}
 			}
 			return nil
@@ -237,6 +246,42 @@ func (l *dataLease) row(ctx context.Context, id int64, db, table string, ref con
 		return err
 	})
 	return result, err
+}
+
+// Both projections derive from one executor row after its original signed
+// grant is checked. Native JSON whitespace counts toward the bounded preview;
+// complete typed JSON keeps the established canonical value representation.
+func dataRowProjections(cells []contract.Cell) ([]contract.Cell, []contract.Cell, error) {
+	preview, complete := make([]contract.Cell, len(cells)), make([]contract.Cell, len(cells))
+	for i, c := range cells {
+		preview[i], complete[i] = c.Clone(), c.Clone()
+		if c.Kind == contract.Null {
+			continue
+		}
+		if c.Kind == contract.Binary {
+			if len(c.Bytes) > dataPreviewUnits {
+				preview[i].Bytes = bytes.Clone(c.Bytes[:dataPreviewUnits])
+				preview[i].Truncated = true
+			}
+		} else {
+			runes := []rune(c.Text)
+			if len(runes) > dataPreviewUnits {
+				preview[i].Text = string(runes[:dataPreviewUnits])
+				preview[i].Truncated = true
+			}
+		}
+		if c.Kind == contract.JSON {
+			var compact bytes.Buffer
+			if json.Compact(&compact, []byte(c.Text)) != nil {
+				return nil, nil, contract.ErrDataPage
+			}
+			complete[i].Text = compact.String()
+			if !preview[i].Truncated {
+				preview[i].Text = compact.String()
+			}
+		}
+	}
+	return preview, complete, nil
 }
 
 func (l *dataLease) chunk(ctx context.Context, id int64, db, table, column string, ref contract.RowRef, offset int64, limit int) (*contract.FieldChunk, error) {

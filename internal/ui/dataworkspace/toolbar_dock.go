@@ -121,7 +121,7 @@ func (s *State) dataDock(c *ui.Context, t *Document) {
 		// cell so showing the dock never collapses a row or rectangle selection.
 		singleCell := t.grid.ColumnSelection == nil && !t.grid.Cells.All && len(mysqlDataSelectedColumns(t)) == 1 &&
 			(t.selection.Len() == 0 || t.selection.Len() == 1 && t.selection.Has(t.selectedRow))
-		if singleCell && !t.edit.Busy && mysqlDataCanEdit(t, t.selectedRow, source) {
+		if singleCell && !t.edit.Busy && t.edit.Err == "" && mysqlDataCanEdit(t, t.selectedRow, source) {
 			e := t.edit.Editor
 			if e == nil || e.Row != t.selectedRow || e.Field != t.page.Columns[source] {
 				s.beginMySQLCellEdit(c.Services(), t, t.selectedRow, source, false)

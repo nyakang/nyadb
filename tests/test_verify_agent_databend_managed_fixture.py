@@ -1,5 +1,6 @@
 import base64
 import copy
+from decimal import Decimal
 import importlib.util
 import json
 from pathlib import Path
@@ -19,6 +20,26 @@ with mock.patch.object(sys, 'path', [str(TOOLS), *sys.path]):
 
 
 class DatabendManagedDiagnosticTests(unittest.TestCase):
+    def test_copied_workbench_receipt_preserves_complete_original_response_and_exact_timings(self):
+        wire = self.receipt(FIXTURE.WORKBENCH_REQUIRED[0], 'workbench-data-write',
+                            {'rows': [[1]], 'query_timings_ms': {'jdbc_execute': 0.558238}})
+        executor = json.loads(json.dumps(wire), parse_float=Decimal)
+        native = {'Receipt': wire['receipt'],
+                  'Original': json.loads(base64.b64decode(wire['native_bytes']))}
+        FIXTURE.verify_workbench_statement(executor, {'NativeJSON': json.dumps(native)})
+        for change in ['missing', 'result', 'original', 'acknowledgement']:
+            with self.subTest(change=change), self.assertRaises(RuntimeError):
+                altered = copy.deepcopy(native)
+                if change == 'missing':
+                    altered.pop('Original')
+                elif change == 'result':
+                    altered['Receipt']['Result']['rows'] = [[2]]
+                elif change == 'original':
+                    altered['Original']['result']['query_timings_ms']['jdbc_execute'] = 0.558239
+                else:
+                    altered['Receipt']['ExecutorAcknowledged'] = False
+                FIXTURE.verify_workbench_statement(executor, {'NativeJSON': json.dumps(altered)})
+
     def test_every_managed_case_must_pass_without_skip_or_substitution(self):
         output = '\n'.join('--- PASS: ' + name + ' (0.01s)' for name in FIXTURE.REQUIRED)
         FIXTURE.verify_named_acceptance(output)
@@ -29,7 +50,7 @@ class DatabendManagedDiagnosticTests(unittest.TestCase):
             FIXTURE.verify_named_acceptance('--- PASS: TestDatabendPublicProvider (0.01s)')
 
     def test_private_provider_and_runtime_require_their_actual_named_cases(self):
-        names = FIXTURE.REQUIRED + FIXTURE.PROVIDER_REQUIRED + FIXTURE.RUNTIME_REQUIRED + FIXTURE.DATA_REQUIRED
+        names = FIXTURE.REQUIRED + FIXTURE.PROVIDER_REQUIRED + FIXTURE.RUNTIME_REQUIRED + FIXTURE.DATA_REQUIRED + FIXTURE.WORKBENCH_REQUIRED
         output = '\n'.join('--- PASS: ' + name + ' (0.01s)' for name in names)
         FIXTURE.verify_named_acceptance(output, names)
         for name in names:

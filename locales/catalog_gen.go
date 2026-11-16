@@ -44569,3 +44569,53 @@ func ConnectionPasswordLabel() string { return In(i18n.Locale()).ConnectionPassw
 func (msgs Messages) ConnectionPasswordLabel() string {
 	return Catalog.Format(msgs.locale, "connectionPasswordLabel", nil)
 }
+
+// DatabendDataReadScope says "Databend 分页读取当前可见数据，跨页不提供一致快照。"
+// in the language the app shows.
+func DatabendDataReadScope() string { return In(i18n.Locale()).DatabendDataReadScope() }
+
+// DatabendDataReadScope says "Databend 分页读取当前可见数据，跨页不提供一致快照。"
+// in the language of msgs.
+func (msgs Messages) DatabendDataReadScope() string {
+	return Catalog.Format(msgs.locale, "databendDataReadScope", nil)
+}
+
+// DatabendDataMutationTitle says "确认 Databend 数据更改"
+// in the language the app shows.
+func DatabendDataMutationTitle() string { return In(i18n.Locale()).DatabendDataMutationTitle() }
+
+// DatabendDataMutationTitle says "确认 Databend 数据更改"
+// in the language of msgs.
+func (msgs Messages) DatabendDataMutationTitle() string {
+	return Catalog.Format(msgs.locale, "databendDataMutationTitle", nil)
+}
+
+// DatabendDataMutationHint says "…"
+// in the language the app shows.
+func DatabendDataMutationHint() string { return In(i18n.Locale()).DatabendDataMutationHint() }
+
+// DatabendDataMutationHint says "…"
+// in the language of msgs.
+func (msgs Messages) DatabendDataMutationHint() string {
+	return Catalog.Format(msgs.locale, "databendDataMutationHint", nil)
+}
+
+// DatabendDataMutationPreview says "Databend 原生写入完整预览"
+// in the language the app shows.
+func DatabendDataMutationPreview() string { return In(i18n.Locale()).DatabendDataMutationPreview() }
+
+// DatabendDataMutationPreview says "Databend 原生写入完整预览"
+// in the language of msgs.
+func (msgs Messages) DatabendDataMutationPreview() string {
+	return Catalog.Format(msgs.locale, "databendDataMutationPreview", nil)
+}
+
+// DatabendDataMutationHistory says "已确认的 Databend 数据更改"
+// in the language the app shows.
+func DatabendDataMutationHistory() string { return In(i18n.Locale()).DatabendDataMutationHistory() }
+
+// DatabendDataMutationHistory says "已确认的 Databend 数据更改"
+// in the language of msgs.
+func (msgs Messages) DatabendDataMutationHistory() string {
+	return Catalog.Format(msgs.locale, "databendDataMutationHistory", nil)
+}

@@ -65,6 +65,7 @@ type dataProjection struct {
 	rowID    bool
 	complete bool
 	rawSlice bool
+	rawJSON  bool
 	offset   int64
 	limit    int
 }
@@ -179,7 +180,9 @@ func (p *dataProjection) decode(columns []contract.Column, row []contract.Cell) 
 				if json.Compact(&compact, []byte(cell.Text)) != nil {
 					return nil, nil, nil, "", contract.ErrDataPage
 				}
-				cell.Text = compact.String()
+				if !p.rawJSON {
+					cell.Text = compact.String()
+				}
 			}
 		case contract.Integer:
 			if !cell.Truncated {

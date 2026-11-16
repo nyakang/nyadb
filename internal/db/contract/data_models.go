@@ -209,6 +209,10 @@ type DataRow struct {
 	Columns  []StructureColumn
 	Values   map[string]DataValue
 	Snapshot *RowSnapshot
+	// PreviewSnapshot is the same original observation projected at the page's
+	// bounded size. Providers validate the original request before returning it
+	// with a complete values Snapshot; readers never infer matching suffixes.
+	PreviewSnapshot *RowSnapshot `json:",omitempty"`
 }
 
 type DataEdit struct {

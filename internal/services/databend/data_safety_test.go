@@ -79,6 +79,25 @@ func TestFieldSlicesKeepNativeJSONTextAndBounds(t *testing.T) {
 	}
 }
 
+func TestCompleteRowReproducesNativeBoundedPreviewWithoutChangingTypedJSON(t *testing.T) {
+	text := strings.Repeat("猫", dataPreviewUnits+1) + "end"
+	rawJSON := "[\n  \"" + strings.Repeat("猫", dataPreviewUnits+1) + "\"\n]"
+	binary := bytes.Repeat([]byte{0, 255, 128}, 700)
+	cells := []contract.Cell{{Kind: contract.Text, Text: text}, {Kind: contract.JSON, Text: rawJSON}, {Kind: contract.Binary, Bytes: binary}, {Kind: contract.Null}, {Kind: contract.JSON, Text: "null"}}
+	preview, full, err := dataRowProjections(cells)
+	if err != nil || len([]rune(preview[0].Text)) != dataPreviewUnits || preview[1].Text != string([]rune(rawJSON)[:dataPreviewUnits]) || len(preview[2].Bytes) != dataPreviewUnits || !preview[0].Truncated || !preview[1].Truncated || !preview[2].Truncated || preview[3].Kind != contract.Null || preview[4].Kind != contract.JSON {
+		t.Fatal("complete observation failed to reproduce its bounded native projection", err)
+	}
+	if full[0].Text != text || full[1].Text != `["`+strings.Repeat("猫", dataPreviewUnits+1)+`"]` || !bytes.Equal(full[2].Bytes, binary) || full[2].Truncated || full[4].Text != "null" {
+		t.Fatal("complete native values changed while reproducing preview")
+	}
+	preview[2].Bytes[0] = 7
+	full[2].Bytes[1] = 7
+	if binary[0] != 0 || binary[1] != 255 {
+		t.Fatal("complete/preview projections aliased original bytes")
+	}
+}
+
 func fmtInt(n int64) string { return strconv.FormatInt(n, 10) }
 
 func safetyLease(t *testing.T) (*dataLease, *contract.TableStructure) {

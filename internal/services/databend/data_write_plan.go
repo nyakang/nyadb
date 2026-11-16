@@ -106,7 +106,7 @@ func (l *dataLease) previewEdits(ctx context.Context, id int64, db, table string
 					return connections.ErrInvalid
 				}
 				seen[entity] = true
-				if err = l.checkOriginalEdit(child, original, m, s, e); err != nil {
+				if err = l.checkOriginalEdit(child, original, m, s, e, false); err != nil {
 					return err
 				}
 			}
@@ -255,7 +255,7 @@ func dataGrantWhere(m *contract.TableStructure, g dataGrant) (string, error) {
 	return strings.Join(predicates, " AND "), nil
 }
 
-func (l *dataLease) checkOriginalEdit(ctx context.Context, original *ManagedSession, m *contract.TableStructure, statement dataStatement, e contract.DataEdit) error {
+func (l *dataLease) checkOriginalEdit(ctx context.Context, original *ManagedSession, m *contract.TableStructure, statement dataStatement, e contract.DataEdit, afterOwnWrite bool) error {
 	complete := e.Kind == "update"
 	if e.Kind == "delete" {
 		complete = true
@@ -275,14 +275,26 @@ func (l *dataLease) checkOriginalEdit(ctx context.Context, original *ManagedSess
 	if err != nil {
 		return err
 	}
-	query := "SELECT " + strings.Join(p.selects, ",") + " FROM " + source + " WHERE " + quoteName(dataReadAlias) + `."_row_id"=` + statement.Grant.RowID + " LIMIT 2"
+	// A FUSE UPDATE rewrites its block and changes even untouched rows' hidden
+	// IDs. Only after this batch's acknowledged prefix do we locate the suffix
+	// by its signed original field match. Initial previews/submits and field
+	// reads still require the captured row ID. This is not concurrency isolation.
+	where := quoteName(dataReadAlias) + `."_row_id"=` + statement.Grant.RowID
+	if afterOwnWrite {
+		where = statement.Where
+	}
+	query := "SELECT " + strings.Join(p.selects, ",") + " FROM " + source + " WHERE " + where + " LIMIT 2"
 	rows := 0
 	err = l.readRows(ctx, original, query, p, func(cells []contract.Cell, digests []*string, _ []int64, id string) error {
 		rows++
 		if rows != 1 {
 			return contract.ErrDataConflict
 		}
-		if err := validateDataGrant(statement.Grant, m, digests, id); err != nil {
+		matching := statement.Grant
+		if afterOwnWrite {
+			matching.RowID = id
+		}
+		if err := validateDataGrant(matching, m, digests, id); err != nil {
 			return err
 		}
 		for i, c := range cells {
@@ -352,7 +364,7 @@ func (l *dataLease) submitEdits(ctx context.Context, id int64, db, table string,
 				return contract.ErrDataConflict
 			}
 			if snapshot.Edits[i].Original != nil {
-				if err = l.checkOriginalEdit(child, original, m, s, snapshot.Edits[i]); err != nil {
+				if err = l.checkOriginalEdit(child, original, m, s, snapshot.Edits[i], result.Applied > 0); err != nil {
 					return err
 				}
 			}

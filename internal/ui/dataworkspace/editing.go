@@ -829,7 +829,7 @@ func (s *State) consumeEdits(services ui.Services) {
 				if t.page != nil {
 					source = slices.Index(t.page.Columns, r.Field)
 				}
-				if r.Row == nil || source < 0 || !mysqlDataCanEdit(t, row, source) || mysqlDataRowKey(t, row) != r.TargetKey || row >= len(t.page.RowSnapshots) || !reflect.DeepEqual(t.page.RowSnapshots[row], r.Row.Snapshot) {
+				if r.Row == nil || source < 0 || !mysqlDataCanEdit(t, row, source) || mysqlDataRowKey(t, row) != r.TargetKey || row >= len(t.page.RowSnapshots) || !dataCompleteRowMatches(t.page.RowSnapshots[row], r.Row) {
 					t.edit.Err = contract.ErrDataConflict.Error()
 					continue
 				}
@@ -838,6 +838,12 @@ func (s *State) consumeEdits(services ui.Services) {
 				if !ok {
 					t.edit.Err = contract.ErrDataPage.Error()
 					continue
+				}
+				if r.Row.PreviewSnapshot != nil {
+					t.page.RowSnapshots[row] = cloneSnapshot(r.Row.Snapshot)
+					if draft := mysqlDataDraftForRow(t, row); draft != nil {
+						draft.Original = cloneSnapshot(r.Row.Snapshot)
+					}
 				}
 				if d := mysqlDataDraftForRow(t, row); d != nil {
 					if value, ok := d.Values[field]; ok {

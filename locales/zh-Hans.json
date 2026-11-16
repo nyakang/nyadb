@@ -4374,5 +4374,10 @@
   "zookeeperProfileInvalid": "请检查 ZooKeeper 服务器、命名空间和 TLS 设置",
   "zookeeperCredentialInvalid": "请检查 ZooKeeper 凭据",
   "zookeeperImportDriver": "导入 ZooKeeper 驱动包",
-  "connectionPasswordLabel": "连接密码"
+  "connectionPasswordLabel": "连接密码",
+  "databendDataReadScope": "Databend 分页读取当前可见数据，跨页不提供一致快照。",
+  "databendDataMutationTitle": "确认 Databend 数据更改",
+  "databendDataMutationHint": "各语句独立执行，不提供批次事务。更改已有行会匹配原始字段并检查唯一匹配；检查不能保证跨语句并发隔离。不完整或未知回执保留草稿并禁止重放。",
+  "databendDataMutationPreview": "Databend 原生写入完整预览",
+  "databendDataMutationHistory": "已确认的 Databend 数据更改"
 }

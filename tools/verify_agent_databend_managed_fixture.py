@@ -37,6 +37,125 @@ DATA_REQUIRED = [
     'TestDatabendDataOriginalDroppedReplyKeepsUnknownWriteAndIndependentDocument',
     'TestDatabendDataOriginalCancellationWaitsForExecutorAndCloseReleasesRequests',
 ]
+WORKBENCH_REQUIRED = [
+    'TestDatabendWorkbenchOriginalTypedGridPagingConfirmationAndReceipts',
+    'TestDatabendWorkbenchOriginalParkedWriteAndRevokedMetadata',
+    'TestDatabendWorkbenchOriginalUnknownReceiptGuardAndExplicitSQLRecovery',
+    'TestDatabendWorkbenchOriginalBoundedFieldsCompleteEditingAndExport',
+]
+
+
+def verify_workbench_statement(executor, statement):
+    native = json.loads(statement['NativeJSON'], parse_float=Decimal)
+    original = json.loads(base64.b64decode(executor['native_bytes'], validate=True), parse_float=Decimal)
+    if native.get('Receipt') != executor['receipt'] or native.get('Original') != original:
+        raise RuntimeError('UI receipt changed or omitted its complete original executor response')
+
+
+def verify_workbench_receipts(directory, database):
+    from PIL import Image
+    records = [json.loads(line, parse_float=Decimal) for line in
+               (directory / 'original-receipts.jsonl').read_text().splitlines()]
+    records = [r for r in records if any(r['test'] == n or r['test'].startswith(n + '/')
+                                       for n in WORKBENCH_REQUIRED)]
+    for record in records:
+        transport.verify_receipt(record)
+    for name in WORKBENCH_REQUIRED:
+        methods = {r['method'] for r in records if r['test'] == name or r['test'].startswith(name + '/')}
+        if {'workbench-handshake', 'workbench-metadata-open', 'workbench-metadata-query',
+                'workbench-data-cursor', 'workbench-data-write'} - methods:
+            raise RuntimeError('Shared workbench lacks original connection/data/write receipts: ' + name)
+    acceptance = [json.loads(line) for line in
+                  (directory / 'workbench-acceptance.jsonl').read_text().splitlines()]
+    if len(acceptance) != 1:
+        raise RuntimeError('Original shared-grid acceptance missing or duplicated')
+    core = acceptance[0]
+    if (core['test'] != WORKBENCH_REQUIRED[0] or core['object']['Schema'] != database or
+            core['pages'] != [200, 5] or core.get('public_provider_registered') is not False or
+            any(core.get(k) is not True for k in ['typed_values', 'field_read', 'complete_editor',
+                'preview_cancel_kept_draft', 'native_update_insert_delete', 'empty_map_ui_writes', 'omitted_defaults'])):
+        raise RuntimeError('Original shared workbench identity/types/workflows incomplete')
+    mutations = [r['receipt']['Result'] for r in records if r['test'] == WORKBENCH_REQUIRED[0]
+                 and r['method'] == 'workbench-data-write']
+    if ([r.get('columns') for r in mutations] != [['number of rows updated'], ['number of rows inserted'],
+                                                 ['number of rows deleted']] or
+            any(r.get('rows') != [[1]] or r.get('column_types') != ['uint64'] or
+                r.get('affected_rows') != 0 or r.get('truncated') is not False for r in mutations)):
+        raise RuntimeError('Original UI mutations lack complete native counts or were replayed')
+    core_executors = [r for r in records if r['test'] == WORKBENCH_REQUIRED[0] and
+                      r['method'] == 'workbench-data-write']
+    copied = core['receipt']['Receipt']['Statements']
+    if len(copied) != 1 or copied[0]['State'] != 'acknowledged' or copied[0]['AffectedRows'] != 1:
+        raise RuntimeError('Copied original UI update receipt is incomplete')
+    verify_workbench_statement(core_executors[0], copied[0])
+    lifecycle = [json.loads(line) for line in
+                 (directory / 'workbench-lifecycle.jsonl').read_text().splitlines()]
+    if len(lifecycle) != 3 or {r['mode'] for r in lifecycle} != {'park', 'metadata', 'unknown'}:
+        raise RuntimeError('Original parked/metadata/unknown workbench matrix incomplete')
+    for row in lifecycle:
+        states = [s['State'] for s in row['receipt']['Receipt']['Statements']]
+        expected = {'park': (2, ['acknowledged', 'acknowledged'], [['1', 'changed'], ['2', 'changed']]),
+                    'metadata': (1, ['acknowledged', 'not_sent'], [['1', 'changed'], ['2', 'second']]),
+                    'unknown': (2, ['acknowledged', 'unknown', 'not_sent'], [['1'], ['2']])}[row['mode']]
+        if (row['writes'], states, row['rows']) != expected:
+            raise RuntimeError('Original ordered UI receipt/persisted prefix/suffix differs')
+        dispatched = [r for r in records if r['test'] == row['test'] and
+                      r['method'] == 'workbench-data-write' and r['receipt']['Dispatched']]
+        sent = [s for s in row['receipt']['Receipt']['Statements'] if s['State'] != 'not_sent']
+        if len(dispatched) != len(sent):
+            raise RuntimeError('UI receipt does not correspond to original dispatched executors')
+        for executor, statement in zip(dispatched, sent):
+            verify_workbench_statement(executor, statement)
+        if row['mode'] == 'unknown' and (row.get('draft_guard') is not True or
+                row.get('sql_text_retained') is not True or row.get('recovery_replayed') is not False or
+                not 0 < row['original_generation'] < row['replacement_generation']):
+            raise RuntimeError('Original unknown receipt/SQL recovery guard incomplete')
+    http_records = [json.loads(line) for line in
+                    (directory / 'workbench-http-receipts.jsonl').read_text().splitlines()]
+    independent = {}
+    for row in http_records:
+        raw = base64.b64decode(row['native_bytes'], validate=True)
+        value = json.loads(raw)
+        if transport.sha(raw) != row['native_sha256'] or value.get('error') is not None:
+            raise RuntimeError('Independent workbench native response bytes/error differ')
+        independent.setdefault((row['test'], row['sql']), []).extend(value.get('data') or [])
+    for row in lifecycle:
+        table = 'workbench_' + row['mode'] + '52'
+        sql = 'SELECT ' + ('id' if row['mode'] == 'unknown' else 'id,txt') + ' FROM "' + database + '".' + table + ' ORDER BY id'
+        if independent.get((row['test'], sql)) != row['rows']:
+            raise RuntimeError('Workbenches lack independent original persisted-row evidence')
+    fields = [json.loads(line) for line in (directory / 'workbench-fields.jsonl').read_text().splitlines()]
+    if (len(fields) != 1 or fields[0]['test'] != WORKBENCH_REQUIRED[3] or
+            fields[0]['preview_units'] != 1024 or fields[0]['chunk_boundaries'] != [1024, 2048, 2052] or
+            fields[0]['complete_edit_units'] != 2054 or fields[0].get('foreign_grant_rejected') is not True or
+            fields[0].get('foreign_plan_rejected') is not True or
+            fields[0]['full_jsonl']['object']['Schema'] != database or
+            fields[0]['full_jsonl']['object']['Name'] != 'workbench_fields52' or
+            [c['Name'] for c in fields[0]['full_jsonl']['columns']] != ['payload'] or
+            len(fields[0]['full_jsonl']['values']) != 1 or
+            fields[0]['full_jsonl']['values'][0].get('kind') != 'text' or
+            fields[0]['full_jsonl']['values'][0].get('truncated', False) is not False or
+            fields[0]['full_jsonl']['values'][0].get('text') != '猫' * 2049 + 'end 改'):
+        raise RuntimeError('Original bounded fields/complete editor/export or signed document isolation incomplete')
+    phases = {WORKBENCH_REQUIRED[0]: ['grid', 'inspector', 'editor', 'preview', 'receipt'],
+              WORKBENCH_REQUIRED[1] + '/park': ['park'],
+              WORKBENCH_REQUIRED[1] + '/metadata': ['metadata'],
+              WORKBENCH_REQUIRED[2]: ['unknown-receipt', 'disconnected', 'recovered'],
+              WORKBENCH_REQUIRED[3]: ['bounded-inspector', 'complete-editor']}
+    captures = []
+    for test, names in phases.items():
+        for language in ['zh-Hans', 'en']:
+            for width, height in [(1280, 800), (720, 520)]:
+                for phase in names:
+                    path = directory / 'workbench' / test / language / f'{phase}-{width}x{height}.png'
+                    with Image.open(path) as rendered:
+                        rendered.load()
+                        if rendered.size != (width, height) or not rendered.getbbox():
+                            raise RuntimeError('Original localized workbench capture is empty or has wrong dimensions')
+                    captures.append({'path': str(path.relative_to(directory)), 'sha256': transport.sha(path.read_bytes())})
+    return {'required_diagnostics': WORKBENCH_REQUIRED, 'original_receipts': len(records),
+            'independent_http_receipts': len(http_records), 'captures': captures,
+            'public_provider_registered': False}
 
 
 def verify_named_acceptance(output, names=None):
@@ -356,7 +475,9 @@ def main():
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--provider', action='store_true', help='Also verify private provider/config/SQL/metadata acceptance')
     parser.add_argument('--data', action='store_true', help='Also verify private native data documents and independent writes')
+    parser.add_argument('--workbench', action='store_true', help='Also verify private original shared workbench UI and lifecycle')
     args = parser.parse_args()
+    args.data = args.data or args.workbench
     args.provider = args.provider or args.data
     original, reproduced, dbx, cache = [p.resolve() for p in
                                        [args.build, args.reproduced_build, args.dbx, args.cache]]
@@ -369,7 +490,7 @@ def main():
     base = ROOT / 'build/databend' / ('managed-' + nonce)
     base.mkdir(parents=True, mode=0o700)
     print('Evidence: ' + str(base), flush=True)
-    result = {'scope': 'original_managed_linux_package_install_process_pool' + ('_private_provider' if args.provider else '') + ('_private_data' if args.data else ''), 'status': 'running',
+    result = {'scope': 'original_managed_linux_package_install_process_pool' + ('_private_provider' if args.provider else '') + ('_private_data' if args.data else '') + ('_private_workbench' if args.workbench else ''), 'status': 'running',
               'pins': pins, 'image': transport.IMAGE, 'race': args.race,
               'public_provider_registered': False, 'independent_builds_identical': True}
     secret, username = secrets.token_hex(24), 'nyadb_managed'
@@ -465,6 +586,15 @@ def main():
             if transport.run_diagnostics(runtime_command, env, base / 'runtime-go-test.log'):
                 raise RuntimeError('Original runtime diagnostics failed; inspect ' + str(base / 'runtime-go-test.log'))
             verify_named_acceptance((base / 'runtime-go-test.log').read_text(), RUNTIME_REQUIRED)
+        if args.workbench:
+            env['NYADB_DATABEND_WORKBENCH_IT'] = '1'
+            shell_command = ['go', 'test', '-count=1', '-v', '-timeout=15m']
+            if args.race:
+                shell_command.append('-race')
+            shell_command += ['-run', '^TestDatabendWorkbenchOriginal', './internal/ui/shell']
+            if transport.run_diagnostics(shell_command, env, base / 'shell-go-test.log', timeout=1020):
+                raise RuntimeError('Original shared workbench diagnostics failed; inspect ' + str(base / 'shell-go-test.log'))
+            verify_named_acceptance((base / 'shell-go-test.log').read_text(), WORKBENCH_REQUIRED)
         required = REQUIRED + (PROVIDER_REQUIRED if args.provider else []) + (DATA_REQUIRED if args.data else [])
         verify_named_acceptance((base / 'go-test.log').read_text(), required)
         result['original_executor_receipts'] = verify_receipts(base)
@@ -474,8 +604,10 @@ def main():
             result['private_runtime'] = verify_runtime_receipts(base)
         if args.data:
             result['private_data'] = verify_data_receipts(base)
+        if args.workbench:
+            result['private_workbench'] = verify_workbench_receipts(base, database)
         result['original_processes_exited'] = transport.verify_processes(base)
-        if result['original_processes_exited'] != (19 if args.data else 15 if args.provider else 5):
+        if result['original_processes_exited'] != (25 if args.workbench else 19 if args.data else 15 if args.provider else 5):
             raise RuntimeError('Original independent process lifecycle coverage differs')
         if verify_build(original, dbx, cache) != pins or verify_build(reproduced, dbx, cache) != pins:
             raise RuntimeError('Original managed artifacts/sources changed during product verification')

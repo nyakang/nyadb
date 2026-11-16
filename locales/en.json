@@ -4374,5 +4374,10 @@
   "zookeeperProfileInvalid": "Check ZooKeeper servers, namespace, and TLS settings",
   "zookeeperCredentialInvalid": "Check ZooKeeper credentials",
   "zookeeperImportDriver": "Import ZooKeeper driver package",
-  "connectionPasswordLabel": "Connection password"
+  "connectionPasswordLabel": "Connection password",
+  "databendDataReadScope": "Databend pages read currently visible data; pages do not share a consistent snapshot.",
+  "databendDataMutationTitle": "Confirm Databend data changes",
+  "databendDataMutationHint": "Statements execute independently without a batch transaction. Existing-row changes match original fields and require a unique match; checks do not guarantee isolation between statements. Incomplete or unknown receipts retain drafts and prohibit replay.",
+  "databendDataMutationPreview": "Complete Databend native write preview",
+  "databendDataMutationHistory": "Acknowledged Databend data changes"
 }
