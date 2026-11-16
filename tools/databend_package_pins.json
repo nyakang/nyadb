@@ -1,0 +1,1947 @@
+{
+  "format": 1,
+  "dbx_revision": "0c019880f5809c646e3fd11c1b6be8bfcb5dc0e0",
+  "dbx_source_files": [
+    {
+      "path": "LICENSE",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    },
+    {
+      "path": "NOTICE",
+      "sha256": "d94f89fa355a318bd645a4e4555fae03c52b651140afb48c1c22a32e1678f520"
+    },
+    {
+      "path": "agents/build.gradle",
+      "sha256": "74545fca833bd9558fa04bad48f628952997d0589cae90d6429d58d5023542f3"
+    },
+    {
+      "path": "agents/common/build.gradle",
+      "sha256": "6a01dddc08abe56df0eeef7469fce3081bc4d538b98228e7a57a7339e5cb6ae9"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/AbstractJdbcAgent.java",
+      "sha256": "4e9e9c519b7c459fd8f9c547cc1623b5f60b9a17e77b4aa7fe1d0ea4913c09ff"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/AgentExecutionContext.java",
+      "sha256": "e6e99f3573efefac3ad2530c20cd894dce482138ae060ea895a9c9c6af9ab999"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/AgentProtocol.java",
+      "sha256": "ea81d066d081b2e71d104882791846a9e9fd204234f9b19990f7920005769720"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/AgentRpcError.java",
+      "sha256": "f3a5873f3242c5bfb085212b365f747790ef0e4a77e1e1e2e9f018dc05653f78"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/BaseDatabaseAgent.java",
+      "sha256": "9e56409489054b7e6f76fd49170cf3ff36d47f2cd9254745b2f194380cfb6951"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/BatchExecutor.java",
+      "sha256": "c0e7f7e09f03e752cd55b0c2b39e7572bc83603cf75ad367222878729efe0826"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/BlobBoundExecutor.java",
+      "sha256": "bfb931f99bdd6104080fdf7284e00afbb90c9bf8553abef1007cf3dfd93907ea"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/BlobBoundStatement.java",
+      "sha256": "adb54a6f74dba092133cbaec7163a0a403434339ca53fe5220f814f9331ddf5e"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/CheckConstraintInfo.java",
+      "sha256": "42d1dfe0bceb050018d2b64ef7c9e931997c0980af6454d653e61658cfa8f819"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/ColumnInfo.java",
+      "sha256": "77460790d8bb83a3da041824761216801a14e015e674eda3294a41b4a1a0fae9"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/CompletionAssistantCandidate.java",
+      "sha256": "d8db01d6040fea43a0b99a81e272a70b5eeb797be2d3e5326cfe57a451f04d6c"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/CompletionAssistantCandidateKind.java",
+      "sha256": "3bc0ac7a2fdcdb2d2499e4c7733c154d52331ecffbe5e8964bfc0dfb5c9eacad"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/CompletionAssistantMatchMode.java",
+      "sha256": "784c37b98b5a550fa5d1e0dc8badf5ca14ee5c04f4e0005407f9c1f4f33dd046"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/CompletionAssistantObjectKind.java",
+      "sha256": "15a07aff095465e1ba62ef0f90b56e8172e6fd1d70ab40734841537a467a233d"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/CompletionAssistantRequest.java",
+      "sha256": "cb9dcfda2843f2b862535915ba1e4251169c6faaea10998a8e09fb1c0a9b8ce0"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/CompletionAssistantResponse.java",
+      "sha256": "ab196de75e621dc97f0e5259a6c3d37469e3bf8ebce889dcaeb11ffefd070974"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/ConfiguredJdbcAgent.java",
+      "sha256": "afcbcfef22e0b8d647c55cea6b445bc0662a6d1cbfb8b89f1480799f9cb2c28f"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/ConnectParams.java",
+      "sha256": "623d812229db299774bd48137034420b52ff01596dc44d04dcb924dfbff71814"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/ConstraintInfo.java",
+      "sha256": "d0034d747e680c202fec5109ab6f5560c19315f5528286214994d10583790a69"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/DatabaseAgent.java",
+      "sha256": "421c6bbe5edc63b37e9b5abb77b880e4b0af9af2639dc3e7f44140aa8d5ea168"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/DatabaseInfo.java",
+      "sha256": "ae2fe6e82774f929d45a5a3dcbcaeb11ea91f04d87843f3989c9a39fb5ed2f7d"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/DdlBuilder.java",
+      "sha256": "e66e36c59a3fdf1512625d3cb3657d7f5d318bf70926f2493c2f2d7be536e624"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/EwkbWktDecoder.java",
+      "sha256": "d8b4dab57b85c1fabc4cae11f7c3b53826b497f3f42d912ecbd5b93e6fe7bc5a"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/ExecuteQueryOptions.java",
+      "sha256": "bcbcb48f78dbdc41d5e77a9f074ce11818f892c0003eea48e6c0c11584195664"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/ExecuteQueryParams.java",
+      "sha256": "8c80b8a5612cf183e72eb055ab3b59b0d3345c51f18e6e7aafc047c27b4533b2"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/ForeignKeyInfo.java",
+      "sha256": "6ec67ce3301b532e21233b2bb5700715f92dcb407e7c9b64b9ce1b03771f870d"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/IndexInfo.java",
+      "sha256": "03bf55d8edaae1f8cd5abb53416bd0467d2c7a67797cf70774ccfbed1dab0b6c"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/JdbcAgentProfile.java",
+      "sha256": "2df552ca470d7acbc322020b6dd6b434331f79bf9a6f6ca930f5aa9a2987dc66"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/JdbcConnectionAffinity.java",
+      "sha256": "23be70e710f0b8bc6debf26b2b6a834f672738a631a668c989edc49e5f6c4ecd"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/JdbcConnectionParameters.java",
+      "sha256": "368a0b59dd16dcb5a20ad539a999e7ff576cf01e3713df51df6a3c396b8762e8"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/JdbcConnectionPoolRegistry.java",
+      "sha256": "83a0271bce152ece18355555ec6f8fd0ceb0f1a7d5b0d92f8e341b9d8ef3f7d0"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/JdbcDatabaseInfo.java",
+      "sha256": "17045f401487e96f99be022f01a69d843e06dfdcdbd14da7a759b6d0e230fab1"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/JdbcExecutor.java",
+      "sha256": "c93a4a8c49ed714bb5b4b9a51731be9e13b0476c495c8c6e99b9b75c4f1dd6f4"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/JdbcIdentifiers.java",
+      "sha256": "5ff24ce597f5071e1a32c6548b687812ede034869a3a7b4591507dedca9c3748"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/JdbcSchemaSwitcher.java",
+      "sha256": "ba4e6c224fb3335778e59f7de9fddca16dbe6d63e17b7ecdf14415693da1770d"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/JdbcSessionRole.java",
+      "sha256": "7f86ad3789e89fb523654538d84dc982285a0e17bf8d2fc239d560a337115e7b"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/JsonRpcServer.java",
+      "sha256": "54af7e092e79c0130222b0ed78d93af38ba1a90445e27f81aa7cca672626972b"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/MetadataListConstraints.java",
+      "sha256": "69e31ab7d065eb8d6f484bee85a97ef4ca3919da1056d29d4a90b8cd5fcad643"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/MetadataReadOptions.java",
+      "sha256": "db1d1e0e5d633479842d7e3630a9b2c8096173be633c5a9609df9a95e7b82258"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/MetadataSqlSupport.java",
+      "sha256": "4116a09f722b73dbf6f9d7db7bee99e94ced435def55851294cc705a8be5a24c"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/MultiSessionJsonRpcServer.java",
+      "sha256": "8201faeab56f1bbaa4b9eb75f9303abb6573b0a4730d89e5b0582d0783a2cf3c"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/NativeJobSession.java",
+      "sha256": "9f45bd5c79e0a5a5ea12c8ae4fcb8aeafa3875c916fe59a1a72f3496f86947e1"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/NativeLegacyJobSession.java",
+      "sha256": "8b16da6a6b2029e9197c358cdeba49a96f19e60044cdef077ecf7d26f52c6236"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/ObjectInfo.java",
+      "sha256": "47cf39fc6ee3d3c00405018afc770cf180c2bef8e899ba5c09d7b5e875e8b773"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/ObjectSource.java",
+      "sha256": "a3203ec83c9f95822147165ba211e1910dc796a88b1f3786c793a3af48877b28"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/OracleObjectPrivilege.java",
+      "sha256": "83ac525d9e89af7ad43dfc1b286941f317108208ff1b3d5518eb54be0dbfbef1"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/OracleTriggerMetadata.java",
+      "sha256": "9ae8c76f9e44ded125f07140f1142cbe999daa9c355696e2ac78679fb8ed3141"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/OracleTriggerReader.java",
+      "sha256": "71024e8a70333d29d5626c8e12a85315fad267a1c5939846dfcb503e772f5935"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/PartitionInfo.java",
+      "sha256": "0c706895d8329dc4b8ec94ca932adb6264c80af0678621cb01369bfea2d40068"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/PlDebugBreakpoint.java",
+      "sha256": "2217c2cf249e46aa0945eb90cf4262b4080fd9b69ff0a04cc81158cebc2f4a9f"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/PlDebugBreakpointMutation.java",
+      "sha256": "453acf6b56fcb8014f76fe08e141953346578263885d816227ccdb3c3d3dc6de"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/PlDebugParam.java",
+      "sha256": "c2d6719ca5d000a89fe8c3ee9252d38dbf0316568b2638aa55dbb2f5e3783606"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/PlDebugStartRequest.java",
+      "sha256": "94e1fddfca54a6a1c2159175b9cbd37f705a9820381c7bdafa7eed4832a4881e"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/PostgresLikeAgent.java",
+      "sha256": "079f844a977d7169f59340cf237d0a2f447f78603beb23bd419d935d90022e1e"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/PostgresLikeAgentProfile.java",
+      "sha256": "4553867b9b3e1d2a2d5729a290643edd4583da3082615682d1c022ade5d51bb8"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/QueryPageOptions.java",
+      "sha256": "23a3944a13315805003151905f7297cdc3f5562c66084510ce3468d68a03ace8"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/QueryPageParams.java",
+      "sha256": "a94ff9f81f554105a458e1d3a541c87e8f819b0e1c6414ef323b991948c49ca5"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/QueryPageResult.java",
+      "sha256": "1950b59afdce8cd9e9878630cff2af1447c8702b03f7eb0a9a45943122f7246c"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/QueryResult.java",
+      "sha256": "d058fb6b691a86cfc9088ddade8aded7c9901f821ab67db7d3cbc9a3c547d9f3"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/QueryTiming.java",
+      "sha256": "1ef1000db7012cf919071acb4bac706830458d2bd673c1f0cd1b57b273d27083"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/SchemaTableParams.java",
+      "sha256": "ca0212669db62fe90ace78ec5b3769e1985bbd698de3c94e3c2f9e05b1baafcb"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/SessionRpcHandler.java",
+      "sha256": "cda8db825ff3869e9428a1bf5e2ebe5b091c68a6dc8c8c97cbb70baac376a24a"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/SpatialColumn.java",
+      "sha256": "d05ab4c1e11775946364a9a8232cda480d0d7f4bb17325e690cfea84585e40ac"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/SpatialValue.java",
+      "sha256": "a2bce71d21db8b6a379ffaecb8c907bf0903d00265d9c7e6e774f30fce130419"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/StandardJdbcMetadata.java",
+      "sha256": "253ad885f1760cb0e9b80eab6f664ead6010946082e3ad357bcb6abe42dbe646"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/TableInfo.java",
+      "sha256": "21bc27f1adcc73015ab29e9143f15f428d8fda693959105b8c827c955e4f4fce"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/TransactionExecutor.java",
+      "sha256": "ce1fd123190ff7b5754d3d469f3be1c5eaf0b2122338e55ad97791018a5e0fe2"
+    },
+    {
+      "path": "agents/common/src/main/java/com/dbx/agent/TriggerInfo.java",
+      "sha256": "0a4149746fe3eb5561cda3dfd76881fb9eb5ff1d11190049d622f7585b1c8eba"
+    },
+    {
+      "path": "agents/common/src/main/resources/agent-protocol-v1.json",
+      "sha256": "492ac851f0d104b7bc0e22ce50ea6ee21002b218c9d33cc1c5f285e16af155fa"
+    },
+    {
+      "path": "agents/common/src/main/resources/agent-protocol-v2.json",
+      "sha256": "f4bcf219d152ac6b8a16636ca9809c0c1ee43c3dc90175327e452b468926418d"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/AbstractJdbcAgentTest.java",
+      "sha256": "8681b00024ccd3f1f1ec65f71fe3046f714e7e8dd7bee2ba0cbe435bea8babdf"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/AgentRpcErrorTest.java",
+      "sha256": "3b870827a97a9fd0cff775b8f78b275517f49e6a7ab26fcbb45b95bd9b33591d"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/BatchExecutorTest.java",
+      "sha256": "3981e32c8886df7fbc2f2f45c3b2c9874c6d5ffdd6ca7a9dbea3b14f16b4a403"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/BlobBoundExecutorTest.java",
+      "sha256": "2f5d3044251b27ab4cdde4168a07ca0aca509e0776a9e75d6d24293f5639cd91"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/ColumnInfoTest.java",
+      "sha256": "a4d7f6417acf00932cefa9511be694ffd33def17aac9a07cb5f3827c402e6816"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/CommonJavaCompatibilityTest.java",
+      "sha256": "36551a3938ebc00dd37916dfeae94e756d756ad11c8ac9e277a3f3598acf0b9a"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/ConfiguredJdbcAgentTest.java",
+      "sha256": "09f11fc584c1ee3f2f9accac7ddf18e8f049377ba2aaabca5bcbf5889b574d12"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/DdlBuilderDefaultTest.java",
+      "sha256": "5d5c2638429f4d2e42be3d6c969d57983646e84f43b76abb742af7cafaedbcfe"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/EwkbWktDecoderTest.java",
+      "sha256": "44ccf6a82692b3bbef8bd76e1b5aca8d22f2fc0903c20e36aee028092929b7f9"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/ForeignKeyInfoTest.java",
+      "sha256": "5a941c8acc9bb7bc7c07ec6ebadcd8863ec26dec8d8b9a0d3790c704909bd7b3"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/JdbcAgentProfileExtendedTest.java",
+      "sha256": "c14d7d1725c1b0d32686d24a8ba6cc269ec6b154b9309c6af270fd64f3d93ab5"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/JdbcBoundedCursorTest.java",
+      "sha256": "f12235a235c1018fba42d57f19861d33955ca213687f6022c5d7dc77dee944ef"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/JdbcConnectionParametersTest.java",
+      "sha256": "98b3d1e119947fc1bae4f3e7bc804cd210c54aa8f45b1d4182f719f312929482"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/JdbcConnectionPoolingTest.java",
+      "sha256": "859fd846f002726b67f8246bc48a42f329a60844a274c1379e4937c894600faf"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/JdbcDedicatedConnectionTest.java",
+      "sha256": "3be00ead46354010aac74e515f6ed24725fcdc5ae5885ae916669d0d9bbc4614"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/JdbcExecutorTest.java",
+      "sha256": "e03128953370ea070be27a01b854cde6a6fc689cab071775838b089087fd7b7f"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/JdbcNativeStatementTrackingTest.java",
+      "sha256": "932638a8f043d7a172786c01af2bc255d05c09c6f4ca5bdaa31bb149cfb40c4c"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/JsonRpcBatchLifecycleTest.java",
+      "sha256": "a872ace2d87ad7c7df5123a343675b473a0b0ee84dfe4fd492df787d80fa3a55"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/JsonRpcLargeValueTest.java",
+      "sha256": "7c2b16655e2cb0443c2815ac8b103afe1e00ff915cd90aa9427325118f70108c"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/MetadataConstraintCoverageTest.java",
+      "sha256": "3445296e331bd24786184f1e97ca070079fdf6135c32fc9dc5bee65e59c11e4b"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/MetadataListConstraintsTest.java",
+      "sha256": "0f22d2b5e50a7d765851bfa453f92d02e9a08e6188293bf08e24aac5c794f2c4"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/NativeJobSessionTest.java",
+      "sha256": "a3a623ff792fe13d8b699332b637192ca1bd6d1019b6c72fb47219e2785d0b69"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/NativeLegacyJobTest.java",
+      "sha256": "f9b6fb48123f8afa9b2cab3b86ce51dae7e82b45a9ae76bd6c5c0d985f38b9db"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/OracleTriggerContractTest.java",
+      "sha256": "af1141ae56765cf0394d9014dbd4abc55fc11a405f8ac8664cd9ef60f8f0fe81"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/OracleTriggerReaderTest.java",
+      "sha256": "61e4148707a2c3fe8e79d6385d1d237efb149c9d5cf136272956ee78b561a491"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/PlDebugRpcTest.java",
+      "sha256": "09c9617eca5a800cf6de07a2cf754b47cc7ced9ef32c5d59bf7fc99db808298f"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/PostgresLikeAgentTest.java",
+      "sha256": "7eec5e2052804e9adfcdac12dfcfd3256388c619a1805aa7ceba285ba2c7abc9"
+    },
+    {
+      "path": "agents/common/src/test/java/com/dbx/agent/StandardJdbcMetadataTest.java",
+      "sha256": "1ba48e5ea4f54e8ac4202c51b63c9c00b55a4e8a6d73234c0e31302158c09380"
+    },
+    {
+      "path": "agents/drivers/databend/build.gradle",
+      "sha256": "a12253634f862cb8bf681c376cd970198639bfa35da3a3621b895634e2aa449c"
+    },
+    {
+      "path": "agents/drivers/databend/src/main/java/com/dbx/agent/databend/DatabendAgent.java",
+      "sha256": "b618c5fafbdcb58d86f9689a4253595361e097e7f0938771a2592d725e4d72e2"
+    },
+    {
+      "path": "agents/drivers/databend/src/test/java/com/dbx/agent/databend/DatabendAgentTest.java",
+      "sha256": "8d37f17b064b24c594d15ed26a16755b15539b155b16c899000b84176e3f15d7"
+    },
+    {
+      "path": "agents/versions.json",
+      "sha256": "c41fb03200ba0adf561838951dea5ed9cb0de6d1782d690a23a3b57d9bd00efb"
+    }
+  ],
+  "agent_version": "0.1.82",
+  "jdbc_version": "0.4.8",
+  "files": [
+    {
+      "coordinate": "com.databend:databend-base:0.4.8",
+      "extension": "pom",
+      "path": "com/databend/databend-base/0.4.8/databend-base-0.4.8.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/databend/databend-base/0.4.8/databend-base-0.4.8.pom",
+      "sha256": "25af9c4d8d7e564ba7742c2e28810793f03d8b98d6c165e56c01c3ca70a3c913"
+    },
+    {
+      "coordinate": "com.databend:databend-jdbc:0.4.8",
+      "extension": "jar",
+      "path": "com/databend/databend-jdbc/0.4.8/databend-jdbc-0.4.8.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/databend/databend-jdbc/0.4.8/databend-jdbc-0.4.8.jar",
+      "sha256": "274597a199f205b347e66db63b384e1846e5982b759c4d0f31abd5e74e82e2d3"
+    },
+    {
+      "coordinate": "com.databend:databend-jdbc:0.4.8",
+      "extension": "pom",
+      "path": "com/databend/databend-jdbc/0.4.8/databend-jdbc-0.4.8.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/databend/databend-jdbc/0.4.8/databend-jdbc-0.4.8.pom",
+      "sha256": "f4128dd4aeef24780c8af9075a2e01c8b63a48721f972722facf05fa7c7accda"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.core:jackson-annotations:2.22",
+      "extension": "jar",
+      "path": "com/fasterxml/jackson/core/jackson-annotations/2.22/jackson-annotations-2.22.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-annotations/2.22/jackson-annotations-2.22.jar",
+      "sha256": "21ddb598807d3a51a876704eb979d9296e1c6a6f47ab1826ff88c6d6a127a2d0"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.core:jackson-annotations:2.22",
+      "extension": "pom",
+      "path": "com/fasterxml/jackson/core/jackson-annotations/2.22/jackson-annotations-2.22.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-annotations/2.22/jackson-annotations-2.22.pom",
+      "sha256": "38c3ba52a0eade3e3eacc5b13499d56e1038ccbad8ec4bb79426dc21432b46d0"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.core:jackson-core:2.22.1",
+      "extension": "jar",
+      "path": "com/fasterxml/jackson/core/jackson-core/2.22.1/jackson-core-2.22.1.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-core/2.22.1/jackson-core-2.22.1.jar",
+      "sha256": "941ff029bcdb93e83d209ce516c1a7fb8bbac07d0a2fa122f5bf194b2cd7b4f4"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.core:jackson-core:2.22.1",
+      "extension": "pom",
+      "path": "com/fasterxml/jackson/core/jackson-core/2.22.1/jackson-core-2.22.1.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-core/2.22.1/jackson-core-2.22.1.pom",
+      "sha256": "34551c6c8d72a4a2215fd05fdcf2f4e693eff99e6e54632bd57cf2674478e293"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.core:jackson-databind:2.22.1",
+      "extension": "jar",
+      "path": "com/fasterxml/jackson/core/jackson-databind/2.22.1/jackson-databind-2.22.1.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.22.1/jackson-databind-2.22.1.jar",
+      "sha256": "7dcd7e53bec1f56c7ad278bd1ca0840bebcc595d61ce44d6a8439abb75b965b2"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.core:jackson-databind:2.22.1",
+      "extension": "pom",
+      "path": "com/fasterxml/jackson/core/jackson-databind/2.22.1/jackson-databind-2.22.1.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.22.1/jackson-databind-2.22.1.pom",
+      "sha256": "0bc8f98c7bd7232bc90324fc63c2f56f7ae92dee2bf0dc303669f4e2de8c1f69"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.22.1",
+      "extension": "jar",
+      "path": "com/fasterxml/jackson/datatype/jackson-datatype-jdk8/2.22.1/jackson-datatype-jdk8-2.22.1.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/datatype/jackson-datatype-jdk8/2.22.1/jackson-datatype-jdk8-2.22.1.jar",
+      "sha256": "2d5ee03fcaa017db0c947a5921ede8b39481d1d637af39079840a87d55e907eb"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.22.1",
+      "extension": "pom",
+      "path": "com/fasterxml/jackson/datatype/jackson-datatype-jdk8/2.22.1/jackson-datatype-jdk8-2.22.1.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/datatype/jackson-datatype-jdk8/2.22.1/jackson-datatype-jdk8-2.22.1.pom",
+      "sha256": "1481b8ae5c806463e408414d45763d7eed679f129fe269901ac53f6fa3b418ae"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.0",
+      "extension": "jar",
+      "path": "com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.21.0/jackson-datatype-jsr310-2.21.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.21.0/jackson-datatype-jsr310-2.21.0.jar",
+      "sha256": "b350169a3b2cc53d781541fe1bfbc0f00c978d185884da79b8330be8fb7aefeb"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.0",
+      "extension": "pom",
+      "path": "com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.21.0/jackson-datatype-jsr310-2.21.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.21.0/jackson-datatype-jsr310-2.21.0.pom",
+      "sha256": "ee9ae2144b2af24c52c5f765de53e3d032c8f79670dc34c3486c1998f46898bd"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson:jackson-base:2.21.0",
+      "extension": "pom",
+      "path": "com/fasterxml/jackson/jackson-base/2.21.0/jackson-base-2.21.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/jackson-base/2.21.0/jackson-base-2.21.0.pom",
+      "sha256": "dce86a926b76ba88d93d2b65d32dac2529ce864097cbd77808f5bb6046c8eb8b"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson:jackson-base:2.22.1",
+      "extension": "pom",
+      "path": "com/fasterxml/jackson/jackson-base/2.22.1/jackson-base-2.22.1.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/jackson-base/2.22.1/jackson-base-2.22.1.pom",
+      "sha256": "3f5f597c7474d90fe27060477f243b804bec705dc60feca4de27ca326386448a"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson:jackson-bom:2.21.0",
+      "extension": "pom",
+      "path": "com/fasterxml/jackson/jackson-bom/2.21.0/jackson-bom-2.21.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/jackson-bom/2.21.0/jackson-bom-2.21.0.pom",
+      "sha256": "28b06c4e5f51330c4fced2b3bd6194188cfd237068ea17e592139164537721ff"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson:jackson-bom:2.22.1",
+      "extension": "pom",
+      "path": "com/fasterxml/jackson/jackson-bom/2.22.1/jackson-bom-2.22.1.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/jackson-bom/2.22.1/jackson-bom-2.22.1.pom",
+      "sha256": "b366aa5fd26958e2308a4807e5d42b14706b001b3ccbf138e31b8698dc0ac0ec"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson:jackson-parent:2.21",
+      "extension": "pom",
+      "path": "com/fasterxml/jackson/jackson-parent/2.21/jackson-parent-2.21.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/jackson-parent/2.21/jackson-parent-2.21.pom",
+      "sha256": "3851df627faeb46887b956104630b74a8bbb5f7de22e974cf15982e20e0373de"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson:jackson-parent:2.22",
+      "extension": "pom",
+      "path": "com/fasterxml/jackson/jackson-parent/2.22/jackson-parent-2.22.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/jackson-parent/2.22/jackson-parent-2.22.pom",
+      "sha256": "7d45a7efb69df207bed7cc54b87a0bb012f10952c095570a273b49485da0d129"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.module:jackson-modules-java8:2.21.0",
+      "extension": "pom",
+      "path": "com/fasterxml/jackson/module/jackson-modules-java8/2.21.0/jackson-modules-java8-2.21.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/module/jackson-modules-java8/2.21.0/jackson-modules-java8-2.21.0.pom",
+      "sha256": "ce5e2063a80ff7edd01706b97a6048bcc318d4e81c88f6423de253a137b77b8d"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.module:jackson-modules-java8:2.22.1",
+      "extension": "pom",
+      "path": "com/fasterxml/jackson/module/jackson-modules-java8/2.22.1/jackson-modules-java8-2.22.1.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/module/jackson-modules-java8/2.22.1/jackson-modules-java8-2.22.1.pom",
+      "sha256": "a241a21d568fc3aa4ec2c46ec99e3a622b3665d8d8e9d8170992ad1c6931e96f"
+    },
+    {
+      "coordinate": "com.fasterxml:oss-parent:75",
+      "extension": "pom",
+      "path": "com/fasterxml/oss-parent/75/oss-parent-75.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/fasterxml/oss-parent/75/oss-parent-75.pom",
+      "sha256": "fcbbf1c18c9047e6917d384f2064e21b42a58fc85fb0523a9e2e015eff7c619d"
+    },
+    {
+      "coordinate": "com.fasterxml:oss-parent:79",
+      "extension": "pom",
+      "path": "com/fasterxml/oss-parent/79/oss-parent-79.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/fasterxml/oss-parent/79/oss-parent-79.pom",
+      "sha256": "9206b7dd67fb138036576c3dfca947a2a8f3e2c4d2d9c1f2d1dea519b3a4dae1"
+    },
+    {
+      "coordinate": "com.github.luben:zstd-jni:1.5.7-6",
+      "extension": "jar",
+      "path": "com/github/luben/zstd-jni/1.5.7-6/zstd-jni-1.5.7-6.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/github/luben/zstd-jni/1.5.7-6/zstd-jni-1.5.7-6.jar",
+      "sha256": "8d6feb1da335f3ab13c584c613e23c7b3c61b392e37956872057baf8f0ca1d6f"
+    },
+    {
+      "coordinate": "com.github.luben:zstd-jni:1.5.7-6",
+      "extension": "pom",
+      "path": "com/github/luben/zstd-jni/1.5.7-6/zstd-jni-1.5.7-6.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/github/luben/zstd-jni/1.5.7-6/zstd-jni-1.5.7-6.pom",
+      "sha256": "794d9b995ed59165c54243dcc73fe9483d7fe1af7fb80fcd89a5ae5b693f3eb7"
+    },
+    {
+      "coordinate": "com.google.code.findbugs:jsr305:3.0.2",
+      "extension": "jar",
+      "path": "com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar",
+      "sha256": "766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7"
+    },
+    {
+      "coordinate": "com.google.code.findbugs:jsr305:3.0.2",
+      "extension": "pom",
+      "path": "com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.pom",
+      "sha256": "19889dbdf1b254b2601a5ee645b8147a974644882297684c798afe5d63d78dfe"
+    },
+    {
+      "coordinate": "com.google.code.gson:gson-parent:2.15.0",
+      "extension": "pom",
+      "path": "com/google/code/gson/gson-parent/2.15.0/gson-parent-2.15.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/google/code/gson/gson-parent/2.15.0/gson-parent-2.15.0.pom",
+      "sha256": "337664b30ade9b66e373b6efca1aba7421c1f8ff63643b8aa8b6d05d8efe8e8b"
+    },
+    {
+      "coordinate": "com.google.code.gson:gson:2.15.0",
+      "extension": "jar",
+      "path": "com/google/code/gson/gson/2.15.0/gson-2.15.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/google/code/gson/gson/2.15.0/gson-2.15.0.jar",
+      "sha256": "96d3dd843dc2911de01cdabcd50064cb9e860353102a0a78c96fd833d396fc7d"
+    },
+    {
+      "coordinate": "com.google.code.gson:gson:2.15.0",
+      "extension": "pom",
+      "path": "com/google/code/gson/gson/2.15.0/gson-2.15.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/google/code/gson/gson/2.15.0/gson-2.15.0.pom",
+      "sha256": "426bc968a4e521865a58dd17a60389fed6195a1c357e3eb8bcb7cae31387bcae"
+    },
+    {
+      "coordinate": "com.google.errorprone:error_prone_annotations:2.41.0",
+      "extension": "jar",
+      "path": "com/google/errorprone/error_prone_annotations/2.41.0/error_prone_annotations-2.41.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/google/errorprone/error_prone_annotations/2.41.0/error_prone_annotations-2.41.0.jar",
+      "sha256": "a56e782b5b50811ac204073a355a21d915a2107fce13ec711331ad036f660fcc"
+    },
+    {
+      "coordinate": "com.google.errorprone:error_prone_annotations:2.41.0",
+      "extension": "pom",
+      "path": "com/google/errorprone/error_prone_annotations/2.41.0/error_prone_annotations-2.41.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/google/errorprone/error_prone_annotations/2.41.0/error_prone_annotations-2.41.0.pom",
+      "sha256": "a151df1e2e0b48618d8b06a180748a29b3abb39b1b2396f6a1c879a727488c6e"
+    },
+    {
+      "coordinate": "com.google.errorprone:error_prone_parent:2.41.0",
+      "extension": "pom",
+      "path": "com/google/errorprone/error_prone_parent/2.41.0/error_prone_parent-2.41.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/google/errorprone/error_prone_parent/2.41.0/error_prone_parent-2.41.0.pom",
+      "sha256": "c538388d760a5c1c98dcf06f6ed3cfe5f11a651827db5cbd2ed8288c795cad42"
+    },
+    {
+      "coordinate": "com.google.flatbuffers:flatbuffers-java:25.2.10",
+      "extension": "jar",
+      "path": "com/google/flatbuffers/flatbuffers-java/25.2.10/flatbuffers-java-25.2.10.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/google/flatbuffers/flatbuffers-java/25.2.10/flatbuffers-java-25.2.10.jar",
+      "sha256": "587bd6c31cda747587493a113bec8602d3a0b0ca579b2b1b838ef71b19e6525d"
+    },
+    {
+      "coordinate": "com.google.flatbuffers:flatbuffers-java:25.2.10",
+      "extension": "pom",
+      "path": "com/google/flatbuffers/flatbuffers-java/25.2.10/flatbuffers-java-25.2.10.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/google/flatbuffers/flatbuffers-java/25.2.10/flatbuffers-java-25.2.10.pom",
+      "sha256": "cf751168a1bdc3a651893927e8fa47c9a4187c757f3e62ec86d0e03feecda826"
+    },
+    {
+      "coordinate": "com.google.guava:failureaccess:1.0.1",
+      "extension": "jar",
+      "path": "com/google/guava/failureaccess/1.0.1/failureaccess-1.0.1.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/google/guava/failureaccess/1.0.1/failureaccess-1.0.1.jar",
+      "sha256": "a171ee4c734dd2da837e4b16be9df4661afab72a41adaf31eb84dfdaf936ca26"
+    },
+    {
+      "coordinate": "com.google.guava:failureaccess:1.0.1",
+      "extension": "pom",
+      "path": "com/google/guava/failureaccess/1.0.1/failureaccess-1.0.1.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/google/guava/failureaccess/1.0.1/failureaccess-1.0.1.pom",
+      "sha256": "e96042ce78fecba0da2be964522947c87b40a291b5fd3cd672a434924103c4b9"
+    },
+    {
+      "coordinate": "com.google.guava:guava-parent:26.0-android",
+      "extension": "pom",
+      "path": "com/google/guava/guava-parent/26.0-android/guava-parent-26.0-android.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/google/guava/guava-parent/26.0-android/guava-parent-26.0-android.pom",
+      "sha256": "f8698ab46ca996ce889c1afc8ca4f25eb8ac6b034dc898d4583742360016cc04"
+    },
+    {
+      "coordinate": "com.google.guava:guava-parent:32.0.1-jre",
+      "extension": "pom",
+      "path": "com/google/guava/guava-parent/32.0.1-jre/guava-parent-32.0.1-jre.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/google/guava/guava-parent/32.0.1-jre/guava-parent-32.0.1-jre.pom",
+      "sha256": "43ed0e36b353f41e5eb75cd756667c9e2df97cef06eb16066967158a1d034d2a"
+    },
+    {
+      "coordinate": "com.google.guava:guava:32.0.1-jre",
+      "extension": "jar",
+      "path": "com/google/guava/guava/32.0.1-jre/guava-32.0.1-jre.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/google/guava/guava/32.0.1-jre/guava-32.0.1-jre.jar",
+      "sha256": "bd7fa227591fb8509677d0d1122cf95158f3b8a9f45653f58281d879f6dc48c5"
+    },
+    {
+      "coordinate": "com.google.guava:guava:32.0.1-jre",
+      "extension": "pom",
+      "path": "com/google/guava/guava/32.0.1-jre/guava-32.0.1-jre.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/google/guava/guava/32.0.1-jre/guava-32.0.1-jre.pom",
+      "sha256": "42c257f7f736d377b31afeeee978ab26d730cd70af60dde7662e182352e2482a"
+    },
+    {
+      "coordinate": "com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava",
+      "extension": "jar",
+      "path": "com/google/guava/listenablefuture/9999.0-empty-to-avoid-conflict-with-guava/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/google/guava/listenablefuture/9999.0-empty-to-avoid-conflict-with-guava/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar",
+      "sha256": "b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99"
+    },
+    {
+      "coordinate": "com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava",
+      "extension": "pom",
+      "path": "com/google/guava/listenablefuture/9999.0-empty-to-avoid-conflict-with-guava/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/google/guava/listenablefuture/9999.0-empty-to-avoid-conflict-with-guava/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.pom",
+      "sha256": "18d4b1db26153d4e55079ce1f76bb1fe05cdb862ef9954a88cbcc4ff38b8679b"
+    },
+    {
+      "coordinate": "com.google.j2objc:j2objc-annotations:2.8",
+      "extension": "jar",
+      "path": "com/google/j2objc/j2objc-annotations/2.8/j2objc-annotations-2.8.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/google/j2objc/j2objc-annotations/2.8/j2objc-annotations-2.8.jar",
+      "sha256": "f02a95fa1a5e95edb3ed859fd0fb7df709d121a35290eff8b74dce2ab7f4d6ed"
+    },
+    {
+      "coordinate": "com.google.j2objc:j2objc-annotations:2.8",
+      "extension": "pom",
+      "path": "com/google/j2objc/j2objc-annotations/2.8/j2objc-annotations-2.8.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/google/j2objc/j2objc-annotations/2.8/j2objc-annotations-2.8.pom",
+      "sha256": "37f87798b18385113c918bfa9e1276fe50735ef8fa849b5800c519d54dbf11f8"
+    },
+    {
+      "coordinate": "com.squareup.okhttp3:okhttp-java-net-cookiejar:5.0.0",
+      "extension": "jar",
+      "path": "com/squareup/okhttp3/okhttp-java-net-cookiejar/5.0.0/okhttp-java-net-cookiejar-5.0.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/squareup/okhttp3/okhttp-java-net-cookiejar/5.0.0/okhttp-java-net-cookiejar-5.0.0.jar",
+      "sha256": "dddd0003098fe4063146f0d5a242f7e4b2daacb361e73a2f3212185b9c1ae04b"
+    },
+    {
+      "coordinate": "com.squareup.okhttp3:okhttp-java-net-cookiejar:5.0.0",
+      "extension": "pom",
+      "path": "com/squareup/okhttp3/okhttp-java-net-cookiejar/5.0.0/okhttp-java-net-cookiejar-5.0.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/squareup/okhttp3/okhttp-java-net-cookiejar/5.0.0/okhttp-java-net-cookiejar-5.0.0.pom",
+      "sha256": "1752adc511b7d09912aea8bcaabbee47ea82631819bfcfbb8a9981f955b5dc24"
+    },
+    {
+      "coordinate": "com.squareup.okhttp3:okhttp-jvm:5.0.0",
+      "extension": "jar",
+      "path": "com/squareup/okhttp3/okhttp-jvm/5.0.0/okhttp-jvm-5.0.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/squareup/okhttp3/okhttp-jvm/5.0.0/okhttp-jvm-5.0.0.jar",
+      "sha256": "4d6ff6aea0fc7c6b8182d26340216040af0e2186e317305d899f8d324faa8a4a"
+    },
+    {
+      "coordinate": "com.squareup.okhttp3:okhttp-jvm:5.0.0",
+      "extension": "pom",
+      "path": "com/squareup/okhttp3/okhttp-jvm/5.0.0/okhttp-jvm-5.0.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/squareup/okhttp3/okhttp-jvm/5.0.0/okhttp-jvm-5.0.0.pom",
+      "sha256": "8ec4424c9fdfda2818624e82492cb078bab855531be788cb63413a0d1f3f2e6c"
+    },
+    {
+      "coordinate": "com.squareup.okhttp3:okhttp-tls:5.0.0",
+      "extension": "jar",
+      "path": "com/squareup/okhttp3/okhttp-tls/5.0.0/okhttp-tls-5.0.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/squareup/okhttp3/okhttp-tls/5.0.0/okhttp-tls-5.0.0.jar",
+      "sha256": "99c0f05dca434b21dacc0b01aed2cf5fbf6af9a20dd7f421d669db53b5c8908f"
+    },
+    {
+      "coordinate": "com.squareup.okhttp3:okhttp-tls:5.0.0",
+      "extension": "pom",
+      "path": "com/squareup/okhttp3/okhttp-tls/5.0.0/okhttp-tls-5.0.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/squareup/okhttp3/okhttp-tls/5.0.0/okhttp-tls-5.0.0.pom",
+      "sha256": "ff196593043bf2992d5146d0dc5f7116eb3f5730a8867c4ae032b843fce70a2a"
+    },
+    {
+      "coordinate": "com.squareup.okhttp3:okhttp-urlconnection:5.0.0",
+      "extension": "jar",
+      "path": "com/squareup/okhttp3/okhttp-urlconnection/5.0.0/okhttp-urlconnection-5.0.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/squareup/okhttp3/okhttp-urlconnection/5.0.0/okhttp-urlconnection-5.0.0.jar",
+      "sha256": "d2ff05bc2d0aa3a99607a08e7c68fe59fbea05690e71ec26d30daf1ea74c6274"
+    },
+    {
+      "coordinate": "com.squareup.okhttp3:okhttp-urlconnection:5.0.0",
+      "extension": "pom",
+      "path": "com/squareup/okhttp3/okhttp-urlconnection/5.0.0/okhttp-urlconnection-5.0.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/squareup/okhttp3/okhttp-urlconnection/5.0.0/okhttp-urlconnection-5.0.0.pom",
+      "sha256": "87a17bd142f698fe122e71a0d407d78a80af99d51177c8a97fb5c8e3006b8dd5"
+    },
+    {
+      "coordinate": "com.squareup.okio:okio-jvm:3.15.0",
+      "extension": "jar",
+      "path": "com/squareup/okio/okio-jvm/3.15.0/okio-jvm-3.15.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/squareup/okio/okio-jvm/3.15.0/okio-jvm-3.15.0.jar",
+      "sha256": "483dc383b1049d220892322a0d6a4308425f09bb05b48c43d4eaa9ff82b1cd16"
+    },
+    {
+      "coordinate": "com.squareup.okio:okio-jvm:3.15.0",
+      "extension": "pom",
+      "path": "com/squareup/okio/okio-jvm/3.15.0/okio-jvm-3.15.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/squareup/okio/okio-jvm/3.15.0/okio-jvm-3.15.0.pom",
+      "sha256": "078e42f68ca4613ff2597fbc5541c5ce578cdcc48839da89da7ca760518bfb79"
+    },
+    {
+      "coordinate": "com.squareup.okio:okio:3.15.0",
+      "extension": "jar",
+      "path": "com/squareup/okio/okio/3.15.0/okio-3.15.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/squareup/okio/okio/3.15.0/okio-3.15.0.jar",
+      "sha256": "0ed4125e048c86af7ece446d654f2ba8bcc5e74d0ae1f4de3c5dc0ad9a975e2d"
+    },
+    {
+      "coordinate": "com.squareup.okio:okio:3.15.0",
+      "extension": "pom",
+      "path": "com/squareup/okio/okio/3.15.0/okio-3.15.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/squareup/okio/okio/3.15.0/okio-3.15.0.pom",
+      "sha256": "2d73785411404eeac32f0473a2e07ab1516b9850a9280cc61a08b479790cccf8"
+    },
+    {
+      "coordinate": "com.vdurmont:semver4j:3.1.0",
+      "extension": "jar",
+      "path": "com/vdurmont/semver4j/3.1.0/semver4j-3.1.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/vdurmont/semver4j/3.1.0/semver4j-3.1.0.jar",
+      "sha256": "0f33724dd012099f0737e3d9203e28f4a804435526998d4f5841993058651cb8"
+    },
+    {
+      "coordinate": "com.vdurmont:semver4j:3.1.0",
+      "extension": "pom",
+      "path": "com/vdurmont/semver4j/3.1.0/semver4j-3.1.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/vdurmont/semver4j/3.1.0/semver4j-3.1.0.pom",
+      "sha256": "45b78699bad9232d899f0ee85513c1faed2f9545ae25e65ab5eae4c82cb2d753"
+    },
+    {
+      "coordinate": "com.zaxxer:HikariCP:7.1.0",
+      "extension": "jar",
+      "path": "com/zaxxer/HikariCP/7.1.0/HikariCP-7.1.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/zaxxer/HikariCP/7.1.0/HikariCP-7.1.0.jar",
+      "sha256": "2be45c641b841e81df87292e181f2c203500c5f0e9a1676f135927387f3cf40b"
+    },
+    {
+      "coordinate": "com.zaxxer:HikariCP:7.1.0",
+      "extension": "pom",
+      "path": "com/zaxxer/HikariCP/7.1.0/HikariCP-7.1.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/com/zaxxer/HikariCP/7.1.0/HikariCP-7.1.0.pom",
+      "sha256": "5b8df2699933ea898aa50d4def4fc2226b15e6f4d993e373a16070f7ed480216"
+    },
+    {
+      "coordinate": "commons-codec:commons-codec:1.21.0",
+      "extension": "jar",
+      "path": "commons-codec/commons-codec/1.21.0/commons-codec-1.21.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/commons-codec/commons-codec/1.21.0/commons-codec-1.21.0.jar",
+      "sha256": "4da851cb6abfb98bfe9eb77c5e5fc47f5414fa28b94e21b7fd9a646705dc167f"
+    },
+    {
+      "coordinate": "commons-codec:commons-codec:1.21.0",
+      "extension": "pom",
+      "path": "commons-codec/commons-codec/1.21.0/commons-codec-1.21.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/commons-codec/commons-codec/1.21.0/commons-codec-1.21.0.pom",
+      "sha256": "b230416ba6f5bf9df8fcb6e7f4a6c26b8fb0fe85ce371d13d5846ed3768309b7"
+    },
+    {
+      "coordinate": "commons-io:commons-io:2.20.0",
+      "extension": "jar",
+      "path": "commons-io/commons-io/2.20.0/commons-io-2.20.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/commons-io/commons-io/2.20.0/commons-io-2.20.0.jar",
+      "sha256": "df90bba0fe3cb586b7f164e78fe8f8f4da3f2dd5c27fa645f888100ccc25dd72"
+    },
+    {
+      "coordinate": "commons-io:commons-io:2.20.0",
+      "extension": "pom",
+      "path": "commons-io/commons-io/2.20.0/commons-io-2.20.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/commons-io/commons-io/2.20.0/commons-io-2.20.0.pom",
+      "sha256": "bdbdf81072c190ee9a8b181a5c58f5bd917a750fb13a256debbf53f5dbd33a2a"
+    },
+    {
+      "coordinate": "de.siegmar:fastcsv:2.2.1",
+      "extension": "jar",
+      "path": "de/siegmar/fastcsv/2.2.1/fastcsv-2.2.1.jar",
+      "url": "https://repo.maven.apache.org/maven2/de/siegmar/fastcsv/2.2.1/fastcsv-2.2.1.jar",
+      "sha256": "8a2ffdeff6a8134befef3fa9aa0e7d4506626826434d6bc45d0c3d7b6330c0f7"
+    },
+    {
+      "coordinate": "de.siegmar:fastcsv:2.2.1",
+      "extension": "pom",
+      "path": "de/siegmar/fastcsv/2.2.1/fastcsv-2.2.1.pom",
+      "url": "https://repo.maven.apache.org/maven2/de/siegmar/fastcsv/2.2.1/fastcsv-2.2.1.pom",
+      "sha256": "d4150522ed9d864273091ed0aad35150f78d136a0920e53e694f1984e4870832"
+    },
+    {
+      "coordinate": "org.apache:apache:23",
+      "extension": "pom",
+      "path": "org/apache/apache/23/apache-23.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/apache/23/apache-23.pom",
+      "sha256": "bc10624e0623f36577fac5639ca2936d3240ed152fb6d8d533ab4d270543491c"
+    },
+    {
+      "coordinate": "org.apache:apache:35",
+      "extension": "pom",
+      "path": "org/apache/apache/35/apache-35.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/apache/35/apache-35.pom",
+      "sha256": "ea297dcd114136e8b8e8b630230d52a76c2fc69f6c5db25d672b1857000728b8"
+    },
+    {
+      "coordinate": "org.apache:apache:37",
+      "extension": "pom",
+      "path": "org/apache/apache/37/apache-37.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/apache/37/apache-37.pom",
+      "sha256": "524ec4787aff73af6b3a9fafa154c7f1881b648299b663fdbfcadda1286f2353"
+    },
+    {
+      "coordinate": "org.apache.arrow:arrow-compression:19.0.0",
+      "extension": "jar",
+      "path": "org/apache/arrow/arrow-compression/19.0.0/arrow-compression-19.0.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/arrow/arrow-compression/19.0.0/arrow-compression-19.0.0.jar",
+      "sha256": "bcdf40b618db41d2ef4b763937fb99c0673ca24b84188c0788a76b74e7f50ea2"
+    },
+    {
+      "coordinate": "org.apache.arrow:arrow-compression:19.0.0",
+      "extension": "pom",
+      "path": "org/apache/arrow/arrow-compression/19.0.0/arrow-compression-19.0.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/arrow/arrow-compression/19.0.0/arrow-compression-19.0.0.pom",
+      "sha256": "f1622a2297fc965affed15f3384f0d2d366009efc782002090225e9c5a83d130"
+    },
+    {
+      "coordinate": "org.apache.arrow:arrow-format:19.0.0",
+      "extension": "jar",
+      "path": "org/apache/arrow/arrow-format/19.0.0/arrow-format-19.0.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/arrow/arrow-format/19.0.0/arrow-format-19.0.0.jar",
+      "sha256": "e805ea51ba8b517ec6c18a96ea83bef5cda5172a2b74419d4b48fb3584ce4504"
+    },
+    {
+      "coordinate": "org.apache.arrow:arrow-format:19.0.0",
+      "extension": "pom",
+      "path": "org/apache/arrow/arrow-format/19.0.0/arrow-format-19.0.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/arrow/arrow-format/19.0.0/arrow-format-19.0.0.pom",
+      "sha256": "bcc492904a6ccc43641cdf67d24758480067312facd3f6dc1a505a2fc8ebf8b3"
+    },
+    {
+      "coordinate": "org.apache.arrow:arrow-java-root:19.0.0",
+      "extension": "pom",
+      "path": "org/apache/arrow/arrow-java-root/19.0.0/arrow-java-root-19.0.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/arrow/arrow-java-root/19.0.0/arrow-java-root-19.0.0.pom",
+      "sha256": "a1196d7b1f7dcc47dae314076189dca8995c74e174bd7755d98c4f4ee29de68f"
+    },
+    {
+      "coordinate": "org.apache.arrow:arrow-memory-core:19.0.0",
+      "extension": "jar",
+      "path": "org/apache/arrow/arrow-memory-core/19.0.0/arrow-memory-core-19.0.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/arrow/arrow-memory-core/19.0.0/arrow-memory-core-19.0.0.jar",
+      "sha256": "0d3646cc2fa9ae94e95dc8b3e0ed5a51e1df15b59dc548f359e941023471884d"
+    },
+    {
+      "coordinate": "org.apache.arrow:arrow-memory-core:19.0.0",
+      "extension": "pom",
+      "path": "org/apache/arrow/arrow-memory-core/19.0.0/arrow-memory-core-19.0.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/arrow/arrow-memory-core/19.0.0/arrow-memory-core-19.0.0.pom",
+      "sha256": "8757f58d5ea77e8fdd27dc603466bbcf5d3d94fdf46cb3c9a538acbb78d0d301"
+    },
+    {
+      "coordinate": "org.apache.arrow:arrow-memory-unsafe:19.0.0",
+      "extension": "jar",
+      "path": "org/apache/arrow/arrow-memory-unsafe/19.0.0/arrow-memory-unsafe-19.0.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/arrow/arrow-memory-unsafe/19.0.0/arrow-memory-unsafe-19.0.0.jar",
+      "sha256": "6103ddbc72a8cc0cdfd940ddf3cac6ee45392672a452f81cb84f8b23304b3cc7"
+    },
+    {
+      "coordinate": "org.apache.arrow:arrow-memory-unsafe:19.0.0",
+      "extension": "pom",
+      "path": "org/apache/arrow/arrow-memory-unsafe/19.0.0/arrow-memory-unsafe-19.0.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/arrow/arrow-memory-unsafe/19.0.0/arrow-memory-unsafe-19.0.0.pom",
+      "sha256": "b2df5cdbd49bc3c6ddaf09e037c6dfa550ffceadfcf5f9b1af001448b67da1eb"
+    },
+    {
+      "coordinate": "org.apache.arrow:arrow-memory:19.0.0",
+      "extension": "pom",
+      "path": "org/apache/arrow/arrow-memory/19.0.0/arrow-memory-19.0.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/arrow/arrow-memory/19.0.0/arrow-memory-19.0.0.pom",
+      "sha256": "23f36d1e628ab1ea01b63a12b9d3c8e609e076faae0a11d11460af0de749c2d5"
+    },
+    {
+      "coordinate": "org.apache.arrow:arrow-vector:19.0.0",
+      "extension": "jar",
+      "path": "org/apache/arrow/arrow-vector/19.0.0/arrow-vector-19.0.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/arrow/arrow-vector/19.0.0/arrow-vector-19.0.0.jar",
+      "sha256": "113e70317945e780050f13d17027d862d4c5d1cebe06c9fd8a5e922945bb2f8c"
+    },
+    {
+      "coordinate": "org.apache.arrow:arrow-vector:19.0.0",
+      "extension": "pom",
+      "path": "org/apache/arrow/arrow-vector/19.0.0/arrow-vector-19.0.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/arrow/arrow-vector/19.0.0/arrow-vector-19.0.0.pom",
+      "sha256": "cda71d39113ac199373b220602e85f0eec573d23c12fb5963906f1c63bccadd4"
+    },
+    {
+      "coordinate": "org.apache.commons:commons-compress:1.28.0",
+      "extension": "jar",
+      "path": "org/apache/commons/commons-compress/1.28.0/commons-compress-1.28.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-compress/1.28.0/commons-compress-1.28.0.jar",
+      "sha256": "e1522945218456f3649a39bc4afd70ce4bd466221519dba7d378f2141a4642ca"
+    },
+    {
+      "coordinate": "org.apache.commons:commons-compress:1.28.0",
+      "extension": "pom",
+      "path": "org/apache/commons/commons-compress/1.28.0/commons-compress-1.28.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-compress/1.28.0/commons-compress-1.28.0.pom",
+      "sha256": "033f4c78d632da88d0eb8ead974fc14a264392cebf12ab6c68d6cea7adf0c64a"
+    },
+    {
+      "coordinate": "org.apache.commons:commons-lang3:3.18.0",
+      "extension": "jar",
+      "path": "org/apache/commons/commons-lang3/3.18.0/commons-lang3-3.18.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-lang3/3.18.0/commons-lang3-3.18.0.jar",
+      "sha256": "4eeeae8d20c078abb64b015ec158add383ac581571cddc45c68f0c9ae0230720"
+    },
+    {
+      "coordinate": "org.apache.commons:commons-lang3:3.18.0",
+      "extension": "pom",
+      "path": "org/apache/commons/commons-lang3/3.18.0/commons-lang3-3.18.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-lang3/3.18.0/commons-lang3-3.18.0.pom",
+      "sha256": "aa254b373b6f6d46bc9dca86331b072a8ab86eb25ea9921fd439618392e98a16"
+    },
+    {
+      "coordinate": "org.apache.commons:commons-parent:52",
+      "extension": "pom",
+      "path": "org/apache/commons/commons-parent/52/commons-parent-52.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-parent/52/commons-parent-52.pom",
+      "sha256": "75dbe8f34e98e4c3ff42daae4a2f9eb4cbcd3b5f1047d54460ace906dbb4502e"
+    },
+    {
+      "coordinate": "org.apache.commons:commons-parent:85",
+      "extension": "pom",
+      "path": "org/apache/commons/commons-parent/85/commons-parent-85.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-parent/85/commons-parent-85.pom",
+      "sha256": "d189ff2c0027e96bb65d31e6f227ed2af966169b36af1e973dd5ba08926dc7b5"
+    },
+    {
+      "coordinate": "org.apache.commons:commons-parent:96",
+      "extension": "pom",
+      "path": "org/apache/commons/commons-parent/96/commons-parent-96.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-parent/96/commons-parent-96.pom",
+      "sha256": "2cd3289b44efa53052d9cdaf3f05544833a520a682f9c7ffd403a00bbb157f9a"
+    },
+    {
+      "coordinate": "org.apache.commons:commons-pool2:2.11.1",
+      "extension": "jar",
+      "path": "org/apache/commons/commons-pool2/2.11.1/commons-pool2-2.11.1.jar",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-pool2/2.11.1/commons-pool2-2.11.1.jar",
+      "sha256": "ea0505ee7515e58b1ac0e686e4d1a5d9f7d808e251a61bc371aa0595b9963f83"
+    },
+    {
+      "coordinate": "org.apache.commons:commons-pool2:2.11.1",
+      "extension": "pom",
+      "path": "org/apache/commons/commons-pool2/2.11.1/commons-pool2-2.11.1.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-pool2/2.11.1/commons-pool2-2.11.1.pom",
+      "sha256": "c1bb02994a4adf89680df7a98adba33c5527683014272d65885bb3036ecd48c3"
+    },
+    {
+      "coordinate": "org.checkerframework:checker-qual:3.33.0",
+      "extension": "jar",
+      "path": "org/checkerframework/checker-qual/3.33.0/checker-qual-3.33.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/org/checkerframework/checker-qual/3.33.0/checker-qual-3.33.0.jar",
+      "sha256": "e316255bbfcd9fe50d165314b85abb2b33cb2a66a93c491db648e498a82c2de1"
+    },
+    {
+      "coordinate": "org.checkerframework:checker-qual:3.33.0",
+      "extension": "pom",
+      "path": "org/checkerframework/checker-qual/3.33.0/checker-qual-3.33.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/checkerframework/checker-qual/3.33.0/checker-qual-3.33.0.pom",
+      "sha256": "f55a922027a78fdd8b3ea15a0d8bfe3fec6a5ceac30c86aa8afa4a5b9b0df603"
+    },
+    {
+      "coordinate": "org.jetbrains:annotations:13.0",
+      "extension": "jar",
+      "path": "org/jetbrains/annotations/13.0/annotations-13.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/org/jetbrains/annotations/13.0/annotations-13.0.jar",
+      "sha256": "ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478"
+    },
+    {
+      "coordinate": "org.jetbrains:annotations:13.0",
+      "extension": "pom",
+      "path": "org/jetbrains/annotations/13.0/annotations-13.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/jetbrains/annotations/13.0/annotations-13.0.pom",
+      "sha256": "965aeb2bedff369819bdde1bf7a0b3b89b8247dd69c88b86375d76163bb8c397"
+    },
+    {
+      "coordinate": "org.jetbrains.kotlin:kotlin-stdlib:2.2.0",
+      "extension": "jar",
+      "path": "org/jetbrains/kotlin/kotlin-stdlib/2.2.0/kotlin-stdlib-2.2.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/2.2.0/kotlin-stdlib-2.2.0.jar",
+      "sha256": "65d12d85a3b865c160db9147851712a64b10dadd68b22eea22a95bf8a8670dca"
+    },
+    {
+      "coordinate": "org.jetbrains.kotlin:kotlin-stdlib:2.2.0",
+      "extension": "pom",
+      "path": "org/jetbrains/kotlin/kotlin-stdlib/2.2.0/kotlin-stdlib-2.2.0.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/2.2.0/kotlin-stdlib-2.2.0.pom",
+      "sha256": "8c3c821007c13411558739b9f3d5382eb81551db3895cffb89561e56c0f4dc16"
+    },
+    {
+      "coordinate": "org.slf4j:slf4j-api:1.7.6",
+      "extension": "jar",
+      "path": "org/slf4j/slf4j-api/1.7.6/slf4j-api-1.7.6.jar",
+      "url": "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-api/1.7.6/slf4j-api-1.7.6.jar",
+      "sha256": "059a84383fad78d85d9c3951bebafab7200c704c411a9d25c913340c3877604a"
+    },
+    {
+      "coordinate": "org.slf4j:slf4j-api:1.7.6",
+      "extension": "pom",
+      "path": "org/slf4j/slf4j-api/1.7.6/slf4j-api-1.7.6.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-api/1.7.6/slf4j-api-1.7.6.pom",
+      "sha256": "7a9e7276c1d353d2b2014bb4ee20446ef016a99e72d9b7b7ac3b380cbd0c3685"
+    },
+    {
+      "coordinate": "org.slf4j:slf4j-api:2.0.20",
+      "extension": "jar",
+      "path": "org/slf4j/slf4j-api/2.0.20/slf4j-api-2.0.20.jar",
+      "url": "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-api/2.0.20/slf4j-api-2.0.20.jar",
+      "sha256": "7e1446499b359675d8aabe6af2de86b85e72ae8a2a932c0b40d0e5ba57097439"
+    },
+    {
+      "coordinate": "org.slf4j:slf4j-api:2.0.20",
+      "extension": "pom",
+      "path": "org/slf4j/slf4j-api/2.0.20/slf4j-api-2.0.20.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-api/2.0.20/slf4j-api-2.0.20.pom",
+      "sha256": "2e625c3f553cddd49f8554cea9926cbf70673b3d6833464f0c5a02f4d9130594"
+    },
+    {
+      "coordinate": "org.slf4j:slf4j-bom:2.0.20",
+      "extension": "pom",
+      "path": "org/slf4j/slf4j-bom/2.0.20/slf4j-bom-2.0.20.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-bom/2.0.20/slf4j-bom-2.0.20.pom",
+      "sha256": "351a3d34f0886942268efcf291708c48dfadce7f2643837efdb4a6954d4e6c62"
+    },
+    {
+      "coordinate": "org.slf4j:slf4j-nop:2.0.20",
+      "extension": "jar",
+      "path": "org/slf4j/slf4j-nop/2.0.20/slf4j-nop-2.0.20.jar",
+      "url": "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-nop/2.0.20/slf4j-nop-2.0.20.jar",
+      "sha256": "6522080396fb339e99bae40d329a06d18d3190dc864020ac4ca943519d0fd85b"
+    },
+    {
+      "coordinate": "org.slf4j:slf4j-nop:2.0.20",
+      "extension": "pom",
+      "path": "org/slf4j/slf4j-nop/2.0.20/slf4j-nop-2.0.20.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-nop/2.0.20/slf4j-nop-2.0.20.pom",
+      "sha256": "3cee6394352190ba1cdde7bf3704532434d5563d5343e4f3016c977acd0162ee"
+    },
+    {
+      "coordinate": "org.slf4j:slf4j-parent:1.7.6",
+      "extension": "pom",
+      "path": "org/slf4j/slf4j-parent/1.7.6/slf4j-parent-1.7.6.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-parent/1.7.6/slf4j-parent-1.7.6.pom",
+      "sha256": "69d805262ede4eac3c0f15825c8b1343a6f741ad96892c3c4f04f196d84fe206"
+    },
+    {
+      "coordinate": "org.slf4j:slf4j-parent:2.0.20",
+      "extension": "pom",
+      "path": "org/slf4j/slf4j-parent/2.0.20/slf4j-parent-2.0.20.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-parent/2.0.20/slf4j-parent-2.0.20.pom",
+      "sha256": "d931cf99cfd3554d322809df03c43ef897082cd480d6ff91b44d8f067ca324c8"
+    },
+    {
+      "coordinate": "org.sonatype.oss:oss-parent:7",
+      "extension": "pom",
+      "path": "org/sonatype/oss/oss-parent/7/oss-parent-7.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/sonatype/oss/oss-parent/7/oss-parent-7.pom",
+      "sha256": "b51f8867c92b6a722499557fc3a1fdea77bdf9ef574722fe90ce436a29559454"
+    },
+    {
+      "coordinate": "org.sonatype.oss:oss-parent:9",
+      "extension": "pom",
+      "path": "org/sonatype/oss/oss-parent/9/oss-parent-9.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/sonatype/oss/oss-parent/9/oss-parent-9.pom",
+      "sha256": "fb40265f982548212ff82e362e59732b2187ec6f0d80182885c14ef1f982827a"
+    },
+    {
+      "name": "zstd-jni",
+      "url": "https://raw.githubusercontent.com/luben/zstd-jni/v1.5.7-6/LICENSE",
+      "sha256": "289a6adada5726047b9e68bf607cc44fbbac953bbb4fd29f53ffe75b5cb3e7b1",
+      "path": "upstream-legal/zstd-jni.txt",
+      "extension": "legal",
+      "coordinate": "com.github.luben:zstd-jni:1.5.7-6"
+    },
+    {
+      "name": "zstd-native-alternative",
+      "url": "https://raw.githubusercontent.com/luben/zstd-jni/v1.5.7-6/src/main/native/LICENSE",
+      "sha256": "2c1a7fa704df8f3a606f6fc010b8b5aaebf403f3aeec339a12048f1ba7331a0b",
+      "path": "upstream-legal/zstd-native-alternative.txt",
+      "extension": "legal",
+      "coordinate": "com.github.luben:zstd-jni:1.5.7-6"
+    },
+    {
+      "name": "fastcsv",
+      "url": "https://raw.githubusercontent.com/osiegmar/FastCSV/v2.2.1/LICENSE",
+      "sha256": "c62f2f60e80ca9318f7e23710d4b1d0a7573f4053ebe04ee0048aa9e23457bd6",
+      "path": "upstream-legal/fastcsv.txt",
+      "extension": "legal",
+      "coordinate": "de.siegmar:fastcsv:2.2.1"
+    },
+    {
+      "name": "slf4j-1.7.6",
+      "url": "https://raw.githubusercontent.com/qos-ch/slf4j/v_1.7.6/LICENSE.txt",
+      "sha256": "00a414dd500cee973ec42dd9a95383c9547203a92910f66de8634e362351b102",
+      "path": "upstream-legal/slf4j-1.7.6.txt",
+      "extension": "legal",
+      "coordinate": "org.slf4j:slf4j-api:1.7.6"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/vdurmont/semver4j/v3.1.0/LICENSE.md",
+      "sha256": "f2648977a7ce48a6a48962a11ff33b3c754fc23780ac1c4c388d40a96b0815b9",
+      "path": "upstream-legal/semver4j.txt",
+      "extension": "legal",
+      "coordinate": "com.vdurmont:semver4j:3.1.0"
+    },
+    {
+      "coordinate": "com.databend:databend-jdbc:0.4.8",
+      "extension": "sources",
+      "path": "com/databend/databend-jdbc/0.4.8/databend-jdbc-0.4.8-sources.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/databend/databend-jdbc/0.4.8/databend-jdbc-0.4.8-sources.jar",
+      "sha256": "0f773d1c0c6dd28ddfca2d116ac8bf7587f84e48c8caca5d82332282edbf624a"
+    }
+  ],
+  "components": [
+    {
+      "coordinate": "com.databend:databend-jdbc:0.4.8",
+      "license_declarations": [
+        {
+          "name": "Apache License 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0",
+          "source_coordinate": "com.databend:databend-base:0.4.8"
+        }
+      ],
+      "embedded_legal": [
+        {
+          "member": "META-INF/LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "bytes": 11358
+        },
+        {
+          "member": "META-INF/NOTICE",
+          "sha256": "d64b23143c6daa5b08eb96b06fd369f42b2d943f3316c1143fc65b00c9bcdfcf",
+          "bytes": 163
+        },
+        {
+          "member": "META-INF/LICENSE.txt",
+          "sha256": "b1d2870f1a00e4d7f56576e5f0870cba109e041f8af66866cf5b499478e654e7",
+          "bytes": 11359
+        },
+        {
+          "member": "META-INF/NOTICE.txt",
+          "sha256": "d82503df1b65173afe535a2f753d27c25377f7f6e9d0b19b4665af617df14750",
+          "bytes": 175
+        },
+        {
+          "member": "META-INF/FastDoubleParser-LICENSE",
+          "sha256": "59067508e44346bf93dc9c5e4d673a67ecd77988c2020bb5e0f8667eb199f396",
+          "bytes": 3228
+        },
+        {
+          "member": "META-INF/FastDoubleParser-ThirdParty-LICENSE",
+          "sha256": "dbc36f9422a40d58d1a214080583667cfd37d61c2fae1657d981edda2a60727f",
+          "bytes": 4578
+        },
+        {
+          "member": "META-INF/Schubfach-LICENSE",
+          "sha256": "12d39a6615219d73202300715e365bec2b958f858d1e837c8f2dace57f905969",
+          "bytes": 1064
+        }
+      ]
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.core:jackson-annotations:2.22",
+      "license_declarations": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "com.fasterxml.jackson.core:jackson-annotations:2.22"
+        }
+      ],
+      "embedded_legal": [
+        {
+          "member": "META-INF/LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "bytes": 11358
+        },
+        {
+          "member": "META-INF/NOTICE",
+          "sha256": "612b14bc77c944ce229cbba0d14919162cfea8ed802cbf06a8e865e032d03201",
+          "bytes": 738
+        }
+      ]
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.core:jackson-core:2.22.1",
+      "license_declarations": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "com.fasterxml.jackson.core:jackson-core:2.22.1"
+        }
+      ],
+      "embedded_legal": [
+        {
+          "member": "META-INF/FastDoubleParser-LICENSE",
+          "sha256": "59067508e44346bf93dc9c5e4d673a67ecd77988c2020bb5e0f8667eb199f396",
+          "bytes": 3228
+        },
+        {
+          "member": "META-INF/FastDoubleParser-ThirdParty-LICENSE",
+          "sha256": "dbc36f9422a40d58d1a214080583667cfd37d61c2fae1657d981edda2a60727f",
+          "bytes": 4578
+        },
+        {
+          "member": "META-INF/LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "bytes": 11358
+        },
+        {
+          "member": "META-INF/Schubfach-LICENSE",
+          "sha256": "12d39a6615219d73202300715e365bec2b958f858d1e837c8f2dace57f905969",
+          "bytes": 1064
+        },
+        {
+          "member": "META-INF/NOTICE",
+          "sha256": "e6aef1c0f4cf5b0f802c16b31fce309b3c3737450b93c40d6291bf6540aae3d1",
+          "bytes": 1616
+        }
+      ]
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.core:jackson-databind:2.22.1",
+      "license_declarations": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "com.fasterxml.jackson.core:jackson-databind:2.22.1"
+        }
+      ],
+      "embedded_legal": [
+        {
+          "member": "META-INF/LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "bytes": 11358
+        },
+        {
+          "member": "META-INF/NOTICE",
+          "sha256": "612b14bc77c944ce229cbba0d14919162cfea8ed802cbf06a8e865e032d03201",
+          "bytes": 738
+        }
+      ]
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.22.1",
+      "license_declarations": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "com.fasterxml.jackson:jackson-base:2.22.1"
+        }
+      ],
+      "embedded_legal": [
+        {
+          "member": "META-INF/LICENSE",
+          "sha256": "bc3d1a9b9fe02f5b9186447ca2896a63015e5e626eccfdda6a04bd7d71be3ce0",
+          "bytes": 330
+        },
+        {
+          "member": "META-INF/NOTICE",
+          "sha256": "7347397a0665f6898b32894a1869a514251abef7da7620902b0e57c5026cf1ed",
+          "bytes": 610
+        }
+      ]
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.0",
+      "license_declarations": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "com.fasterxml.jackson:jackson-base:2.21.0"
+        }
+      ],
+      "embedded_legal": [
+        {
+          "member": "META-INF/LICENSE",
+          "sha256": "66ea9c8987b1674aababbcc24f61c83ab4fb7baf3af1d701caf0a3aaea97fa92",
+          "bytes": 331
+        },
+        {
+          "member": "META-INF/NOTICE",
+          "sha256": "7347397a0665f6898b32894a1869a514251abef7da7620902b0e57c5026cf1ed",
+          "bytes": 610
+        }
+      ]
+    },
+    {
+      "coordinate": "com.github.luben:zstd-jni:1.5.7-6",
+      "license_declarations": [
+        {
+          "name": "BSD 2-Clause License",
+          "url": "https://opensource.org/licenses/BSD-2-Clause",
+          "source_coordinate": "com.github.luben:zstd-jni:1.5.7-6"
+        }
+      ],
+      "embedded_legal": []
+    },
+    {
+      "coordinate": "com.google.code.findbugs:jsr305:3.0.2",
+      "license_declarations": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "com.google.code.findbugs:jsr305:3.0.2"
+        }
+      ],
+      "embedded_legal": []
+    },
+    {
+      "coordinate": "com.google.code.gson:gson:2.15.0",
+      "license_declarations": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "com.google.code.gson:gson:2.15.0"
+        }
+      ],
+      "embedded_legal": []
+    },
+    {
+      "coordinate": "com.google.errorprone:error_prone_annotations:2.41.0",
+      "license_declarations": [
+        {
+          "name": "Apache 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "com.google.errorprone:error_prone_annotations:2.41.0"
+        }
+      ],
+      "embedded_legal": []
+    },
+    {
+      "coordinate": "com.google.flatbuffers:flatbuffers-java:25.2.10",
+      "license_declarations": [
+        {
+          "name": "Apache License V2.0",
+          "url": "https://raw.githubusercontent.com/google/flatbuffers/master/LICENSE",
+          "source_coordinate": "com.google.flatbuffers:flatbuffers-java:25.2.10"
+        }
+      ],
+      "embedded_legal": []
+    },
+    {
+      "coordinate": "com.google.guava:failureaccess:1.0.1",
+      "license_declarations": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "com.google.guava:guava-parent:26.0-android"
+        }
+      ],
+      "embedded_legal": []
+    },
+    {
+      "coordinate": "com.google.guava:guava:32.0.1-jre",
+      "license_declarations": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "com.google.guava:guava-parent:32.0.1-jre"
+        }
+      ],
+      "embedded_legal": [
+        {
+          "member": "META-INF/LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "bytes": 11358
+        }
+      ]
+    },
+    {
+      "coordinate": "com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava",
+      "license_declarations": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "com.google.guava:guava-parent:26.0-android"
+        }
+      ],
+      "embedded_legal": []
+    },
+    {
+      "coordinate": "com.google.j2objc:j2objc-annotations:2.8",
+      "license_declarations": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "com.google.j2objc:j2objc-annotations:2.8"
+        }
+      ],
+      "embedded_legal": []
+    },
+    {
+      "coordinate": "com.squareup.okhttp3:okhttp-java-net-cookiejar:5.0.0",
+      "license_declarations": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "com.squareup.okhttp3:okhttp-java-net-cookiejar:5.0.0"
+        }
+      ],
+      "embedded_legal": []
+    },
+    {
+      "coordinate": "com.squareup.okhttp3:okhttp-jvm:5.0.0",
+      "license_declarations": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "com.squareup.okhttp3:okhttp-jvm:5.0.0"
+        }
+      ],
+      "embedded_legal": []
+    },
+    {
+      "coordinate": "com.squareup.okhttp3:okhttp-tls:5.0.0",
+      "license_declarations": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "com.squareup.okhttp3:okhttp-tls:5.0.0"
+        }
+      ],
+      "embedded_legal": []
+    },
+    {
+      "coordinate": "com.squareup.okhttp3:okhttp-urlconnection:5.0.0",
+      "license_declarations": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "com.squareup.okhttp3:okhttp-urlconnection:5.0.0"
+        }
+      ],
+      "embedded_legal": []
+    },
+    {
+      "coordinate": "com.squareup.okio:okio:3.15.0",
+      "license_declarations": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "com.squareup.okio:okio:3.15.0"
+        }
+      ],
+      "embedded_legal": []
+    },
+    {
+      "coordinate": "com.squareup.okio:okio-jvm:3.15.0",
+      "license_declarations": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "com.squareup.okio:okio-jvm:3.15.0"
+        }
+      ],
+      "embedded_legal": []
+    },
+    {
+      "coordinate": "com.vdurmont:semver4j:3.1.0",
+      "license_declarations": [
+        {
+          "name": "The MIT License",
+          "url": "http://www.opensource.org/licenses/mit-license.php",
+          "source_coordinate": "com.vdurmont:semver4j:3.1.0"
+        }
+      ],
+      "embedded_legal": []
+    },
+    {
+      "coordinate": "com.zaxxer:HikariCP:7.1.0",
+      "license_declarations": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "com.zaxxer:HikariCP:7.1.0"
+        }
+      ],
+      "embedded_legal": []
+    },
+    {
+      "coordinate": "commons-codec:commons-codec:1.21.0",
+      "license_declarations": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "org.apache:apache:37"
+        }
+      ],
+      "embedded_legal": [
+        {
+          "member": "META-INF/LICENSE.txt",
+          "sha256": "b1d2870f1a00e4d7f56576e5f0870cba109e041f8af66866cf5b499478e654e7",
+          "bytes": 11359
+        },
+        {
+          "member": "META-INF/NOTICE.txt",
+          "sha256": "d82503df1b65173afe535a2f753d27c25377f7f6e9d0b19b4665af617df14750",
+          "bytes": 175
+        }
+      ]
+    },
+    {
+      "coordinate": "commons-io:commons-io:2.20.0",
+      "license_declarations": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "org.apache:apache:35"
+        }
+      ],
+      "embedded_legal": [
+        {
+          "member": "META-INF/LICENSE.txt",
+          "sha256": "c1d1a38c99c48ccad170890ade6066e2e240bb6ce59861d4eb7f672eddd2a4c6",
+          "bytes": 11360
+        },
+        {
+          "member": "META-INF/NOTICE.txt",
+          "sha256": "b54b0db6c617273efff79ba193bb01b05eadcddfff55c24063b38b2acef714c3",
+          "bytes": 172
+        }
+      ]
+    },
+    {
+      "coordinate": "de.siegmar:fastcsv:2.2.1",
+      "license_declarations": [
+        {
+          "name": "MIT License",
+          "url": "https://opensource.org/licenses/MIT",
+          "source_coordinate": "de.siegmar:fastcsv:2.2.1"
+        }
+      ],
+      "embedded_legal": []
+    },
+    {
+      "coordinate": "org.apache.arrow:arrow-compression:19.0.0",
+      "license_declarations": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "org.apache:apache:35"
+        }
+      ],
+      "embedded_legal": [
+        {
+          "member": "META-INF/LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "bytes": 11358
+        },
+        {
+          "member": "META-INF/NOTICE",
+          "sha256": "036770044b61d059338cb8777bc59cfbec333d9a67497c8d784bdd0b8bacc6b5",
+          "bytes": 167
+        }
+      ]
+    },
+    {
+      "coordinate": "org.apache.arrow:arrow-format:19.0.0",
+      "license_declarations": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "org.apache:apache:35"
+        }
+      ],
+      "embedded_legal": [
+        {
+          "member": "META-INF/LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "bytes": 11358
+        },
+        {
+          "member": "META-INF/NOTICE",
+          "sha256": "cc238ec4439244fd6511129411b2beccb621ab044b9a3abe33d750c55a4a7785",
+          "bytes": 162
+        }
+      ]
+    },
+    {
+      "coordinate": "org.apache.arrow:arrow-memory-core:19.0.0",
+      "license_declarations": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "org.apache:apache:35"
+        }
+      ],
+      "embedded_legal": [
+        {
+          "member": "META-INF/LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "bytes": 11358
+        },
+        {
+          "member": "META-INF/NOTICE",
+          "sha256": "ec6aa9bc2151a7200658842d05871b4b12b611786578eb987c51cf3fc08a87c1",
+          "bytes": 169
+        }
+      ]
+    },
+    {
+      "coordinate": "org.apache.arrow:arrow-memory-unsafe:19.0.0",
+      "license_declarations": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "org.apache:apache:35"
+        }
+      ],
+      "embedded_legal": [
+        {
+          "member": "META-INF/LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "bytes": 11358
+        },
+        {
+          "member": "META-INF/NOTICE",
+          "sha256": "9fa422e57f82631a9726f37a7454307f558fd4d030f27abae835c45a60211dc5",
+          "bytes": 171
+        }
+      ]
+    },
+    {
+      "coordinate": "org.apache.arrow:arrow-vector:19.0.0",
+      "license_declarations": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "org.apache:apache:35"
+        }
+      ],
+      "embedded_legal": [
+        {
+          "member": "META-INF/LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "bytes": 11358
+        },
+        {
+          "member": "META-INF/NOTICE",
+          "sha256": "d64b23143c6daa5b08eb96b06fd369f42b2d943f3316c1143fc65b00c9bcdfcf",
+          "bytes": 163
+        }
+      ]
+    },
+    {
+      "coordinate": "org.apache.commons:commons-compress:1.28.0",
+      "license_declarations": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "org.apache:apache:35"
+        }
+      ],
+      "embedded_legal": [
+        {
+          "member": "META-INF/LICENSE.txt",
+          "sha256": "51b88fd3e9e24edcdce1dd145a4fca2dcd12911407f00b06dfa6ff600f9733c1",
+          "bytes": 11358
+        },
+        {
+          "member": "META-INF/NOTICE.txt",
+          "sha256": "0d98967f0ab328af8d9d536aa9a5c684b5dd665657245f6ee6b5915affe811c0",
+          "bytes": 178
+        }
+      ]
+    },
+    {
+      "coordinate": "org.apache.commons:commons-lang3:3.18.0",
+      "license_declarations": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "org.apache:apache:35"
+        }
+      ],
+      "embedded_legal": [
+        {
+          "member": "META-INF/LICENSE.txt",
+          "sha256": "b1d2870f1a00e4d7f56576e5f0870cba109e041f8af66866cf5b499478e654e7",
+          "bytes": 11359
+        },
+        {
+          "member": "META-INF/NOTICE.txt",
+          "sha256": "64bc8696af3f6c770521412b85d3a733fa44b2ef5b0f4bd739e0c4d02eca492a",
+          "bytes": 174
+        }
+      ]
+    },
+    {
+      "coordinate": "org.apache.commons:commons-pool2:2.11.1",
+      "license_declarations": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "org.apache:apache:23"
+        }
+      ],
+      "embedded_legal": [
+        {
+          "member": "META-INF/LICENSE.txt",
+          "sha256": "8f8441a968c10a65a27d75935cb16937775e2fcfc2d73066ca4b2ae9a6597b4f",
+          "bytes": 11663
+        },
+        {
+          "member": "META-INF/NOTICE.txt",
+          "sha256": "a6104991d2063bbaaebc6fc6a47d1860947bf5b040599ec6055bb1365f5f62d1",
+          "bytes": 174
+        }
+      ]
+    },
+    {
+      "coordinate": "org.checkerframework:checker-qual:3.33.0",
+      "license_declarations": [
+        {
+          "name": "The MIT License",
+          "url": "http://opensource.org/licenses/MIT",
+          "source_coordinate": "org.checkerframework:checker-qual:3.33.0"
+        }
+      ],
+      "embedded_legal": [
+        {
+          "member": "META-INF/LICENSE.txt",
+          "sha256": "e90eaa08dea089df10f2bf7f9dba63a5f6237c01562c4741e2e86773e78582d5",
+          "bytes": 1126
+        }
+      ]
+    },
+    {
+      "coordinate": "org.jetbrains:annotations:13.0",
+      "license_declarations": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "org.jetbrains:annotations:13.0"
+        }
+      ],
+      "embedded_legal": []
+    },
+    {
+      "coordinate": "org.jetbrains.kotlin:kotlin-stdlib:2.2.0",
+      "license_declarations": [
+        {
+          "name": "The Apache License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "source_coordinate": "org.jetbrains.kotlin:kotlin-stdlib:2.2.0"
+        }
+      ],
+      "embedded_legal": []
+    },
+    {
+      "coordinate": "org.slf4j:slf4j-api:1.7.6",
+      "license_declarations": [
+        {
+          "name": "MIT License",
+          "url": "http://www.opensource.org/licenses/mit-license.php",
+          "source_coordinate": "org.slf4j:slf4j-parent:1.7.6"
+        }
+      ],
+      "embedded_legal": []
+    },
+    {
+      "coordinate": "org.slf4j:slf4j-api:2.0.20",
+      "license_declarations": [
+        {
+          "name": "MIT",
+          "url": "https://opensource.org/license/mit",
+          "source_coordinate": "org.slf4j:slf4j-bom:2.0.20"
+        }
+      ],
+      "embedded_legal": [
+        {
+          "member": "META-INF/LICENSE.txt",
+          "sha256": "6632f550c207be8d7d6b5e87f5d7b905bee218d18392d531df457bf60bec1447",
+          "bytes": 1159
+        }
+      ]
+    },
+    {
+      "coordinate": "org.slf4j:slf4j-nop:2.0.20",
+      "license_declarations": [
+        {
+          "name": "MIT",
+          "url": "https://opensource.org/license/mit",
+          "source_coordinate": "org.slf4j:slf4j-bom:2.0.20"
+        }
+      ],
+      "embedded_legal": [
+        {
+          "member": "META-INF/LICENSE.txt",
+          "sha256": "6632f550c207be8d7d6b5e87f5d7b905bee218d18392d531df457bf60bec1447",
+          "bytes": 1159
+        }
+      ]
+    }
+  ],
+  "launch_coordinates": [
+    "com.google.code.gson:gson:2.15.0",
+    "com.zaxxer:HikariCP:7.1.0",
+    "org.slf4j:slf4j-api:2.0.20",
+    "org.slf4j:slf4j-nop:2.0.20",
+    "com.databend:databend-jdbc:0.4.8"
+  ],
+  "relocations": [
+    [
+      "com/google/shaded/common/",
+      "com/google/common/"
+    ],
+    [
+      "hidden/coyote/",
+      "com/acme/coyote/"
+    ],
+    [
+      "com/databend/jdbc/com/fasterxml/jackson/",
+      "com/fasterxml/jackson/"
+    ],
+    [
+      "com/databend/jdbc/org/slf4j/",
+      "org/slf4j/"
+    ],
+    [
+      "com/databend/jdbc/org/apache/commons/lang3/",
+      "org/apache/commons/lang3/"
+    ]
+  ]
+}
