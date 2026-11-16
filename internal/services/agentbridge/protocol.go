@@ -58,6 +58,10 @@ type RemoteError struct {
 	// NativeCode preserves CQL's hexadecimal response code separately from a
 	// relational SQLSTATE. The complete original field stays in its envelope.
 	NativeCode string `json:",omitempty"`
+	// JDBC 0.4.8 places a Databend query ID in SQLState. The original common
+	// agent truncates diagnostics to 16 bytes. This is only its retained ID
+	// prefix, never a complete query ID or a relational SQLSTATE.
+	NativeQueryIDPrefix string `json:",omitempty"`
 }
 
 type ErrorCodeFormat uint8
@@ -65,6 +69,7 @@ type ErrorCodeFormat uint8
 const (
 	SQLStateCodes ErrorCodeFormat = iota
 	CQLCodes
+	DatabendCodes
 )
 
 func (e *RemoteError) Error() string {
@@ -83,6 +88,9 @@ func (e *RemoteError) Error() string {
 	}
 	if e.NativeCode != "" {
 		s += " native code " + e.NativeCode
+	}
+	if e.NativeQueryIDPrefix != "" {
+		s += " native query ID prefix " + e.NativeQueryIDPrefix
 	}
 	return s
 }
@@ -257,6 +265,14 @@ func decodeRemote(raw json.RawMessage, structured bool, sessionID string, codes 
 				}
 			}
 			e.NativeCode = details.SQLState
+			details.SQLState = ""
+		} else if codes == DatabendCodes && len(details.SQLState) == 16 {
+			for _, c := range details.SQLState {
+				if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'f') {
+					return nil, ErrProtocol
+				}
+			}
+			e.NativeQueryIDPrefix = details.SQLState
 			details.SQLState = ""
 		} else {
 			if len(details.SQLState) != 5 {

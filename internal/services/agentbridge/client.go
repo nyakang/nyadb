@@ -56,7 +56,7 @@ func normalizeOptions(o Options) (Options, error) {
 	if o.CancelWait == 0 {
 		o.CancelWait = 15 * time.Second
 	}
-	if o.MaxFrameBytes < 1024 || o.MaxFrameBytes > 512<<20 || o.MaxInFlight < 1 || o.MaxInFlight > 32 || o.CancelWait <= 0 || o.CancelWait > time.Minute || o.ErrorCodes > CQLCodes {
+	if o.MaxFrameBytes < 1024 || o.MaxFrameBytes > 512<<20 || o.MaxInFlight < 1 || o.MaxInFlight > 32 || o.CancelWait <= 0 || o.CancelWait > time.Minute || o.ErrorCodes > DatabendCodes {
 		return o, ErrRequest
 	}
 	return o, nil
