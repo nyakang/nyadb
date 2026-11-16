@@ -37,6 +37,18 @@ class TrinoFixtureTests(unittest.TestCase):
             FIXTURE.remove_owned("a" * 64, "nonce")
             self.assertEqual(run.call_count, 1)
 
+    def test_connector_network_cleanup_requires_owned_empty_immutable_network(self):
+        identifier = 'a' * 64
+        original = {'Id': identifier, 'Labels': {'nyadb.fixture': 'trino', 'nyadb.fixture.nonce': 'nonce'}, 'Containers': {}}
+        for replacement in [dict(original, Id='b' * 64), dict(original, Labels={}), dict(original, Containers={'foreign': {}})]:
+            with patch.object(FIXTURE.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, json.dumps([replacement]))) as run:
+                with self.assertRaises(RuntimeError):
+                    FIXTURE.remove_network(identifier, 'nonce')
+                self.assertEqual(run.call_count, 1)
+        with patch.object(FIXTURE.subprocess, 'run', side_effect=[subprocess.CompletedProcess([], 0, json.dumps([original])), subprocess.CompletedProcess([], 0)]) as run:
+            FIXTURE.remove_network(identifier, 'nonce')
+            self.assertEqual(run.call_args_list[1].args[0], ['docker', 'network', 'rm', identifier])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -5,7 +5,7 @@ Requires Linux, Docker, Go, an existing JDK 21+, and the pinned Trino image.
 Builds a complete private driverstore bundle, including a linked JRE. This
 acceptance supports bridge, adapter-only provider, and complete public workbench
 scopes. Only workbench evidence validates public managed JDBC integration; the
-shared Trino grid remains read-only.
+native INSERT alignment additionally requires the PostgreSQL connector fixture.
 """
 import argparse
 import importlib.util
@@ -49,6 +49,7 @@ PROVIDER_REQUIRED = [
     'TestTrinoNativeCommittedWriteLostReplyNeverReplays',
     'TestTrinoNativeCloseReleasesOriginalTransaction',
 ]
+INSERT_REQUIRED = ['TestTrinoNativeDocumentInsertPrecisionOmissionAndReceipts', 'TestTrinoManagedNativeDocumentInsertPrecisionOmissionAndReceipts']
 
 def verify_named_acceptance(output, required):
     for name in required:
@@ -61,8 +62,10 @@ def verify_acceptance(output, tls=False):
     verify_named_acceptance(output, required)
 
 
-def verify_provider_acceptance(output, tls=False):
+def verify_provider_acceptance(output, tls=False, writes=False):
     verify_named_acceptance(output, PROVIDER_REQUIRED)
+    if writes:
+        verify_named_acceptance(output, INSERT_REQUIRED)
     if tls:
         verify_named_acceptance(output, ['TestTrinoManagedNativeAuthenticationAndExplicitRecovery/' + case for case in ['wrong-password', 'untrusted-certificate', 'wrong-hostname']])
 
@@ -79,7 +82,7 @@ UI_REQUIRED = {
 SHELL_IMAGES = ['grid', 'structure', 'sql', 'plan', 'recovery']
 
 
-def verify_workbench_images(base):
+def verify_workbench_images(base, writes=False):
     import math
     from PIL import Image
     editor = base / 'editor-screenshots'
@@ -99,6 +102,14 @@ def verify_workbench_images(base):
                     if x < 0 or y < 0 or w <= 0 or h <= 0 or x + w > width + 1 or y + h > 781:
                         raise RuntimeError('Localized Trino control clipped: ' + name + ':' + label)
     images += [(base / 'shell-screenshots' / ('trino-managed-' + name + '.png'), (1280, 800)) for name in SHELL_IMAGES]
+    if writes:
+        images += [(base / 'shell-screenshots' / ('trino-managed-' + name + '.png'), (1280, 800)) for name in ['insert-confirmation', 'insert-receipt']]
+        images += [(base / 'http-shell-screenshots' / ('trino-live-' + name + '.png'), (1280, 800)) for name in ['insert-confirmation', 'insert-receipt']]
+        receipt = json.loads((base / 'shell-screenshots/insert-receipt.json').read_text())
+        native = receipt.get('Receipt', {})
+        statements = native.get('Statements', [])
+        if len(statements) != 1 or statements[0].get('State') != 'acknowledged' or statements[0].get('AffectedRows') != 1 or not native.get('Object', {}).get('ProfileID') or not json.loads(statements[0].get('NativeJSON', '{}')).get('ExecutorAcknowledged'):
+            raise RuntimeError('Original native grid INSERT receipt missing')
     for path, dimensions in images:
         with Image.open(path) as img:
             if img.format != 'PNG' or img.size != dimensions:
@@ -107,17 +118,19 @@ def verify_workbench_images(base):
     return [str(path.relative_to(base)) for path, _ in images]
 
 
-def verify_scope_evidence(base, scope, tls=False):
+def verify_scope_evidence(base, scope, tls=False, writes=False):
     if scope not in ['bridge', 'provider', 'workbench']:
         raise RuntimeError('Unknown Trino evidence scope')
     if scope != 'provider':
         verify_acceptance((base / 'acceptance.log').read_text(), tls)
     if scope in ['provider', 'workbench']:
-        verify_provider_acceptance((base / 'provider-acceptance.log').read_text(), tls)
+        verify_provider_acceptance((base / 'provider-acceptance.log').read_text(), tls, writes)
     if scope == 'workbench':
         for log, name in UI_REQUIRED.items():
             verify_named_acceptance((base / (log + '-acceptance.log')).read_text(), [name])
-        return {'public_managed_provider': True, 'screenshots': verify_workbench_images(base)}
+        if writes:
+            verify_named_acceptance((base / 'http-shell-acceptance.log').read_text(), ['TestTrinoNativeShellFixture'])
+        return {'public_managed_provider': True, 'grid_writes':writes, 'screenshots': verify_workbench_images(base,writes)}
     return {'public_managed_provider': False, 'screenshots': []}
 
 
@@ -202,6 +215,7 @@ def main():
     parser.add_argument('--java', default=shutil.which('java'))
     parser.add_argument('--plain', action='store_true')
     parser.add_argument('--race', action='store_true')
+    parser.add_argument('--postgres', action='store_true', help='include the native PostgreSQL connector write fixture')
     parser.add_argument('--scope', choices=['bridge', 'provider', 'workbench'], default='bridge', help='provider is adapter-only evidence; workbench also requires public editor and shell acceptance')
     args = parser.parse_args()
     if sys.platform != 'linux' or not args.java:
@@ -233,7 +247,7 @@ def main():
         state_file.write_text(json.dumps(state, indent=2) + '\n')
         server_log = base / 'server-fixture.log'
         with server_log.open('w') as log:
-            server = subprocess.Popen([sys.executable, str(ROOT / 'tools/verify_trino_fixture.py'), '--hold', *(['--plain'] if args.plain else [])], stdout=log, stderr=subprocess.STDOUT, cwd=ROOT, start_new_session=True)
+            server = subprocess.Popen([sys.executable, str(ROOT / 'tools/verify_trino_fixture.py'), '--hold', *(['--plain'] if args.plain else []), *(['--postgres'] if args.postgres else [])], stdout=log, stderr=subprocess.STDOUT, cwd=ROOT, start_new_session=True)
         deadline = time.monotonic() + 270
         while True:
             output = server_log.read_text()
@@ -289,7 +303,7 @@ def main():
             native_command = command[:-2] + ['-run=TestTrinoManagedNative|TestTrinoNative', './internal/services/trino']
             with (base / 'provider-acceptance.log').open('w') as log:
                 subprocess.run(native_command, cwd=ROOT, env=native_env, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=930)
-            verify_provider_acceptance((base / 'provider-acceptance.log').read_text(), tls=not args.plain)
+            verify_provider_acceptance((base / 'provider-acceptance.log').read_text(), tls=not args.plain,writes=args.postgres)
             state['managed_provider_verified'] = True
             if args.scope == 'workbench':
                 ui_env = dict(native_env, NYADB_AGENT_TRINO_EDITOR_IT='1', NYADB_AGENT_TRINO_SHELL_IT='1', NYADB_TRINO_EDITOR_SCREENSHOTS=str(base / 'editor-screenshots'), NYADB_TRINO_MANAGED_SHELL_SCREENSHOTS=str(base / 'shell-screenshots'))
@@ -298,7 +312,13 @@ def main():
                     with (base / (log_name + '-acceptance.log')).open('w') as log:
                         subprocess.run(ui_command, cwd=ROOT, env=ui_env, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=930)
                     verify_named_acceptance((base / (log_name + '-acceptance.log')).read_text(), [name])
-        state.update(verify_scope_evidence(base, args.scope, tls=not args.plain))
+                if args.postgres:
+                    http_env = dict(native_env, NYADB_TRINO_VISUAL_DIR=str(base / 'http-shell-screenshots'))
+                    http_command = command[:-2] + ['-run=^TestTrinoNativeShellFixture$', './internal/ui/shell']
+                    with (base / 'http-shell-acceptance.log').open('w') as log:
+                        subprocess.run(http_command, cwd=ROOT, env=http_env, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=930)
+                    verify_named_acceptance((base / 'http-shell-acceptance.log').read_text(), ['TestTrinoNativeShellFixture'])
+        state.update(verify_scope_evidence(base, args.scope, tls=not args.plain,writes=args.postgres))
         passed = True
         print('Original Trino JDBC acceptance passed; scope=' + args.scope, flush=True)
     finally:
@@ -323,6 +343,10 @@ def main():
         if owned is not None:
             if subprocess.run(['docker', 'inspect', owned['id']], capture_output=True).returncode == 0:
                 cleanup_errors.append('Original server remains after child exit')
+            if owned.get('postgres_id') and subprocess.run(['docker', 'inspect', owned['postgres_id']], capture_output=True).returncode == 0:
+                cleanup_errors.append('Original PostgreSQL connector remains after child exit')
+            if owned.get('network') and subprocess.run(['docker', 'network', 'inspect', owned['network']], capture_output=True).returncode == 0:
+                cleanup_errors.append('Original connector network remains after child exit')
             if Path(owned['folder']).exists():
                 cleanup_errors.append('Original server private configuration remains after child exit')
         if json.loads((private / 'owner.json').read_text()) != owner:

@@ -4340,5 +4340,10 @@
   "trinoDriverRequired": "Select or import an installed Trino driver package",
   "trinoImportDriver": "Import Trino driver package",
   "trinoSelectCA": "Select Trino CA certificate",
-  "trinoHTTPTransport": "HTTP / HTTPS"
+  "trinoHTTPTransport": "HTTP / HTTPS",
+  "trinoDataMutationTitle": "Confirm Trino inserts",
+  "trinoDataMutationHint": "Each INSERT runs independently without a batch transaction. The native connector handles omitted fields; explicit NULL differs from omission. This driver exposes no primary keys, so existing rows remain read-only. Unknown or incomplete receipts retain drafts and prohibit replay.",
+  "trinoDataMutationPreview": "Complete native Trino INSERT preview",
+  "trinoDataMutationHistory": "Acknowledged Trino inserts",
+  "trinoDataReadScope": "Trino pages read currently visible data without a consistent snapshot across pages."
 }

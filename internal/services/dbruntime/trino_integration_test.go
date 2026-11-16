@@ -85,7 +85,7 @@ func TestTrinoNativeRuntimePublicationFixture(t *testing.T) {
 	if !first.Capabilities().Explain {
 		t.Fatal("runtime lost verified native plan tools")
 	}
-	if runtime.AdvancedLoader == nil || runtime.TableMetadata == nil || runtime.Exporter == nil || runtime.Saver != nil || runtime.Importer != nil || runtime.Transactions.Begin != nil || runtime.Capabilities.EditableTables {
+	if runtime.AdvancedLoader == nil || runtime.TableMetadata == nil || runtime.Exporter == nil || runtime.Saver != nil || runtime.Importer != nil || runtime.Transactions.Begin != nil || runtime.ReserveDocument == nil {
 		t.Fatal("runtime composed unsupported OLTP tools")
 	}
 	if len(runtime.ExportFormats) != 6 {

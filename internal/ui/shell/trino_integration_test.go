@@ -128,8 +128,8 @@ func TestTrinoNativeShellFixture(t *testing.T) {
 		t.Fatal("Trino did not enter the shared qualified grid")
 	}
 	wait(func() bool { return !dataTab.data.Busy() })
-	if dataTab.data.Page() == nil || !tt.HasText("native shared grid") || dataTab.data.Page().Editable == nil || *dataTab.data.Page().Editable {
-		t.Fatalf("native readonly grid failed: %s", dataTab.data.Error())
+	if dataTab.data.Page() == nil || !tt.HasText("native shared grid") || dataTab.data.Page().Editable == nil || !*dataTab.data.Page().Editable {
+		t.Fatalf("native insert-capable grid failed: %s", dataTab.data.Error())
 	}
 	if dataTab.data.Database() != label {
 		t.Fatal("data document discarded its qualified namespace label")
@@ -153,6 +153,55 @@ func TestTrinoNativeShellFixture(t *testing.T) {
 	if len(dataTab.data.Page().Rows) != before || dataTab.data.HasDraft() {
 		t.Fatal("read-only Trino accepted edits")
 	}
+	click := func(label string) {
+		t.Helper()
+		tt.Frame()
+		if err := tt.Click(label); err != nil {
+			t.Fatal(err)
+		}
+	}
+	click("添加记录")
+	s.dataWorkspace.EditCell(services, dataTab.data, before, "id", contract.Cell{Kind: contract.Integer, Text: "7"})
+	s.dataWorkspace.EditCell(services, dataTab.data, before, "note", contract.Cell{Kind: contract.Text, Text: "native HTTP insert 中文"})
+	click("保存数据更改")
+	wait(func() bool { return tt.HasText("确认 Trino 数据新增") || !dataTab.data.Busy() })
+	if !tt.HasText("确认 Trino 数据新增") {
+		t.Fatal("HTTP original INSERT confirmation missing")
+	}
+	click("复制完整预览")
+	if !strings.Contains(tt.Clipboard(), "INSERT INTO") || !strings.Contains(tt.Clipboard(), "native HTTP insert 中文") {
+		t.Fatal("HTTP insert preview lost original request")
+	}
+	if output := os.Getenv("NYADB_TRINO_VISUAL_DIR"); output != "" {
+		writeDomainCapture(t, output, "trino-live-insert-confirmation", tt)
+	}
+	click("确认并提交更改")
+	wait(func() bool { return !dataTab.data.Busy() })
+	if dataTab.data.HasDraft() || len(dataTab.data.Page().Rows) != before+1 {
+		t.Fatal("HTTP insert receipt did not settle original draft/read")
+	}
+	click("原生顺序写入回执")
+	click("复制完整回执")
+	var receipt struct {
+		Receipt contract.DataSequentialWriteReceipt
+	}
+	if err = json.Unmarshal([]byte(tt.Clipboard()), &receipt); err != nil || len(receipt.Receipt.Statements) != 1 || receipt.Receipt.Statements[0].State != contract.DataWriteAcknowledged || receipt.Receipt.Statements[0].AffectedRows != 1 {
+		t.Fatal("HTTP original INSERT acknowledgement missing", err)
+	}
+	var httpReceipt struct {
+		Terminal bool
+		Native   struct {
+			UpdateType  string `json:"updateType"`
+			UpdateCount int64  `json:"updateCount"`
+		}
+	}
+	if err = json.Unmarshal([]byte(receipt.Receipt.Statements[0].NativeJSON), &httpReceipt); err != nil || !httpReceipt.Terminal || httpReceipt.Native.UpdateType != "INSERT" || httpReceipt.Native.UpdateCount != 1 {
+		t.Fatal("HTTP receipt fabricated acknowledgement", err)
+	}
+	if output := os.Getenv("NYADB_TRINO_VISUAL_DIR"); output != "" {
+		writeDomainCapture(t, output, "trino-live-insert-receipt", tt)
+	}
+	click("关闭")
 	s.openMySQLStructure(services, label, table)
 	tt.Frame()
 	if s.currentTab().kind != tabStructure {

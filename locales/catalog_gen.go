@@ -44229,3 +44229,53 @@ func TrinoHTTPTransport() string { return In(i18n.Locale()).TrinoHTTPTransport()
 func (msgs Messages) TrinoHTTPTransport() string {
 	return Catalog.Format(msgs.locale, "trinoHTTPTransport", nil)
 }
+
+// TrinoDataMutationTitle says "确认 Trino 数据新增"
+// in the language the app shows.
+func TrinoDataMutationTitle() string { return In(i18n.Locale()).TrinoDataMutationTitle() }
+
+// TrinoDataMutationTitle says "确认 Trino 数据新增"
+// in the language of msgs.
+func (msgs Messages) TrinoDataMutationTitle() string {
+	return Catalog.Format(msgs.locale, "trinoDataMutationTitle", nil)
+}
+
+// TrinoDataMutationHint says "各 INSERT 语句独立执行，不提供批次事务。省略字段由原生连接器处理；显式 NULL …"
+// in the language the app shows.
+func TrinoDataMutationHint() string { return In(i18n.Locale()).TrinoDataMutationHint() }
+
+// TrinoDataMutationHint says "各 INSERT 语句独立执行，不提供批次事务。省略字段由原生连接器处理；显式 NULL …"
+// in the language of msgs.
+func (msgs Messages) TrinoDataMutationHint() string {
+	return Catalog.Format(msgs.locale, "trinoDataMutationHint", nil)
+}
+
+// TrinoDataMutationPreview says "Trino 原生 INSERT 完整预览"
+// in the language the app shows.
+func TrinoDataMutationPreview() string { return In(i18n.Locale()).TrinoDataMutationPreview() }
+
+// TrinoDataMutationPreview says "Trino 原生 INSERT 完整预览"
+// in the language of msgs.
+func (msgs Messages) TrinoDataMutationPreview() string {
+	return Catalog.Format(msgs.locale, "trinoDataMutationPreview", nil)
+}
+
+// TrinoDataMutationHistory says "已确认的 Trino 数据新增"
+// in the language the app shows.
+func TrinoDataMutationHistory() string { return In(i18n.Locale()).TrinoDataMutationHistory() }
+
+// TrinoDataMutationHistory says "已确认的 Trino 数据新增"
+// in the language of msgs.
+func (msgs Messages) TrinoDataMutationHistory() string {
+	return Catalog.Format(msgs.locale, "trinoDataMutationHistory", nil)
+}
+
+// TrinoDataReadScope says "Trino 分页读取当前可见数据；跨页不提供一致快照。"
+// in the language the app shows.
+func TrinoDataReadScope() string { return In(i18n.Locale()).TrinoDataReadScope() }
+
+// TrinoDataReadScope says "Trino 分页读取当前可见数据；跨页不提供一致快照。"
+// in the language of msgs.
+func (msgs Messages) TrinoDataReadScope() string {
+	return Catalog.Format(msgs.locale, "trinoDataReadScope", nil)
+}

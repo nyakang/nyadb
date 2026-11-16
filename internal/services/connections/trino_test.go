@@ -19,7 +19,7 @@ func TestTrinoProfileURIAndIndependentCapabilities(t *testing.T) {
 		t.Fatal(err)
 	}
 	d, ok := connections.Describe(p.Kind)
-	if !ok || d.Dialect != "trino" || d.ClientFamily != "trino" || !d.Capabilities.Query || !d.Capabilities.Metadata || !d.Capabilities.Export || d.Capabilities.EditableTables || d.Capabilities.Transactions || d.Capabilities.Import || d.Capabilities.Accounts || d.Capabilities.Backup {
+	if !ok || d.Dialect != "trino" || d.ClientFamily != "trino" || !d.Capabilities.Query || !d.Capabilities.Metadata || !d.Capabilities.Export || !d.Capabilities.EditableTables || d.Capabilities.Transactions || d.Capabilities.Import || d.Capabilities.Accounts || d.Capabilities.Backup {
 		t.Fatal("unverified connector capabilities advertised")
 	}
 	caFile := filepath.Join(t.TempDir(), "ca with spaces.pem")

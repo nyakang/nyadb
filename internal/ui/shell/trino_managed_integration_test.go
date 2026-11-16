@@ -263,8 +263,8 @@ func TestTrinoManagedNativePublicChooserQualifiedGridSQLAndRecovery(t *testing.T
 		t.Fatal("Trino did not enter the shared qualified grid")
 	}
 	wait(func() bool { return !dataTab.data.Busy() })
-	if dataTab.data.Page() == nil || !tt.HasText("native shared grid") || dataTab.data.Page().Editable == nil || *dataTab.data.Page().Editable {
-		t.Fatalf("native readonly grid failed: %s", dataTab.data.Error())
+	if dataTab.data.Page() == nil || !tt.HasText("native shared grid") || dataTab.data.Page().Editable == nil || !*dataTab.data.Page().Editable {
+		t.Fatalf("native insert-capable grid failed: %s", dataTab.data.Error())
 	}
 	row := dataTab.data.Page().Rows[0]
 	if row[0].Text != "9007199254740993" || !row[2].Truncated || !row[3].Truncated {
@@ -302,6 +302,92 @@ func TestTrinoManagedNativePublicChooserQualifiedGridSQLAndRecovery(t *testing.T
 	if len(dataTab.data.Page().Rows) != before || dataTab.data.HasDraft() {
 		t.Fatal("read-only Trino accepted edits")
 	}
+	click := func(label string) {
+		t.Helper()
+		tt.Frame()
+		if err := tt.Click(label); err != nil {
+			t.Fatal(err)
+		}
+	}
+	click("添加记录")
+	if !dataTab.data.HasDraft() || len(dataTab.data.Page().Rows) != before+1 {
+		t.Fatal("public native insert did not create an omitted-field draft")
+	}
+	s.dataWorkspace.EditCell(services, dataTab.data, before, "id", contract.Cell{Kind: contract.Integer, Text: "7"})
+	s.dataWorkspace.EditCell(services, dataTab.data, before, "note", contract.Cell{Kind: contract.Text, Text: "public inserted 中文'quote"})
+	s.dataWorkspace.EditCell(services, dataTab.data, before, "payload", contract.Cell{Kind: contract.Binary, Bytes: []byte{0, 255, 1}})
+	s.dataWorkspace.EditCell(services, dataTab.data, before, "items", contract.Cell{Kind: contract.JSON, Text: `[9007199254740995,null]`})
+	preview := func() {
+		t.Helper()
+		click("保存数据更改")
+		wait(func() bool { return tt.HasText("确认 Trino 数据新增") || !dataTab.data.Busy() })
+		if !tt.HasText("确认 Trino 数据新增") {
+			t.Fatal("native insert confirmation missing", tt.Texts())
+		}
+		click("复制完整预览")
+		if !strings.Contains(tt.Clipboard(), "INSERT INTO") || !strings.Contains(tt.Clipboard(), "9007199254740995") || !strings.Contains(tt.Clipboard(), table) {
+			t.Fatal("native insert preview lost original typed request")
+		}
+	}
+	preview()
+	if output := os.Getenv("NYADB_TRINO_MANAGED_SHELL_SCREENSHOTS"); output != "" {
+		writeDomainCapture(t, output, "trino-managed-insert-confirmation", tt)
+	}
+	click("取消")
+	if !dataTab.data.HasDraft() || !s.dataWorkspace.CanSave(dataTab.data) {
+		t.Fatal("canceling confirmation discarded draft")
+	}
+	check, err := lease.Execute(context.Background(), label, "SELECT COUNT(*) FROM "+table+" WHERE id=7")
+	if err != nil || check.Rows[0][0] != "0" {
+		t.Fatal("preview executed INSERT", err)
+	}
+	preview()
+	click("确认并提交更改")
+	// Park the original completion behind another document. Only reactivation
+	// may consume its receipt and settle the original drafts.
+	s.openQuery()
+	tt.Frame()
+	check, err = lease.Execute(context.Background(), label, "SELECT CAST(id AS VARCHAR),note,to_hex(payload),json_format(CAST(items AS JSON)) FROM "+table+" WHERE id=7")
+	if err != nil {
+		t.Fatal(err)
+	}
+	insertDeadline := time.Now().Add(2 * time.Minute)
+	for len(check.Rows) == 0 {
+		check, err = lease.Execute(context.Background(), label, "SELECT CAST(id AS VARCHAR),note,to_hex(payload),json_format(CAST(items AS JSON)) FROM "+table+" WHERE id=7")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if time.Now().After(insertDeadline) {
+			t.Fatal("original native INSERT did not finish")
+		}
+	}
+	if check.Rows[0][1] != "public inserted 中文'quote" || check.Rows[0][2] != "00FF01" || check.Rows[0][3] != `[9007199254740995,null]` {
+		t.Fatal("public native insert changed typed values")
+	}
+	if !dataTab.data.HasDraft() {
+		t.Fatal("parked native completion changed inactive drafts")
+	}
+	s.selectTab(dataTab.id)
+	tt.Frame()
+	wait(func() bool { return !dataTab.data.Busy() })
+	if dataTab.data.HasDraft() || len(dataTab.data.Page().Rows) != before+1 {
+		t.Fatal("reactivated native INSERT did not settle original receipt/read")
+	}
+	click("原生顺序写入回执")
+	click("复制完整回执")
+	var writeReceipt struct {
+		Receipt contract.DataSequentialWriteReceipt
+	}
+	if err = json.Unmarshal([]byte(tt.Clipboard()), &writeReceipt); err != nil || writeReceipt.Receipt.Object != dataTab.data.Object() || len(writeReceipt.Receipt.Statements) != 1 || writeReceipt.Receipt.Statements[0].State != contract.DataWriteAcknowledged || writeReceipt.Receipt.Statements[0].AffectedRows != 1 {
+		t.Fatal("public native INSERT receipt missing", err)
+	}
+	if output := os.Getenv("NYADB_TRINO_MANAGED_SHELL_SCREENSHOTS"); output != "" {
+		writeDomainCapture(t, output, "trino-managed-insert-receipt", tt)
+		if err = os.WriteFile(filepath.Join(output, "insert-receipt.json"), []byte(tt.Clipboard()), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	click("关闭")
 	s.openMySQLStructure(services, label, table)
 	tt.Frame()
 	if s.currentTab().kind != tabStructure {

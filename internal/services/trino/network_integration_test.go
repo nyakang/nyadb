@@ -14,9 +14,13 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
 func TestTrinoNativeCommittedWriteLostReplyNeverReplays(t *testing.T) {
@@ -98,6 +102,66 @@ func TestTrinoNativeCommittedWriteLostReplyNeverReplays(t *testing.T) {
 	rows := nativeRun(t, original, "SELECT n FROM memory.default."+name)
 	if len(rows) != 1 || string(rows[0][0]) != "9007199254740993" {
 		t.Fatal("native committed write was replayed or lost", rows)
+	}
+	// Exercise the original-document INSERT path through the same real-product
+	// lost-reply relay. A later successful read cannot acknowledge this write.
+	p, _ := connections.Defaults(connections.Trino)
+	u, _ := url.Parse(server.URL)
+	port, _ := strconv.Atoi(u.Port())
+	p.ID, p.Name, p.Host, p.Port, p.Username, p.Database = 397, "original lost INSERT", u.Hostname(), uint16(port), cfg.Username, "memory"
+	p.TrinoOptions.DefaultSchema, p.TrinoOptions.CAFile = "default", ca
+	rawSession, err := OpenSession(context.Background(), p, password)
+	if err != nil {
+		t.Fatal(err)
+	}
+	session := rawSession.(*Session)
+	defer session.Close()
+	if _, err = session.Namespaces(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	o := contract.NamespaceRef{ProfileID: p.ID, Catalog: "memory", Schema: "default"}.Object("TABLE", name)
+	document, err := session.ReserveDataDocument(o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer document.Close()
+	runtime := document.Runtime()
+	label := namespaceLabel(o.Catalog, o.Schema)
+	edits := []contract.DataEdit{{Kind: "insert", Values: map[string]contract.DataValue{"n": {Kind: contract.Integer, Text: "9007199254740995"}}}, {Kind: "insert", Values: map[string]contract.DataValue{"n": {Kind: contract.Integer, Text: "9007199254740996"}}}}
+	plan, err := runtime.PreviewEdits(context.Background(), p.ID, label, name, edits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dropped.Store(false)
+	receipt, err := runtime.SubmitEdits(context.Background(), p.ID, label, name, plan)
+	if !dropped.Load() || !errors.Is(err, contract.ErrDataCommitUncertain) || receipt == nil || receipt.Applied != 0 || !receipt.CommitUncertain || receipt.Sequential.Statements[0].State != contract.DataWriteUnknown || receipt.Sequential.Statements[1].State != contract.DataWriteNotSent {
+		t.Fatal("document lost original unknown write or sent suffix", err)
+	}
+	progress, valid := contract.SequentialDataWriteProgress(receipt, 2)
+	if !valid || !progress.Unknown {
+		t.Fatal("unknown receipt does not preserve original statement identity")
+	}
+	page, err := runtime.AdvancedLoader(context.Background(), p.ID, label, name, contract.DataOptions{Object: o, Limit: 10})
+	if err != nil || len(page.Rows) != 2 {
+		t.Fatal("original committed values or unsent suffix changed", err)
+	}
+	if _, err = runtime.PreviewEdits(context.Background(), p.ID, label, name, edits); !errors.Is(err, contract.ErrDataCommitUncertain) {
+		t.Fatal("read acknowledged the original unknown write", err)
+	}
+	if err = document.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err = session.Close(); err != nil {
+		t.Fatal(err)
+	}
+	recovered, err := OpenSession(context.Background(), p, password)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer recovered.Close()
+	rows = nativeRun(t, original, "SELECT n FROM memory.default."+name)
+	if len(rows) != 2 {
+		t.Fatal("explicit recovery replayed native INSERT", rows)
 	}
 }
 

@@ -4340,5 +4340,10 @@
   "trinoDriverRequired": "请选择或导入已安装的 Trino 驱动包",
   "trinoImportDriver": "导入 Trino 驱动包",
   "trinoSelectCA": "选择 Trino CA 证书",
-  "trinoHTTPTransport": "HTTP / HTTPS"
+  "trinoHTTPTransport": "HTTP / HTTPS",
+  "trinoDataMutationTitle": "确认 Trino 数据新增",
+  "trinoDataMutationHint": "各 INSERT 语句独立执行，不提供批次事务。省略字段由原生连接器处理；显式 NULL 与省略不同。当前驱动不提供主键，已有行保持只读。未知或不完整回执保留草稿并禁止重放。",
+  "trinoDataMutationPreview": "Trino 原生 INSERT 完整预览",
+  "trinoDataMutationHistory": "已确认的 Trino 数据新增",
+  "trinoDataReadScope": "Trino 分页读取当前可见数据；跨页不提供一致快照。"
 }

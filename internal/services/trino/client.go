@@ -29,6 +29,9 @@ var ErrBusy = errors.New("Trino session already has an active statement")
 var ErrBounds = errors.New("Trino statement or result exceeds native client bounds")
 var ErrProtocol = errors.New("invalid or unsupported Trino protocol response")
 
+// A complete 1 MiB binary or quoted field can expand when encoded as SQL.
+const statementBytes = 8 << 20
+
 // QueryError exposes stable native diagnostics without retaining SQL or server
 // messages, which may contain a statement's credentials or literal values.
 type QueryError struct {
@@ -243,8 +246,12 @@ func (c *Client) interrupted(id, next string, cause error) error {
 // server query error preserves acknowledged session state. Any interruption or
 // uncertain response retires the session, even after cancellation is confirmed.
 func (c *Client) Run(ctx context.Context, source string, consume Consumer) (Result, error) {
+	return c.run(ctx, source, consume, nil)
+}
+
+func (c *Client) run(ctx context.Context, source string, consume Consumer, attempt *httpInsertAttempt) (Result, error) {
 	var result Result
-	if len(source) == 0 || len(source) > 1<<20 || !utf8.ValidString(source) || strings.ContainsRune(source, 0) {
+	if len(source) == 0 || len(source) > statementBytes || !utf8.ValidString(source) || strings.ContainsRune(source, 0) {
 		return result, ErrBounds
 	}
 	if !c.operation.TryLock() {
@@ -269,6 +276,12 @@ func (c *Client) Run(ctx context.Context, source string, consume Consumer) (Resu
 	var columns []Column
 	var columnBytes []byte
 	for pages := 0; pages < 100000; pages++ {
+		if attempt != nil && method == http.MethodPost {
+			if err := ctx.Err(); err != nil {
+				return result, err
+			}
+			attempt.Dispatched = true
+		}
 		status, header, raw, err := c.request(ctx, method, target, source)
 		if err != nil || status != 200 {
 			if err == nil {
@@ -281,6 +294,9 @@ func (c *Client) Run(ctx context.Context, source string, consume Consumer) (Resu
 			return result, c.interrupted(result.QueryID, next, ErrProtocol)
 		}
 		result.QueryID = page.ID
+		if attempt != nil && page.Next == "" {
+			attempt.Native = bytes.Clone(raw)
+		}
 		if page.Next != "" {
 			next, err = c.nextURI(page.Next, page.ID)
 			if err != nil {
@@ -350,6 +366,9 @@ func (c *Client) Run(ctx context.Context, source string, consume Consumer) (Resu
 			result.UpdateCount = &v
 		}
 		if next == "" {
+			if attempt != nil {
+				attempt.Terminal = true
+			}
 			return result, nil
 		}
 		method, target, source = http.MethodGet, next, ""

@@ -183,8 +183,8 @@ func TestTrinoManagedNativeProviderQualifiedReadsOriginalValuesAndSQL(t *testing
 	if _, err = s.DataReads().AdvancedLoader(ctx, p.ID, label, table, contract.DataOptions{Object: object, Limit: 2, UseKeyset: true}); !errors.Is(err, contract.ErrUnsupported) {
 		t.Fatal("unverified keyset identity was admitted")
 	}
-	if s.Capabilities().EditableTables {
-		t.Fatal("unverified connector writes advertised")
+	if !s.Capabilities().EditableTables || contract.ComposeData(s).ReserveDocument == nil || contract.ComposeData(s).Saver != nil {
+		t.Fatal("managed INSERT must require an original document plan")
 	}
 	run(first, "", "USE tpch.tiny; PREPARE captured FROM SELECT current_catalog,current_schema")
 	q := run(first, "", "EXECUTE captured")

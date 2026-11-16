@@ -18,6 +18,7 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
 IMAGE = 'trinodb/trino@sha256:2704eb53935af5e582d63d6033e9bf99d20c325e9b0e30b1016ef59a4773979f'
+POSTGRES_IMAGE = 'postgres@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193'
 
 
 def remove_owned(identifier, nonce):
@@ -33,12 +34,26 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(plain=False, hold=False, race=False, transport_only=False):
+def remove_network(identifier, nonce):
+    if not re.fullmatch('[0-9a-f]{64}', identifier):
+        raise RuntimeError('invalid immutable Trino network ID')
+    result = subprocess.run(['docker', 'network', 'inspect', identifier], capture_output=True, text=True)
+    if result.returncode:
+        return
+    obj = json.loads(result.stdout)[0]
+    labels = obj.get('Labels') or {}
+    if obj['Id'] != identifier or labels.get('nyadb.fixture') != 'trino' or labels.get('nyadb.fixture.nonce') != nonce or obj.get('Containers'):
+        raise RuntimeError('Trino network ownership changed or network still in use')
+    subprocess.run(['docker', 'network', 'rm', identifier], check=True, stdout=subprocess.DEVNULL)
+
+
+def verify(plain=False, hold=False, race=False, transport_only=False, postgres=False):
     base, output = ROOT/'temp/trino', ROOT/'build/trino'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
     subprocess.run(['docker', 'image', 'inspect', IMAGE], check=True, stdout=subprocess.DEVNULL)
     nonce, identifier = uuid.uuid4().hex, None
+    postgres_id, network = None, None
     def terminate(signum, _frame):
         raise SystemExit(128+signum)
     signal.signal(signal.SIGTERM, terminate)
@@ -76,7 +91,27 @@ def verify(plain=False, hold=False, race=False, transport_only=False):
             p.chmod(0o600)
         port = '8080' if plain else '8443'
         try:
-            identifier = subprocess.check_output(['docker', 'create', '--name', 'nyadb-trino-it-'+nonce[:12], '--label', 'nyadb.fixture=trino', '--label', 'nyadb.fixture.nonce='+nonce, '--memory=6g', '--cpus=4', '--user=0', '-p', '127.0.0.1::'+port, '--mount', 'type=bind,source='+str(cfg)+',target=/nyadb-config,readonly', '--mount', 'type=bind,source='+str(cfg/'config.properties')+',target=/etc/trino/config.properties,readonly', '--mount', 'type=bind,source='+str(catalogs)+',target=/etc/trino/catalog,readonly', *([] if plain else ['--mount', 'type=bind,source='+str(cfg/'password-authenticator.properties')+',target=/etc/trino/password-authenticator.properties,readonly']), IMAGE], text=True).strip()
+            if postgres:
+                subprocess.run(['docker', 'image', 'inspect', POSTGRES_IMAGE], check=True, stdout=subprocess.DEVNULL)
+                network = subprocess.check_output(['docker', 'network', 'create', '--label', 'nyadb.fixture=trino', '--label', 'nyadb.fixture.nonce='+nonce, 'nyadb-trino-net-'+nonce[:12]], text=True).strip()
+                pg_password = folder/'pg-password'
+                pg_secret = secrets.token_hex(32)
+                pg_password.write_text(pg_secret)
+                pg_password.chmod(0o600)
+                init = folder/'init.sql'
+                init.write_text("CREATE TABLE insert_fixture(id BIGINT PRIMARY KEY, note TEXT DEFAULT 'native default', amount NUMERIC(38,20), payload BYTEA, stamp TIMESTAMP(6), CONSTRAINT positive_id CHECK(id > 0));\n")
+                init.chmod(0o644)
+                postgres_id = subprocess.check_output(['docker', 'create', '--name', 'nyadb-trino-pg-'+nonce[:12], '--label', 'nyadb.fixture=trino', '--label', 'nyadb.fixture.nonce='+nonce, '--network', network, '--network-alias', 'nyadb-pg', '-e', 'POSTGRES_USER=nyadb_it', '-e', 'POSTGRES_DB=nyadb_it', '-e', 'POSTGRES_PASSWORD_FILE=/nyadb-password', '--mount', 'type=bind,source='+str(pg_password)+',target=/nyadb-password,readonly', '--mount', 'type=bind,source='+str(init)+',target=/docker-entrypoint-initdb.d/init.sql,readonly', POSTGRES_IMAGE], text=True).strip()
+                subprocess.run(['docker', 'start', postgres_id], check=True, stdout=subprocess.DEVNULL)
+                deadline = time.monotonic()+120
+                while subprocess.run(['docker', 'exec', postgres_id, 'pg_isready', '-U', 'nyadb_it', '-d', 'nyadb_it'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode:
+                    if time.monotonic() >= deadline:
+                        raise RuntimeError('owned PostgreSQL connector did not become ready')
+                    time.sleep(1)
+                pg_catalog = catalogs/'postgresql.properties'
+                pg_catalog.write_text('connector.name=postgresql\nconnection-url=jdbc:postgresql://nyadb-pg:5432/nyadb_it\nconnection-user=nyadb_it\nconnection-password='+pg_secret+'\n')
+                pg_catalog.chmod(0o600)
+            identifier = subprocess.check_output(['docker', 'create', '--name', 'nyadb-trino-it-'+nonce[:12], '--label', 'nyadb.fixture=trino', '--label', 'nyadb.fixture.nonce='+nonce, *(['--network', network] if network else []), '--memory=6g', '--cpus=4', '--user=0', '-p', '127.0.0.1::'+port, '--mount', 'type=bind,source='+str(cfg)+',target=/nyadb-config,readonly', '--mount', 'type=bind,source='+str(cfg/'config.properties')+',target=/etc/trino/config.properties,readonly', '--mount', 'type=bind,source='+str(catalogs)+',target=/etc/trino/catalog,readonly', *([] if plain else ['--mount', 'type=bind,source='+str(cfg/'password-authenticator.properties')+',target=/etc/trino/password-authenticator.properties,readonly']), IMAGE], text=True).strip()
             subprocess.run(['docker', 'start', identifier], check=True, stdout=subprocess.DEVNULL)
             published = subprocess.check_output(['docker', 'port', identifier, port+'/tcp'], text=True).strip().rsplit(':', 1)[1]
             endpoint = ('http' if plain else 'https')+'://127.0.0.1:'+published
@@ -98,9 +133,9 @@ def verify(plain=False, hold=False, race=False, transport_only=False):
                 time.sleep(1)
             (output/('identity-'+nonce+'.json')).write_text(json.dumps(identity, indent=2)+'\n')
             probe = folder/'probe.json'
-            probe.write_text(json.dumps({'endpoint':endpoint, 'username':'nyadb_it', 'password_file':str(password_file), 'catalog':'memory', 'schema':'default', 'ca_file':'' if plain else str(cfg/'ca-cert.pem')}))
+            probe.write_text(json.dumps({'endpoint':endpoint, 'username':'nyadb_it', 'password_file':str(password_file), 'catalog':'memory', 'schema':'default', 'ca_file':'' if plain else str(cfg/'ca-cert.pem'), 'postgres':postgres}))
             probe.chmod(0o600)
-            (output/('owned-fixture-'+nonce+'.json')).write_text(json.dumps({'id':identifier, 'nonce':nonce, 'image':IMAGE, 'folder':str(folder), 'probe':str(probe), 'tls':not plain}, indent=2)+'\n')
+            (output/('owned-fixture-'+nonce+'.json')).write_text(json.dumps({'id':identifier, 'nonce':nonce, 'image':IMAGE, 'folder':str(folder), 'probe':str(probe), 'tls':not plain, 'postgres_id':postgres_id, 'postgres_image':POSTGRES_IMAGE if postgres else None, 'network':network}, indent=2)+'\n')
             print('Native Trino 484 ready; private probe:', probe, flush=True)
             if hold:
                 while True:
@@ -124,11 +159,15 @@ def verify(plain=False, hold=False, race=False, transport_only=False):
             if identifier:
                 result = subprocess.run(['docker','logs',identifier], capture_output=True, text=True)
                 text = result.stdout+result.stderr
-                for value in [password,secret]:
+                for value in [password,secret,pg_secret if postgres_id else '']:
                     if value:
                         text = text.replace(value,'[redacted]')
                 (output/('server-'+nonce+'.log')).write_text(text)
                 remove_owned(identifier,nonce)
+            if postgres_id:
+                remove_owned(postgres_id, nonce)
+            if network:
+                remove_network(network, nonce)
 
 
 if __name__ == '__main__':
@@ -137,5 +176,6 @@ if __name__ == '__main__':
     parser.add_argument('--hold',action='store_true')
     parser.add_argument('--race',action='store_true')
     parser.add_argument('--transport-only',action='store_true',help='skip runtime and workbench acceptance')
+    parser.add_argument('--postgres',action='store_true',help='include a real PostgreSQL connector for native insert/default/constraint acceptance')
     args=parser.parse_args()
-    verify(args.plain,args.hold,args.race,args.transport_only)
+    verify(args.plain,args.hold,args.race,args.transport_only,args.postgres)

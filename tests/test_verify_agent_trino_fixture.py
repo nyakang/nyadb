@@ -87,6 +87,32 @@ class TrinoWorkbenchEvidenceScopeTests(unittest.TestCase):
             with self.subTest(missing=missing), self.assertRaises(RuntimeError):
                 FIXTURE.verify_provider_acceptance('\n'.join(lines + [line for line in cases if line != missing]), tls=True)
 
+    def test_insert_scope_requires_real_native_insert_passes_and_original_receipt(self):
+        lines = ['--- PASS: ' + name + ' (1s)' for name in FIXTURE.PROVIDER_REQUIRED]
+        inserts = ['--- PASS: ' + name + ' (1s)' for name in FIXTURE.INSERT_REQUIRED]
+        FIXTURE.verify_provider_acceptance('\n'.join(lines + inserts), writes=True)
+        for missing in inserts:
+            with self.subTest(missing=missing), self.assertRaises(RuntimeError):
+                FIXTURE.verify_provider_acceptance('\n'.join(lines + [line for line in inserts if line != missing]), writes=True)
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            self.evidence(base)
+            for name in ['insert-confirmation', 'insert-receipt']:
+                Image.new('RGB', (1280, 800)).save(base / ('shell-screenshots/trino-managed-' + name + '.png'))
+            (base / 'http-shell-screenshots').mkdir()
+            for name in ['insert-confirmation', 'insert-receipt']:
+                Image.new('RGB', (1280, 800)).save(base / ('http-shell-screenshots/trino-live-' + name + '.png'))
+            path = base / 'shell-screenshots/insert-receipt.json'
+            native = json.dumps({'ExecutorAcknowledged': True, 'Result': {'affected_rows': 1}})
+            receipt = {'Receipt': {'Object': {'ProfileID': 1}, 'Statements': [{'State': 'acknowledged', 'AffectedRows': 1, 'NativeJSON': native}]}}
+            path.write_text(json.dumps(receipt))
+            self.assertEqual(len(FIXTURE.verify_workbench_images(base, writes=True)), 21)
+            for state in ['unknown', 'failed', 'not_sent']:
+                receipt['Receipt']['Statements'][0]['State'] = state
+                path.write_text(json.dumps(receipt))
+                with self.subTest(state=state), self.assertRaises(RuntimeError):
+                    FIXTURE.verify_workbench_images(base, writes=True)
+
     def test_missing_clipped_and_corrupt_screenshots_fail(self):
         with tempfile.TemporaryDirectory() as temp:
             base = Path(temp)

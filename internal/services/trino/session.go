@@ -21,6 +21,7 @@ type Session struct {
 	closed     bool
 	work       sync.WaitGroup
 	leases     map[*queryLease]bool
+	dataLeases map[*dataLease]bool
 	managed    *managedBinding
 	closeOnce  sync.Once
 	closeErr   error
@@ -81,10 +82,17 @@ func (s *Session) close() {
 	for l := range s.leases {
 		leases = append(leases, l)
 	}
+	dataLeases := make([]*dataLease, 0, len(s.dataLeases))
+	for l := range s.dataLeases {
+		dataLeases = append(dataLeases, l)
+	}
 	s.namespaces = nil
 	s.mu.Unlock()
 	for _, l := range leases {
 		l.Release()
+	}
+	for _, l := range dataLeases {
+		_ = l.Close()
 	}
 	if s.managed != nil && s.managed.queries != nil {
 		s.managed.queries.Close()

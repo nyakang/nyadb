@@ -128,7 +128,9 @@ func realTrinoRuntime(t *testing.T, f trinoAgentFixture) (*driverstore.Store, dr
 		_, err = journal.Write(append(record, '\n'))
 		return err
 	}
-	runtime, err := lease.StartJDBCObserved(ctx, "trino", driverstore.JDBCSettings{MaxConnections: 6, MetadataReserve: 1, WaitTimeout: 3 * time.Second}, agentbridge.Options{CancelWait: 15 * time.Second}, observe)
+	// Cold original JDBC allocation uses the product's pool wait. Queued
+	// cancellation is tested separately with its own short request deadline.
+	runtime, err := lease.StartJDBCObserved(ctx, "trino", driverstore.JDBCSettings{MaxConnections: 6, MetadataReserve: 1, WaitTimeout: 30 * time.Second}, agentbridge.Options{CancelWait: 15 * time.Second}, observe)
 	if err != nil {
 		lease.Close()
 		t.Fatal(err)
@@ -143,7 +145,7 @@ func realTrinoRuntime(t *testing.T, f trinoAgentFixture) (*driverstore.Store, dr
 
 func realTrinoSession(t *testing.T, c *agentbridge.Client, params map[string]any) *agentbridge.Session {
 	t.Helper()
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 	s, receipt, err := c.OpenSession(ctx, params)
 	if err != nil || !receipt.Dispatched || !receipt.ExecutorAcknowledged || !s.Alive() {

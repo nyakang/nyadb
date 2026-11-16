@@ -41,7 +41,7 @@ func Describe(kind Kind) (Descriptor, bool) {
 	case Elasticsearch:
 		return Descriptor{kind, "Elasticsearch", "elasticsearch", "server", "elasticsearch", 9200, contract.Capabilities{Documents: true, Query: true, Metadata: true, EditableTables: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}}, true
 	case Trino:
-		return Descriptor{kind, "Trino", "trino", "server", "trino", 8080, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Count: true, Export: true, JSONL: true, Explain: true}}, true
+		return Descriptor{kind, "Trino", "trino", "server", "trino", 8080, contract.Capabilities{Query: true, Metadata: true, Schemas: true, EditableTables: true, Count: true, Export: true, JSONL: true, Explain: true}}, true
 	case StarRocks:
 		return Descriptor{kind, "StarRocks", "starrocks", "server", "mysql", 9030, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Count: true, Export: true, JSONL: true, Explain: true}}, true
 	case Doris:
