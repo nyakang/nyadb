@@ -213,6 +213,7 @@ func cloneReceipts(receipts []Receipt) []Receipt {
 	out := append([]Receipt(nil), receipts...)
 	for i := range out {
 		out[i].Result = append(json.RawMessage(nil), out[i].Result...)
+		out[i].original = append(json.RawMessage(nil), out[i].original...)
 		if out[i].RemoteError != nil {
 			v := *out[i].RemoteError
 			if v.VendorCode != nil {

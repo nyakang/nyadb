@@ -18,6 +18,21 @@ IMAGE = 'cassandra@sha256:b494afb347bfd20765d80817d89d9e6e31ae77a339bfb34e82c6ea
 WORKBENCH_TESTS = ['PublicDocumentsCQLAndPublishedGenerations', 'PublicChooserURIGridCQLStructureAndRecovery']
 DATA_TESTS = ['DataPagingRowsAndExport', 'DataUUIDStaticFieldsAndSchema', 'DataCancellationAndOriginalClose', 'SharedGridPagingInspectorParkGenerationAndClose']
 SESSION_TESTS = ['QualifiedSchemaAndIndependentCQL', 'CQLPagingStreamingAndAcknowledgement', 'LeaseLostCounterReplyExplicitRecovery', 'MetadataChangeQueueAndOriginalClose', 'OriginalPreconnectAndMetadataCancellation']
+AGENT_DIAGNOSTIC_TESTS = {
+    'TestCassandraAgentManagedOriginalReceiptsValuesCursorAndClose',
+    'TestCassandraAgentManagedDocumentIsolationAndOriginalCancellation',
+    'TestCassandraAgentLocalOriginalReceiptsValuesCursorAndClose',
+    'TestCassandraAgentLocalDocumentIsolationAndOriginalCancellation',
+}
+
+
+def verify_native_evidence(text, required, allowed_skips):
+    for name in required:
+        if not re.search(r'^--- PASS: TestCassandraNative'+re.escape(name)+r' \(', text, re.M):
+            raise RuntimeError('Missing native Cassandra PASS evidence: '+name)
+    skipped = set(re.findall(r'^--- SKIP: (\S+)', text, re.M))
+    if skipped - allowed_skips - AGENT_DIAGNOSTIC_TESTS:
+        raise RuntimeError('Unexpected native Cassandra SKIP evidence')
 
 
 
@@ -176,14 +191,10 @@ def verify(plain=False, race=False, profile=False, session=False, data=False, wo
             if workbench:
                 required += WORKBENCH_TESTS
             text = logfile.read_text()
-            if any('--- PASS: TestCassandraNative'+name not in text for name in required):
-                raise RuntimeError('Missing native Cassandra PASS evidence')
             allowed_skips = set() if session else {'TestCassandraNative'+name for name in SESSION_TESTS}
             if not data:
                 allowed_skips |= {'TestCassandraNative'+name for name in DATA_TESTS[:3]}
-            skipped = set(re.findall(r'--- SKIP: (\S+)', text))
-            if skipped - allowed_skips:
-                raise RuntimeError('Unexpected native Cassandra SKIP evidence')
+            verify_native_evidence(text, required, allowed_skips)
             evidence['version'] = '5.0.6'
             evidence['required_tests'] = required
             evidence['log_sha256'] = hashlib.sha256(logfile.read_bytes()).hexdigest()

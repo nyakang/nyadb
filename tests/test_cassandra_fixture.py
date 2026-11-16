@@ -11,6 +11,21 @@ SPEC.loader.exec_module(FIXTURE)
 
 
 class CassandraFixtureOwnershipTests(unittest.TestCase):
+    def test_public_evidence_allows_only_declared_independent_agent_skips(self):
+        required = ['AuthenticationAndTLS', 'PublicChooserURIGridCQLStructureAndRecovery']
+        public = '\n'.join('--- PASS: TestCassandraNative'+name+' (0.01s)' for name in required)
+        agents = '\n'.join('--- SKIP: '+name+' (0.00s)' for name in FIXTURE.AGENT_DIAGNOSTIC_TESTS)
+        FIXTURE.verify_native_evidence(public+'\n'+agents, required, set())
+        for invalid in [
+            public.replace('--- PASS: TestCassandraNativeAuthenticationAndTLS', '--- SKIP: TestCassandraNativeAuthenticationAndTLS'),
+            public.replace('TestCassandraNativeAuthenticationAndTLS ', 'TestCassandraNativeAuthenticationAndTLSAlternative '),
+            public+'\n--- SKIP: TestCassandraAgentUnknownMode (0.00s)',
+            'log: '+public.replace('\n', '\nlog: '),
+            agents,
+        ]:
+            with self.subTest(output=invalid), self.assertRaises(RuntimeError):
+                FIXTURE.verify_native_evidence(invalid, required, set())
+
     def test_cleanup_rejects_names_and_changed_ownership(self):
         with patch.object(FIXTURE.subprocess, 'run') as run:
             with self.assertRaises(RuntimeError):

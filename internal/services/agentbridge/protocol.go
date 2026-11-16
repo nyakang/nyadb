@@ -38,12 +38,14 @@ type Receipt struct {
 }
 
 // OriginalResponse returns an owned copy of a single-session v1 JSON-RPC
-// response (nil for v2 receipts). It may contain credentials or values in native
+// response or an explicitly retained v2 response. It may contain credentials or values in native
 // error text. Only explicit native receipt inspection/export should access it; ordinary errors
 // and JSON serialization of Receipt keep the sanitized RemoteError instead.
 func (r Receipt) OriginalResponse() json.RawMessage {
 	return append(json.RawMessage(nil), r.original...)
 }
+
+func (r Receipt) Clone() Receipt { return cloneReceipts([]Receipt{r})[0] }
 
 // RemoteError deliberately excludes native message text, which can contain
 // credentials or SQL values. Retryable is a native hint, never replay authority.
@@ -53,7 +55,17 @@ type RemoteError struct {
 	Category, SessionDisposition, Stage, OperationOutcome, SQLState string
 	VendorCode                                                      *int64
 	Retryable                                                       bool
+	// NativeCode preserves CQL's hexadecimal response code separately from a
+	// relational SQLSTATE. The complete original field stays in its envelope.
+	NativeCode string `json:",omitempty"`
 }
+
+type ErrorCodeFormat uint8
+
+const (
+	SQLStateCodes ErrorCodeFormat = iota
+	CQLCodes
+)
 
 func (e *RemoteError) Error() string {
 	if e == nil {
@@ -68,6 +80,9 @@ func (e *RemoteError) Error() string {
 	}
 	if e.VendorCode != nil {
 		s += " vendor " + strconv.FormatInt(*e.VendorCode, 10)
+	}
+	if e.NativeCode != "" {
+		s += " native code " + e.NativeCode
 	}
 	return s
 }
@@ -172,7 +187,7 @@ func controlMethod(method string) bool {
 	return false
 }
 
-func decodeRemote(raw json.RawMessage, structured bool, sessionID string) (*RemoteError, error) {
+func decodeRemote(raw json.RawMessage, structured bool, sessionID string, codes ErrorCodeFormat) (*RemoteError, error) {
 	fields, err := objectFields(raw)
 	if err != nil {
 		return nil, err
@@ -232,12 +247,25 @@ func decodeRemote(raw json.RawMessage, structured bool, sessionID string) (*Remo
 		return nil, ErrProtocol
 	}
 	if details.SQLState != "" {
-		if len(details.SQLState) != 5 {
-			return nil, ErrProtocol
-		}
-		for _, c := range details.SQLState {
-			if !(c >= 'A' && c <= 'Z' || c >= '0' && c <= '9') {
+		if codes == CQLCodes {
+			if len(details.SQLState) != 6 || !strings.HasPrefix(details.SQLState, "0x") {
 				return nil, ErrProtocol
+			}
+			for _, c := range details.SQLState[2:] {
+				if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'f') {
+					return nil, ErrProtocol
+				}
+			}
+			e.NativeCode = details.SQLState
+			details.SQLState = ""
+		} else {
+			if len(details.SQLState) != 5 {
+				return nil, ErrProtocol
+			}
+			for _, c := range details.SQLState {
+				if !(c >= 'A' && c <= 'Z' || c >= '0' && c <= '9') {
+					return nil, ErrProtocol
+				}
 			}
 		}
 	}

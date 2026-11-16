@@ -38,6 +38,12 @@ type Options struct {
 	MaxFrameBytes int
 	MaxInFlight   int
 	CancelWait    time.Duration
+	// RetainOriginalResponses keeps complete v2 envelopes for explicit native
+	// inspection. Ordinary receipt serialization and errors remain sanitized.
+	RetainOriginalResponses bool
+	// ErrorCodes selects the original structured error code representation.
+	// Default SQLStateCodes retains strict JDBC/SQLSTATE validation.
+	ErrorCodes ErrorCodeFormat
 }
 
 func normalizeOptions(o Options) (Options, error) {
@@ -50,7 +56,7 @@ func normalizeOptions(o Options) (Options, error) {
 	if o.CancelWait == 0 {
 		o.CancelWait = 15 * time.Second
 	}
-	if o.MaxFrameBytes < 1024 || o.MaxFrameBytes > 512<<20 || o.MaxInFlight < 1 || o.MaxInFlight > 32 || o.CancelWait <= 0 || o.CancelWait > time.Minute {
+	if o.MaxFrameBytes < 1024 || o.MaxFrameBytes > 512<<20 || o.MaxInFlight < 1 || o.MaxInFlight > 32 || o.CancelWait <= 0 || o.CancelWait > time.Minute || o.ErrorCodes > CQLCodes {
 		return o, ErrRequest
 	}
 	return o, nil
@@ -65,27 +71,29 @@ type pendingCall struct {
 // Client owns one captured process. Every terminal path closes and waits for
 // that process; callers must construct a new Client to recover explicitly.
 type Client struct {
-	mu              sync.Mutex
-	cmd             *exec.Cmd
-	owner           *processOwner
-	stdin, stdout   *os.File
-	options         Options
-	protocolVersion int
-	metadata        Handshake
-	nextID          uint64
-	pending         map[uint64]*pendingCall
-	sessions        map[*Session]bool
-	terminal        error
-	ready           chan struct{}
-	done            chan struct{}
-	processDone     chan struct{}
-	readerDone      chan struct{}
-	writer          chan struct{}
-	slots           chan struct{}
-	stopOnce        sync.Once
-	closeOnce       sync.Once
-	closing         atomic.Bool
-	closeError      error
+	mu               sync.Mutex
+	cmd              *exec.Cmd
+	owner            *processOwner
+	stdin, stdout    *os.File
+	options          Options
+	protocolVersion  int
+	metadata         Handshake
+	handshakeReceipt Receipt
+	readyResponse    json.RawMessage
+	nextID           uint64
+	pending          map[uint64]*pendingCall
+	sessions         map[*Session]bool
+	terminal         error
+	ready            chan struct{}
+	done             chan struct{}
+	processDone      chan struct{}
+	readerDone       chan struct{}
+	writer           chan struct{}
+	slots            chan struct{}
+	stopOnce         sync.Once
+	closeOnce        sync.Once
+	closing          atomic.Bool
+	closeError       error
 }
 
 func Start(ctx context.Context, spec LaunchSpec, options Options) (*Client, error) {
@@ -204,6 +212,7 @@ func start(ctx context.Context, spec LaunchSpec, options Options, version int) (
 	}
 	c.mu.Lock()
 	c.metadata = h
+	c.handshakeReceipt = cloneReceipts([]Receipt{r})[0]
 	c.mu.Unlock()
 	if ctx.Err() != nil || !c.Alive() {
 		c.Close()
@@ -274,6 +283,20 @@ func (c *Client) Handshake() Handshake {
 	h := c.metadata
 	h.Capabilities = append([]string(nil), h.Capabilities...)
 	return h
+}
+
+// HandshakeReceipt and ReadyResponse return owned original protocol evidence.
+// Original v2 bytes are retained only when requested at process construction.
+func (c *Client) HandshakeReceipt() Receipt {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return cloneReceipts([]Receipt{c.handshakeReceipt})[0]
+}
+
+func (c *Client) ReadyResponse() json.RawMessage {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return append(json.RawMessage(nil), c.readyResponse...)
 }
 func (c *Client) failure() error {
 	c.mu.Lock()
@@ -376,6 +399,11 @@ func (c *Client) readResponses() {
 				return
 			}
 			seenReady = true
+			if c.options.RetainOriginalResponses {
+				c.mu.Lock()
+				c.readyResponse = append(json.RawMessage(nil), line...)
+				c.mu.Unlock()
+			}
 			close(c.ready)
 			continue
 		}
@@ -403,11 +431,11 @@ func (c *Client) readResponses() {
 			return
 		}
 		r := response{result: append(json.RawMessage(nil), result...)}
-		if c.protocolVersion == 1 {
+		if c.protocolVersion == 1 || c.options.RetainOriginalResponses {
 			r.original = append(json.RawMessage(nil), line...)
 		}
 		if hasError {
-			r.remote, err = decodeRemote(remote, p.structured, p.sessionID)
+			r.remote, err = decodeRemote(remote, p.structured, p.sessionID, c.options.ErrorCodes)
 			if err != nil {
 				c.stop(ErrProtocol)
 				return
