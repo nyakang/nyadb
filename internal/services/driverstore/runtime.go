@@ -60,21 +60,40 @@ func (l *Lease) StartJDBCObserved(ctx context.Context, profile string, settings 
 }
 
 func (l *Lease) start(ctx context.Context, profile string, settings *JDBCSettings, options agentbridge.Options, started func(int) error) (*Runtime, error) {
+	spec, err := l.prepareStart(ctx, profile, settings, false, started)
+	if err != nil {
+		return nil, err
+	}
+	client, err := agentbridge.Start(ctx, spec, options)
+	if err != nil {
+		return nil, errors.Join(err, l.releaseRuntime())
+	}
+	return &Runtime{Client: client, lease: l}, nil
+}
+
+func (l *Lease) prepareStart(ctx context.Context, profile string, settings *JDBCSettings, single bool, started func(int) error) (agentbridge.LaunchSpec, error) {
+	if ctx == nil {
+		return agentbridge.LaunchSpec{}, ErrPackage
+	}
 	l.mu.Lock()
 	if l.active || l.consumed {
 		l.mu.Unlock()
-		return nil, ErrBusy
+		return agentbridge.LaunchSpec{}, ErrBusy
 	}
 	spec, err := l.launchSpec(profile)
 	if err != nil {
 		l.mu.Unlock()
-		return nil, err
+		return agentbridge.LaunchSpec{}, err
+	}
+	if single && l.manifest.Runtime != "native" {
+		l.mu.Unlock()
+		return agentbridge.LaunchSpec{}, ErrPackage
 	}
 	if settings != nil {
 		args, err := settings.arguments()
 		if err != nil || l.manifest.Runtime != "java" {
 			l.mu.Unlock()
-			return nil, ErrPackage
+			return agentbridge.LaunchSpec{}, ErrPackage
 		}
 		spec.Args = append(args, spec.Args...)
 	}
@@ -85,23 +104,52 @@ func (l *Lease) start(ctx context.Context, profile string, settings *JDBCSetting
 		started, _ = ctx.Value(runtimeObserverKey{}).(func(int) error)
 	}
 	spec.Started = started
-	client, err := agentbridge.Start(ctx, spec, options)
-	if err != nil {
-		l.mu.Lock()
-		l.active = false
-		l.mu.Unlock()
-		return nil, errors.Join(err, l.Close())
-	}
-	return &Runtime{Client: client, lease: l}, nil
+	return spec, nil
+}
+
+func (l *Lease) releaseRuntime() error {
+	l.mu.Lock()
+	l.active = false
+	l.mu.Unlock()
+	return l.Close()
 }
 
 func (r *Runtime) Close() error {
 	r.once.Do(func() {
 		r.err = r.Client.Close()
-		r.lease.mu.Lock()
-		r.lease.active = false
-		r.lease.mu.Unlock()
-		r.err = errors.Join(r.err, r.lease.Close())
+		r.err = errors.Join(r.err, r.lease.releaseRuntime())
+	})
+	return r.err
+}
+
+// SingleSessionRuntime binds a native v1 process to its immutable package
+// marker. It never supplies the Java/v2 Client or permits rebinding a process.
+type SingleSessionRuntime struct {
+	Session *agentbridge.SingleSession
+	lease   *Lease
+	once    sync.Once
+	err     error
+}
+
+func (l *Lease) StartSingleSession(ctx context.Context, profile string, options agentbridge.Options) (*SingleSessionRuntime, error) {
+	return l.StartSingleSessionObserved(ctx, profile, options, nil)
+}
+
+func (l *Lease) StartSingleSessionObserved(ctx context.Context, profile string, options agentbridge.Options, started func(int) error) (*SingleSessionRuntime, error) {
+	spec, err := l.prepareStart(ctx, profile, nil, true, started)
+	if err != nil {
+		return nil, err
+	}
+	session, err := agentbridge.StartSingleSession(ctx, spec, options)
+	if err != nil {
+		return nil, errors.Join(err, l.releaseRuntime())
+	}
+	return &SingleSessionRuntime{Session: session, lease: l}, nil
+}
+
+func (r *SingleSessionRuntime) Close() error {
+	r.once.Do(func() {
+		r.err = errors.Join(r.Session.Close(), r.lease.releaseRuntime())
 	})
 	return r.err
 }

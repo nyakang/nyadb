@@ -39,6 +39,9 @@ func init() {
 		result := any(map[string]bool{"ok": true})
 		if r.Method == "handshake" {
 			result = agentbridge.Handshake{ProtocolVersion: 2, AgentProtocolVersion: 2, Capabilities: []string{"connect", "query", "multi_session", "structured_error_v1"}}
+			if os.Getenv("NYADB_DRIVERSTORE_PROTOCOL") == "1" {
+				result = agentbridge.Handshake{ProtocolVersion: 1, AgentProtocolVersion: 1, Capabilities: []string{"connect", "kv"}}
+			}
 		}
 		if r.Method == "shutdown" {
 			gate := os.Getenv("NYADB_DRIVERSTORE_SHUTDOWN_GATE")

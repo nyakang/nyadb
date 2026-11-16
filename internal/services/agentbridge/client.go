@@ -65,29 +65,34 @@ type pendingCall struct {
 // Client owns one captured process. Every terminal path closes and waits for
 // that process; callers must construct a new Client to recover explicitly.
 type Client struct {
-	mu            sync.Mutex
-	cmd           *exec.Cmd
-	owner         *processOwner
-	stdin, stdout *os.File
-	options       Options
-	metadata      Handshake
-	nextID        uint64
-	pending       map[uint64]*pendingCall
-	sessions      map[*Session]bool
-	terminal      error
-	ready         chan struct{}
-	done          chan struct{}
-	processDone   chan struct{}
-	readerDone    chan struct{}
-	writer        chan struct{}
-	slots         chan struct{}
-	stopOnce      sync.Once
-	closeOnce     sync.Once
-	closing       atomic.Bool
-	closeError    error
+	mu              sync.Mutex
+	cmd             *exec.Cmd
+	owner           *processOwner
+	stdin, stdout   *os.File
+	options         Options
+	protocolVersion int
+	metadata        Handshake
+	nextID          uint64
+	pending         map[uint64]*pendingCall
+	sessions        map[*Session]bool
+	terminal        error
+	ready           chan struct{}
+	done            chan struct{}
+	processDone     chan struct{}
+	readerDone      chan struct{}
+	writer          chan struct{}
+	slots           chan struct{}
+	stopOnce        sync.Once
+	closeOnce       sync.Once
+	closing         atomic.Bool
+	closeError      error
 }
 
 func Start(ctx context.Context, spec LaunchSpec, options Options) (*Client, error) {
+	return start(ctx, spec, options, 2)
+}
+
+func start(ctx context.Context, spec LaunchSpec, options Options, version int) (*Client, error) {
 	if ctx == nil {
 		return nil, ErrRequest
 	}
@@ -149,7 +154,7 @@ func Start(ctx context.Context, spec LaunchSpec, options Options) (*Client, erro
 	}
 	inputRead.Close()
 	outputWrite.Close()
-	c := &Client{cmd: cmd, owner: owner, stdin: inputWrite, stdout: outputRead, options: o,
+	c := &Client{cmd: cmd, owner: owner, stdin: inputWrite, stdout: outputRead, options: o, protocolVersion: version,
 		pending: map[uint64]*pendingCall{}, sessions: map[*Session]bool{}, ready: make(chan struct{}),
 		done: make(chan struct{}), processDone: make(chan struct{}), readerDone: make(chan struct{}),
 		writer: make(chan struct{}, 1), slots: make(chan struct{}, o.MaxInFlight)}
@@ -186,13 +191,13 @@ func Start(ctx context.Context, spec LaunchSpec, options Options) (*Client, erro
 		c.Close()
 		return nil, ErrLost
 	}
-	params, _ := json.Marshal(map[string]any{"appVersion": "nyadb", "protocolVersion": 2})
+	params, _ := json.Marshal(map[string]any{"appVersion": "nyadb", "protocolVersion": version})
 	r, err := c.call(ctx, "handshake", params, "", true)
 	if err != nil {
 		c.Close()
 		return nil, err
 	}
-	h, err := decodeHandshake(r.Result)
+	h, err := decodeHandshakeVersion(r.Result, version)
 	if err != nil {
 		c.Close()
 		return nil, err
@@ -308,7 +313,7 @@ func (c *Client) Close() error {
 	c.closeOnce.Do(func() {
 		c.closing.Store(true)
 		c.mu.Lock()
-		graceful := c.terminal == nil && c.metadata.ProtocolVersion == 2
+		graceful := c.terminal == nil && (c.metadata.ProtocolVersion == 2 || c.metadata.ProtocolVersion == 1 && len(c.pending) == 0)
 		all := make([]*Session, 0, len(c.sessions))
 		for s := range c.sessions {
 			all = append(all, s)
@@ -398,6 +403,9 @@ func (c *Client) readResponses() {
 			return
 		}
 		r := response{result: append(json.RawMessage(nil), result...)}
+		if c.protocolVersion == 1 {
+			r.original = append(json.RawMessage(nil), line...)
+		}
 		if hasError {
 			r.remote, err = decodeRemote(remote, p.structured, p.sessionID)
 			if err != nil {
@@ -526,6 +534,7 @@ func (c *Client) call(ctx context.Context, method string, params json.RawMessage
 	p, dispatched, err := c.submit(ctx, method, params, sessionID)
 	r.Dispatched = dispatched
 	if err != nil {
+		r.CancellationRequested = dispatched && ctx.Err() != nil
 		r.ProcessExitConfirmed = c.exited()
 		return r, err
 	}
@@ -538,6 +547,7 @@ func (c *Client) call(ctx context.Context, method string, params json.RawMessage
 		r.CancellationRequested = true
 		if sessionID == "" || control {
 			c.stop(ErrLost)
+			<-c.processDone
 			return c.finish(r, <-p.result, ctx.Err())
 		}
 		wait, cancel := context.WithTimeout(context.Background(), c.options.CancelWait)
@@ -587,6 +597,7 @@ func receiptOK(raw json.RawMessage) bool {
 
 func (c *Client) finish(r Receipt, native response, canceled error) (Receipt, error) {
 	r.Result, r.RemoteError = native.result, native.remote
+	r.original = native.original
 	if native.err != nil {
 		<-c.processDone
 		r.ProcessExitConfirmed = true

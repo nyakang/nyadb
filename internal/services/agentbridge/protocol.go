@@ -13,14 +13,15 @@ import (
 )
 
 var (
-	ErrLaunch   = errors.New("database agent could not be started")
-	ErrArtifact = errors.New("database agent artifact verification failed")
-	ErrProtocol = errors.New("database agent protocol is invalid")
-	ErrLost     = errors.New("original database agent exited; reconnect explicitly")
-	ErrClosed   = errors.New("original database agent session is closed")
-	ErrRequest  = errors.New("database agent request is invalid")
-	ErrLimit    = errors.New("database agent request exceeds its resource limit")
-	ErrVersion  = errors.New("database agent does not support session protocol v2")
+	ErrLaunch        = errors.New("database agent could not be started")
+	ErrArtifact      = errors.New("database agent artifact verification failed")
+	ErrProtocol      = errors.New("database agent protocol is invalid")
+	ErrLost          = errors.New("original database agent exited; reconnect explicitly")
+	ErrClosed        = errors.New("original database agent session is closed")
+	ErrRequest       = errors.New("database agent request is invalid")
+	ErrLimit         = errors.New("database agent request exceeds its resource limit")
+	ErrVersion       = errors.New("database agent does not support session protocol v2")
+	ErrSingleVersion = errors.New("database agent does not support single-session protocol v1")
 )
 
 // Receipt retains the original complete result even when cancellation raced
@@ -33,6 +34,15 @@ type Receipt struct {
 	ExecutorAcknowledged  bool
 	CancellationRequested bool
 	ProcessExitConfirmed  bool
+	original              json.RawMessage
+}
+
+// OriginalResponse returns an owned copy of a single-session v1 JSON-RPC
+// response (nil for v2 receipts). It may contain credentials or values in native
+// error text. Only explicit native receipt inspection/export should access it; ordinary errors
+// and JSON serialization of Receipt keep the sanitized RemoteError instead.
+func (r Receipt) OriginalResponse() json.RawMessage {
+	return append(json.RawMessage(nil), r.original...)
 }
 
 // RemoteError deliberately excludes native message text, which can contain
@@ -78,9 +88,10 @@ func (h Handshake) Supports(capability string) bool {
 }
 
 type response struct {
-	result json.RawMessage
-	remote *RemoteError
-	err    error
+	result   json.RawMessage
+	original json.RawMessage
+	remote   *RemoteError
+	err      error
 }
 
 // objectFields rejects repeated keys and trailing JSON before routing IDs or
@@ -237,11 +248,18 @@ func decodeRemote(raw json.RawMessage, structured bool, sessionID string) (*Remo
 }
 
 func decodeHandshake(raw json.RawMessage) (Handshake, error) {
+	return decodeHandshakeVersion(raw, 2)
+}
+
+func decodeHandshakeVersion(raw json.RawMessage, version int) (Handshake, error) {
 	var h Handshake
 	if _, err := objectFields(raw); err != nil {
 		return h, err
 	}
-	if json.Unmarshal(raw, &h) != nil || h.ProtocolVersion != 2 || h.AgentProtocolVersion != 2 || !h.Supports("multi_session") || !h.Supports("connect") {
+	if json.Unmarshal(raw, &h) != nil || h.ProtocolVersion != version || h.AgentProtocolVersion != version || !h.Supports("connect") || h.Supports("multi_session") != (version == 2) {
+		if version == 1 {
+			return Handshake{}, ErrSingleVersion
+		}
 		return Handshake{}, ErrVersion
 	}
 	if len(h.Capabilities) > 256 {

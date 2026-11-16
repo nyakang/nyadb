@@ -26,6 +26,9 @@ func (c *Client) OpenSession(ctx context.Context, params any) (*Session, Receipt
 	if ctx == nil {
 		return nil, Receipt{}, ErrRequest
 	}
+	if c.Handshake().ProtocolVersion != 2 {
+		return nil, Receipt{}, ErrVersion
+	}
 	s := &Session{client: c, id: rand.Text(), gate: make(chan struct{}, 1)}
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	s.gate <- struct{}{}
