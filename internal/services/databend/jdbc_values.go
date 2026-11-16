@@ -15,7 +15,9 @@ import (
 // DecodeJDBCValue retains the pinned original agent's exact scalar/JSON text.
 // Databend's native binary type is emitted as uppercase hex without a 0x
 // prefix. Generic ARRAY metadata does not supply editable element types; its
-// JSON projection must not be used to invent such a schema.
+// JSON projection must not be used to invent such a schema. MAP is an exact
+// JSON object projection; TUPLE stays opaque native text without an invented
+// element schema. Original receipts remain unchanged by these conversions.
 func DecodeJDBCValue(declaration string, raw json.RawMessage) (contract.Cell, error) {
 	raw = bytes.TrimSpace(raw)
 	if !utf8.Valid(raw) || !json.Valid(raw) {
@@ -40,6 +42,23 @@ func DecodeJDBCValue(declaration string, raw json.RawMessage) (contract.Cell, er
 		text := string(raw)
 		if unsigned {
 			_, err = strconv.ParseUint(text, 10, size)
+			// The pinned original agent reads BIGINT via getLong and INTEGER
+			// via getInt. UInt64/UInt32's upper halves therefore arrive as
+			// negative JSON integers. Reinterpret only these exact declared
+			// widths. UInt8/UInt16 fit the original signed Java int unchanged.
+			if err != nil && (size == 32 || size == 64) && strings.HasPrefix(text, "-") {
+				var signed int64
+				signed, err = strconv.ParseInt(text, 10, size)
+				if err == nil && signed < 0 {
+					bits := uint64(signed)
+					if size == 32 {
+						bits = uint64(uint32(signed))
+					}
+					text = strconv.FormatUint(bits, 10)
+				} else {
+					return contract.Cell{}, agentbridge.ErrNativeResult
+				}
+			}
 		} else {
 			_, err = strconv.ParseInt(text, 10, size)
 		}
@@ -61,7 +80,7 @@ func DecodeJDBCValue(declaration string, raw json.RawMessage) (contract.Cell, er
 		return agentbridge.DecodeStandardValue("boolean", raw)
 	case "float32", "float64":
 		return agentbridge.DecodeStandardValue("double", raw)
-	case "string", "binary", "array", "variant", "date", "timestamp":
+	case "string", "binary", "array", "variant", "map", "tuple", "date", "timestamp":
 		var text string
 		if json.Unmarshal(raw, &text) != nil {
 			return contract.Cell{}, agentbridge.ErrNativeResult
@@ -73,9 +92,10 @@ func DecodeJDBCValue(declaration string, raw json.RawMessage) (contract.Cell, er
 				return contract.Cell{}, agentbridge.ErrNativeResult
 			}
 			return contract.Cell{Kind: contract.Binary, Bytes: value}, nil
-		case "array", "variant":
+		case "array", "variant", "map":
 			value := []byte(text)
-			if !utf8.Valid(value) || !json.Valid(value) || base == "array" && (len(bytes.TrimSpace(value)) == 0 || bytes.TrimSpace(value)[0] != '[') {
+			trimmed := bytes.TrimSpace(value)
+			if !utf8.Valid(value) || !json.Valid(value) || base == "array" && (len(trimmed) == 0 || trimmed[0] != '[') || base == "map" && (len(trimmed) == 0 || trimmed[0] != '{') {
 				return contract.Cell{}, agentbridge.ErrNativeResult
 			}
 			return contract.Cell{Kind: contract.JSON, Text: text}, nil

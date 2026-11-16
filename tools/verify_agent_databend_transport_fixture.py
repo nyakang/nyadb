@@ -30,6 +30,9 @@ REQUIRED = [
     'TestDatabendTransportLocalCommittedUpstreamReplyLossNeverReplays',
     'TestDatabendTransportLocalOriginalTLSGatewayAndAuthentication',
     'TestDatabendTransportLocalOriginalQueuedCancellationAndIndependentSession',
+    'TestDatabendTransportLocalOriginalUnsignedBoundariesAndCompositeValues',
+    'TestDatabendTransportLocalOriginalActiveCancellationAcknowledgement',
+    'TestDatabendTransportLocalOriginalKeylessGuardsAndPartialBatch',
 ]
 
 
@@ -124,6 +127,70 @@ def verify_receipts(directory):
     if set(REQUIRED) - covered:
         raise RuntimeError('A named diagnostic has no original executor evidence')
     return len(receipts)
+
+
+def verify_active_cancellation(directory):
+    evidence = json.loads((directory / 'active-cancellation.json').read_text())
+    if (not re.fullmatch('[0-9a-f]{32}', evidence.get('original_query_id', '')) or
+            evidence.get('initial_state') not in ['Starting', 'Running'] or
+            evidence.get('first_page_observed') is not True or
+            evidence.get('original_final_http_status') != 200 or
+            evidence.get('upstream_submissions') != 1 or
+            evidence.get('executor_acknowledged') is not True or
+            evidence.get('native_kill_or_rollback_accepted') is not False):
+        raise RuntimeError('Captured original active cancellation scope/acknowledgement differs')
+    records = [json.loads(line, parse_float=Decimal) for line in (directory / 'original-receipts.jsonl').read_text().splitlines()]
+    canceled = [r for r in records if r['method'] == 'active-canceled-original']
+    if len(canceled) != 1:
+        raise RuntimeError('Original active executor receipt is missing or ambiguous')
+    verify_receipt(canceled[0])
+    receipt = canceled[0]['receipt']
+    if receipt.get('CancellationRequested') is not True or receipt.get('ProcessExitConfirmed') is not False:
+        raise RuntimeError('Original executor cancellation was substituted with process termination')
+    return evidence
+
+
+def verify_mutation_evidence(directory):
+    records = [json.loads(line, parse_float=Decimal) for line in (directory / 'original-receipts.jsonl').read_text().splitlines()]
+    counts = []
+    partial = []
+    for record in records:
+        if record['test'] != 'TestDatabendTransportLocalOriginalKeylessGuardsAndPartialBatch':
+            continue
+        if record['method'] == 'execute_query':
+            verify_receipt(record)
+            result = record['receipt']['Result']
+            if (result.get('column_types') != ['uint64'] or result.get('truncated') is not False or
+                    result.get('affected_rows') != 0 or len(result.get('rows', [])) != 1 or
+                    len(result['rows'][0]) != 1 or type(result['rows'][0][0]) is not int):
+                raise RuntimeError('Original native mutation count shape changed')
+            counts.append((result.get('columns'), result['rows'][0][0]))
+        elif record['method'] == 'original-partial-batch':
+            verify_receipt(record)
+            partial.append(record)
+    expected = [(['number of rows updated'], 2), (['number of rows updated'], 0),
+                (['number of rows deleted'], 0), (['number of rows updated'], 1),
+                (['number of rows deleted'], 1), (['number of rows updated'], 0)]
+    if counts != expected or len(partial) != 1 or partial[0]['receipt']['RemoteError'].get('OperationOutcome') != 'unknown':
+        raise RuntimeError('Exact keyless counts or original unknown batch outcome differ')
+    observed = []
+    for line in (directory / 'independent-http-receipts.jsonl').read_text().splitlines():
+        record = json.loads(line)
+        raw = base64.b64decode(record['native_bytes'], validate=True)
+        if sha(raw) != record['native_sha256']:
+            raise RuntimeError('Independent original HTTP receipt changed')
+        if (record['test'] == 'TestDatabendTransportLocalOriginalKeylessGuardsAndPartialBatch' and
+                re.fullmatch(r'SELECT id,txt FROM "nyadb_transport_[0-9a-f]{16}"\.keyless_guards ORDER BY id,txt', record['sql'])):
+            value = json.loads(raw)
+            if value.get('error') is not None:
+                raise RuntimeError('Independent original final read failed')
+            observed += value.get('data') or []
+    if observed != [['7', 'duplicate'], ['7', 'duplicate'], ['9', 'late duplicate'],
+                    ['9', 'late duplicate'], ['11', 'first']]:
+        raise RuntimeError('Original durable prefix, duplicate guard or unsent suffix changed')
+    return {'original_statement_counts': [c[1] for c in counts],
+            'partial_batch_outcome': 'unknown', 'independent_final_rows': len(observed),
+            'concurrent_snapshot_commit_guarantees_accepted': False}
 
 
 def verify_processes(directory):
@@ -270,6 +337,8 @@ def main():
             raise RuntimeError('Original transport diagnostics failed; inspect ' + str(base / 'go-test.log'))
         verify_named_acceptance(output)
         result['original_executor_receipts'] = verify_receipts(base)
+        result['active_cancellation'] = verify_active_cancellation(base)
+        result['mutation_evidence'] = verify_mutation_evidence(base)
         result['original_processes_exited'] = verify_processes(base)
         if source_snapshot(dbx) != original or verify_original_package(package, dbx) != pins:
             raise RuntimeError('Original source/artifact snapshot changed')
@@ -278,7 +347,8 @@ def main():
                           'managed archive licensing/shaded dependency publication acceptance',
                           'public config persistence/URI/chooser/editor/provider/workspaces',
                           'native product TLS/cloud/warehouse/routes/other versions/modes',
-                          'active cancellation acknowledgement/keyless writes/shared data editing',
+                          'initial POST cancellation/native kill acknowledgement/shared data editing',
+                          'keyless concurrency guarantees/managed mutation plans',
                       ])
     except BaseException as error:
         result.update(status='failed', error=str(error))

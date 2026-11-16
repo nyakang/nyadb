@@ -92,6 +92,88 @@ class DatabendTransportDiagnosticTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 FIXTURE.verify_receipts(Path(directory))
 
+    def test_active_cancellation_requires_original_page_identity_and_executor_receipt(self):
+        evidence = {'original_query_id': 'a' * 32, 'initial_state': 'Starting',
+                    'first_page_observed': True, 'original_final_http_status': 200,
+                    'upstream_submissions': 1, 'executor_acknowledged': True,
+                    'native_kill_or_rollback_accepted': False}
+        record = self.receipt(error=True)
+        record.update(method='active-canceled-original')
+        record['receipt'].update(CancellationRequested=True, ProcessExitConfirmed=False)
+        for change in ['none', 'id', 'terminal', 'page', 'ack', 'process', 'retry', 'kill', 'receipt']:
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as directory:
+                altered, original = copy.deepcopy(evidence), copy.deepcopy(record)
+                if change == 'id':
+                    altered['original_query_id'] = 'a' * 16
+                elif change == 'terminal':
+                    altered['initial_state'] = 'Succeeded'
+                elif change == 'page':
+                    altered['first_page_observed'] = False
+                elif change == 'ack':
+                    original['receipt']['ExecutorAcknowledged'] = False
+                elif change == 'process':
+                    original['receipt']['ProcessExitConfirmed'] = True
+                elif change == 'retry':
+                    altered['upstream_submissions'] = 2
+                elif change == 'kill':
+                    altered['native_kill_or_rollback_accepted'] = True
+                elif change == 'receipt':
+                    original['method'] = 'cancel_session'
+                base = Path(directory)
+                (base / 'active-cancellation.json').write_text(json.dumps(altered))
+                (base / 'original-receipts.jsonl').write_text(json.dumps(original))
+                if change == 'none':
+                    self.assertEqual(FIXTURE.verify_active_cancellation(base), evidence)
+                else:
+                    with self.assertRaises(RuntimeError):
+                        FIXTURE.verify_active_cancellation(base)
+
+    def test_keyless_and_partial_batch_evidence_preserves_native_counts_and_durable_prefix(self):
+        records = []
+        owner = 'TestDatabendTransportLocalOriginalKeylessGuardsAndPartialBatch'
+        for index, (label, count) in enumerate([('updated', 2), ('updated', 0), ('deleted', 0),
+                                                 ('updated', 1), ('deleted', 1), ('updated', 0)]):
+            result = {'columns': ['number of rows ' + label], 'column_types': ['uint64'],
+                      'rows': [[count]], 'affected_rows': 0, 'execution_time_ms': 1, 'truncated': False,
+                      'query_timings_ms': {'agent_total': 0.1}}
+            raw = json.dumps({'jsonrpc': '2.0', 'id': index + 1, 'result': result}).encode()
+            records.append({'test': owner, 'method': 'execute_query', 'native_bytes': base64.b64encode(raw).decode(),
+                            'native_sha256': FIXTURE.sha(raw), 'receipt': {
+                                'Dispatched': True, 'ExecutorAcknowledged': True, 'Result': result, 'RemoteError': None}})
+        partial = self.receipt(error=True)
+        partial.update(test=owner, method='original-partial-batch')
+        partial['receipt']['RemoteError']['OperationOutcome'] = 'unknown'
+        records.append(partial)
+        raw = json.dumps({'data': [['7', 'duplicate'], ['7', 'duplicate'], ['9', 'late duplicate'],
+                                  ['9', 'late duplicate'], ['11', 'first']], 'error': None}).encode()
+        native = {'test': owner, 'sql': 'SELECT id,txt FROM "nyadb_transport_' + 'a' * 16 +
+                  '".keyless_guards ORDER BY id,txt', 'native_bytes': base64.b64encode(raw).decode(),
+                  'native_sha256': FIXTURE.sha(raw)}
+        for change in ['none', 'count', 'missing', 'batch', 'native', 'prefix']:
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as directory:
+                originals, independent = copy.deepcopy(records), copy.deepcopy(native)
+                if change == 'count':
+                    originals[0]['receipt']['Result']['rows'] = [[1]]
+                elif change == 'missing':
+                    originals.pop(3)
+                elif change == 'batch':
+                    originals[-1]['receipt']['RemoteError']['OperationOutcome'] = 'completed'
+                elif change == 'native':
+                    independent['native_sha256'] = '0' * 64
+                elif change == 'prefix':
+                    value = json.loads(base64.b64decode(independent['native_bytes']))
+                    value['data'].append(['12', 'third'])
+                    changed = json.dumps(value).encode()
+                    independent.update(native_bytes=base64.b64encode(changed).decode(), native_sha256=FIXTURE.sha(changed))
+                base = Path(directory)
+                (base / 'original-receipts.jsonl').write_text('\n'.join(map(json.dumps, originals)))
+                (base / 'independent-http-receipts.jsonl').write_text(json.dumps(independent))
+                if change == 'none':
+                    self.assertEqual(FIXTURE.verify_mutation_evidence(base)['original_statement_counts'], [2, 0, 0, 1, 1, 0])
+                else:
+                    with self.assertRaises(RuntimeError):
+                        FIXTURE.verify_mutation_evidence(base)
+
     def test_cleanup_checks_original_ownership_and_redacts_bootstrap_secrets(self):
         observed = {'Id': 'original', 'Config': {'Labels': {'nyadb.databend.transport': 'owned'}},
                     'Mounts': [{'Type': 'volume', 'Name': 'original-volume'}]}

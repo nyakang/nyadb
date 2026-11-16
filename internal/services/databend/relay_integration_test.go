@@ -204,6 +204,17 @@ func localNativeQuery(t *testing.T, f localTransportFixture, source string) [][]
 		if err != nil || reply.StatusCode != 200 || json.Unmarshal(raw, &value) != nil || len(value.Error) != 0 && !bytes.Equal(value.Error, []byte("null")) {
 			t.Fatal("independent original HTTP query failed")
 		}
+		hash := sha256.Sum256(raw)
+		record, _ := json.Marshal(map[string]any{"test": t.Name(), "sql": source, "native_bytes": raw, "native_sha256": hex.EncodeToString(hash[:])})
+		journal, err := os.OpenFile(filepath.Join(f.Directory, "independent-http-receipts.jsonl"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = journal.Write(append(record, '\n'))
+		journal.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
 		rows = append(rows, value.Data...)
 		if value.NextURI == "" {
 			return rows
@@ -360,7 +371,10 @@ func TestDatabendTransportLocalOriginalDriverRetriesOnlyCachedReceipt(t *testing
 	defer loss.Close()
 	c := localOriginalClient(t, f)
 	s := localOriginalSession(t, f, c, r, loss.URL)
-	localOriginalQuery(t, f, s, source)
+	receipt := localOriginalCall(t, f, s, "execute_query", map[string]any{"sql": source, "schema": f.Database, "maxRows": 10})
+	if observed, err := DecodeMutationReceipt("insert", receipt); err != nil || observed.State != contract.DataWriteAcknowledged || observed.AffectedRows != 1 || !bytes.Equal(observed.Original.OriginalResponse(), receipt.OriginalResponse()) {
+		t.Fatal("cached retry lost the original native insert acknowledgement", err)
+	}
 	rows := localNativeQuery(t, f, "SELECT count() FROM \""+f.Database+"\".lost_local WHERE id=17")
 	if len(rows) != 1 || rows[0][0] != "1" || upstreamCalls.Load() != 1 || localCalls.Load() < 2 {
 		t.Fatal("original JDBC retry re-executed committed SQL", upstreamCalls.Load(), localCalls.Load())
@@ -533,4 +547,202 @@ func TestDatabendTransportLocalOriginalQueuedCancellationAndIndependentSession(t
 	if result.err != nil || !result.receipt.ExecutorAcknowledged || !first.Alive() || !second.Alive() {
 		t.Fatal("queued cancellation changed captured executor", result.err)
 	}
+}
+
+func TestDatabendTransportLocalOriginalUnsignedBoundariesAndCompositeValues(t *testing.T) {
+	f := readLocalTransportFixture(t)
+	r := fixtureRelay(t, f, f.Endpoint)
+	c := localOriginalClient(t, f)
+	s := localOriginalSession(t, f, c, r, r.Endpoint())
+	q := localOriginalQuery(t, f, s, `SELECT CAST(9223372036854775807 AS UInt64), CAST(9223372036854775808 AS UInt64), CAST(18446744073709551615 AS UInt64), CAST(-9223372036854775808 AS Int64), CAST(-1 AS Int64), CAST(1.25 AS Float32), CAST(-2.5 AS Float64), true, to_date('2026-11-16'), to_timestamp('2026-11-16 01:02:03.123456'), unhex(''), NULL, parse_json('null'), (7,'seven'), MAP(['x'],[9007199254740993]), CAST(255 AS UInt8), CAST(65535 AS UInt16), CAST(2147483648 AS UInt32), CAST(4294967295 AS UInt32)`)
+	expected := []contract.Cell{
+		{Kind: contract.Integer, Text: "9223372036854775807"},
+		{Kind: contract.Integer, Text: "9223372036854775808"},
+		{Kind: contract.Integer, Text: "18446744073709551615"},
+		{Kind: contract.Integer, Text: "-9223372036854775808"},
+		{Kind: contract.Integer, Text: "-1"},
+		{Kind: contract.Floating, Text: "1.25"},
+		{Kind: contract.Floating, Text: "-2.5"},
+		{Kind: contract.Boolean, Text: "true"},
+		{Kind: contract.DateTime, Text: "2026-11-16"},
+		{Kind: contract.DateTime, Text: "2026-11-16 01:02:03.123456"},
+		{Kind: contract.Binary, Bytes: []byte{}},
+		{Kind: contract.Null}, {Kind: contract.JSON, Text: "null"},
+		{Kind: contract.Text, Text: `(7,"seven")`},
+		{Kind: contract.JSON, Text: `{"x":9007199254740993}`},
+		{Kind: contract.Integer, Text: "255"},
+		{Kind: contract.Integer, Text: "65535"},
+		{Kind: contract.Integer, Text: "2147483648"},
+		{Kind: contract.Integer, Text: "4294967295"},
+	}
+	if len(q.SQL.Sets) != 1 || len(q.SQL.Sets[0].Rows) != 1 || len(q.SQL.Sets[0].Rows[0]) != len(expected) {
+		t.Fatal("original boundary shape changed")
+	}
+	for i, cell := range q.SQL.Sets[0].Rows[0] {
+		if cell.Kind != expected[i].Kind || cell.Text != expected[i].Text || !bytes.Equal(cell.Bytes, expected[i].Bytes) || cell.Truncated {
+			t.Fatal("original boundary lost precision, bytes or native composite", i, cell)
+		}
+	}
+	var native struct{ Rows [][]json.RawMessage }
+	if json.Unmarshal(q.Native, &native) != nil || string(native.Rows[0][1]) != "-9223372036854775808" || string(native.Rows[0][2]) != "-1" || string(native.Rows[0][17]) != "-2147483648" || string(native.Rows[0][18]) != "-1" {
+		t.Fatal("exact typed conversion rewrote the original signed JDBC receipt")
+	}
+}
+
+func TestDatabendTransportLocalOriginalActiveCancellationAcknowledgement(t *testing.T) {
+	f := readLocalTransportFixture(t)
+	pageStarted, finalized := make(chan struct{}), make(chan struct{})
+	var originalID atomic.Value
+	var initialState atomic.Value
+	var pageBlocked atomic.Bool
+	var finalStatus atomic.Int32
+	var submitted atomic.Int32
+	var finalizeOnce sync.Once
+	product := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		raw, _ := io.ReadAll(req.Body)
+		req.Body = io.NopCloser(bytes.NewReader(raw))
+		if req.Method == "POST" && req.URL.Path == "/v1/query" && bytes.Contains(raw, []byte("SELECT sleep(2)")) {
+			submitted.Add(1)
+			originalID.Store(req.Header.Get(queryIDHeader))
+			code, headers, body := forwardFixture(t, f.Endpoint, req)
+			var response struct{ State string }
+			if json.Unmarshal(body, &response) == nil {
+				initialState.Store(response.State)
+			}
+			fixtureResponse(w, code, headers, body)
+			return
+		}
+		id, _ := originalID.Load().(string)
+		if id != "" && req.Method == "GET" && strings.HasPrefix(req.URL.Path, "/v1/query/"+id+"/page/") && pageBlocked.CompareAndSwap(false, true) {
+			// Reaching the first original page proves the initial POST returned
+			// and JDBC assigned executingQueryPages. Hold only this captured
+			// query's page while its own cancel thread finalizes it.
+			close(pageStarted)
+			select {
+			case <-finalized:
+			case <-time.After(8 * time.Second):
+				t.Error("original JDBC did not finalize its captured active query")
+			}
+		}
+		code, headers, body := forwardFixture(t, f.Endpoint, req)
+		if id != "" && req.Method == "GET" && req.URL.Path == "/v1/query/"+id+"/final" {
+			finalStatus.Store(int32(code))
+			finalizeOnce.Do(func() { close(finalized) })
+		}
+		fixtureResponse(w, code, headers, body)
+	}))
+	defer product.Close()
+	r := fixtureRelay(t, f, product.URL)
+	c := localOriginalClient(t, f)
+	first := localOriginalSession(t, f, c, r, r.Endpoint())
+	second := localOriginalSession(t, f, c, r, r.Endpoint())
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	type outcome struct {
+		receipt agentbridge.Receipt
+		err     error
+	}
+	done := make(chan outcome, 1)
+	go func() {
+		receipt, err := first.Call(ctx, "execute_query", map[string]any{"sql": "SELECT sleep(2)", "schema": f.Database, "maxRows": 10})
+		done <- outcome{receipt, err}
+	}()
+	select {
+	case <-pageStarted:
+	case <-time.After(10 * time.Second):
+		cancel()
+		t.Fatal("original driver did not enter its first active page")
+	}
+	state, _ := initialState.Load().(string)
+	if state != "Starting" && state != "Running" {
+		cancel()
+		t.Fatal("native query was already terminal before active cancellation", state)
+	}
+	cancel()
+	var result outcome
+	select {
+	case result = <-done:
+	case <-time.After(10 * time.Second):
+		t.Fatal("original executor did not acknowledge cancellation")
+	}
+	recordTransportReceipt(t, f, "active-canceled-original", result.receipt)
+	if !errors.Is(result.err, context.Canceled) || !result.receipt.Dispatched || !result.receipt.CancellationRequested || !result.receipt.ExecutorAcknowledged || result.receipt.ProcessExitConfirmed || !first.Alive() || !second.Alive() || submitted.Load() != 1 || finalStatus.Load() != 200 {
+		t.Fatal("active cancellation lost original acknowledgement or replayed the query", result.err, result.receipt, submitted.Load(), finalStatus.Load())
+	}
+	if q := localOriginalQuery(t, f, second, "SELECT 535353"); q.SQL.Sets[0].Rows[0][0].Text != "535353" {
+		t.Fatal("active cancellation changed independent original session")
+	}
+	if q := localOriginalQuery(t, f, first, "SELECT 545454"); q.SQL.Sets[0].Rows[0][0].Text != "545454" {
+		t.Fatal("acknowledged original session could not execute a fresh query")
+	}
+	// /final is the driver's own cleanup request. Neither its HTTP 200 nor
+	// cancel_session's ok alone proves native kill/rollback acknowledgement.
+	record, _ := json.Marshal(map[string]any{"original_query_id": originalID.Load(), "initial_state": state, "first_page_observed": pageBlocked.Load(), "original_final_http_status": finalStatus.Load(), "upstream_submissions": submitted.Load(), "executor_acknowledged": result.receipt.ExecutorAcknowledged, "native_kill_or_rollback_accepted": false})
+	if err := os.WriteFile(filepath.Join(f.Directory, "active-cancellation.json"), record, 0600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestDatabendTransportLocalOriginalKeylessGuardsAndPartialBatch(t *testing.T) {
+	f := readLocalTransportFixture(t)
+	table := `"` + f.Database + `".keyless_guards`
+	localNativeQuery(t, f, "CREATE TABLE "+table+" (id UInt64 NOT NULL, txt String NOT NULL)")
+	localNativeQuery(t, f, "INSERT INTO "+table+" VALUES (7,'duplicate'),(7,'duplicate'),(8,'other')")
+	r := fixtureRelay(t, f, f.Endpoint)
+	c := localOriginalClient(t, f)
+	s := localOriginalSession(t, f, c, r, r.Endpoint())
+	observe := func(kind, source string) MutationReceipt {
+		receipt := localOriginalCall(t, f, s, "execute_query", map[string]any{"sql": source, "schema": f.Database, "maxRows": 10})
+		observed, err := DecodeMutationReceipt(kind, receipt)
+		if err != nil || observed.State != contract.DataWriteAcknowledged || !bytes.Equal(observed.Original.OriginalResponse(), receipt.OriginalResponse()) {
+			t.Fatal("original native mutation acknowledgement missing", err)
+		}
+		return observed
+	}
+	if observed := observe("update", "UPDATE "+table+" SET txt='duplicate' WHERE id=7 AND txt='duplicate'"); observed.AffectedRows != 2 {
+		t.Fatal("ordinary predicate's exact multiple-row receipt became a one-row edit")
+	}
+	for _, request := range []struct{ kind, source string }{
+		{"update", "UPDATE " + table + " SET txt='blocked' WHERE id=7 AND txt='duplicate' AND (SELECT count() FROM " + table + " WHERE id=7 AND txt='duplicate')=1"},
+		{"delete", "DELETE FROM " + table + " WHERE id=7 AND txt='duplicate' AND (SELECT count() FROM " + table + " WHERE id=7 AND txt='duplicate')=1"},
+	} {
+		observed := observe(request.kind, request.source)
+		if observed.AffectedRows != 0 {
+			t.Fatal("same-statement guard mutated duplicate rows", observed.AffectedRows)
+		}
+	}
+	for _, request := range []struct{ kind, source string }{
+		{"update", "UPDATE " + table + " SET txt='changed' WHERE id=8 AND txt='other' AND (SELECT count() FROM " + table + " WHERE id=8 AND txt='other')=1"},
+		{"delete", "DELETE FROM " + table + " WHERE id=8 AND txt='changed' AND (SELECT count() FROM " + table + " WHERE id=8 AND txt='changed')=1"},
+	} {
+		observed := observe(request.kind, request.source)
+		if observed.AffectedRows != 1 {
+			t.Fatal("same-statement guard lost exact one-row native acknowledgement", observed.AffectedRows)
+		}
+	}
+	// Preflight once, then introduce a duplicate through an independent native
+	// session. The mutation rechecks in its own statement instead of trusting
+	// an earlier count or publishing read-only _row_id as a mutation locator.
+	localNativeQuery(t, f, "INSERT INTO "+table+" VALUES (9,'late duplicate')")
+	if rows := localNativeQuery(t, f, "SELECT count() FROM "+table+" WHERE id=9 AND txt='late duplicate'"); len(rows) != 1 || rows[0][0] != "1" {
+		t.Fatal("independent original preflight count missing")
+	}
+	localNativeQuery(t, f, "INSERT INTO "+table+" VALUES (9,'late duplicate')")
+	if observed := observe("update", "UPDATE "+table+" SET txt='blocked' WHERE id=9 AND txt='late duplicate' AND (SELECT count() FROM "+table+" WHERE id=9 AND txt='late duplicate')=1"); observed.AffectedRows != 0 {
+		t.Fatal("stale preflight authorized multiple-row update")
+	}
+	receipt, err := s.Call(context.Background(), "execute_batch", map[string]any{"schema": f.Database, "statements": []string{"INSERT INTO " + table + " VALUES (11,'first')", "SELECT !!!", "INSERT INTO " + table + " VALUES (12,'third')"}})
+	recordTransportReceipt(t, f, "original-partial-batch", receipt)
+	if err == nil || !receipt.ExecutorAcknowledged || receipt.RemoteError == nil || receipt.RemoteError.OperationOutcome != "unknown" || !s.Alive() {
+		t.Fatal("partial original batch became transactional success or permission to replay", err)
+	}
+	if observed, err := DecodeMutationReceipt("insert", receipt); err == nil || observed.State != contract.DataWriteUnknown || observed.AffectedRows != 0 || !bytes.Equal(observed.Original.OriginalResponse(), receipt.OriginalResponse()) {
+		t.Fatal("unknown batch was decomposed into invented statement acknowledgements", err)
+	}
+	rows := localNativeQuery(t, f, "SELECT id,txt FROM "+table+" ORDER BY id,txt")
+	if fmt.Sprint(rows) != "[[7 duplicate] [7 duplicate] [9 late duplicate] [9 late duplicate] [11 first]]" {
+		t.Fatal("guard or partial original batch changed durable prefix/unsent suffix", rows)
+	}
+	// This diagnoses same-statement semantics and a duplicate introduced
+	// before dispatch. It does not prove concurrent snapshot/commit guarantees.
 }
