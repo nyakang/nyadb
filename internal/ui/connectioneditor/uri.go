@@ -68,6 +68,11 @@ func (s *State) ImportURI(raw string) error {
 			s.connectionDraft.TrinoOptions.DriverSHA256 = original.TrinoOptions.DriverSHA256
 			s.connectionDraft.TrinoOptions.DriverDirectory = original.TrinoOptions.DriverDirectory
 		}
+		if original.Kind == connections.Databend && parsed.Profile.Kind == connections.Databend {
+			s.connectionDraft.DatabendOptions.DriverVersion = original.DatabendOptions.DriverVersion
+			s.connectionDraft.DatabendOptions.DriverSHA256 = original.DatabendOptions.DriverSHA256
+			s.connectionDraft.DatabendOptions.DriverDirectory = original.DatabendOptions.DriverDirectory
+		}
 		if original.Kind == connections.ZooKeeper && parsed.Profile.Kind == connections.ZooKeeper {
 			s.connectionDraft.ZooKeeperOptions.DriverVersion = original.ZooKeeperOptions.DriverVersion
 			s.connectionDraft.ZooKeeperOptions.DriverSHA256 = original.ZooKeeperOptions.DriverSHA256

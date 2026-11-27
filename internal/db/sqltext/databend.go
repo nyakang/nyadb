@@ -126,3 +126,32 @@ func DatabendMutationKind(source string) string {
 	}
 	return ""
 }
+
+// DatabendStatementAt uses the same lexical boundaries as execution.
+func DatabendStatementAt(source string, offset int) string {
+	parts, err := SplitDatabend(source)
+	if err != nil {
+		return source
+	}
+	at := 0
+	for _, part := range parts {
+		start := strings.Index(source[at:], part) + at
+		end := start + len(part)
+		if offset <= end {
+			return part
+		}
+		at = end
+	}
+	if len(parts) > 0 {
+		return parts[len(parts)-1]
+	}
+	return ""
+}
+
+func FormatDatabend(source string) (string, error) {
+	tokens, err := DatabendTokens(source)
+	if err != nil {
+		return "", err
+	}
+	return formatTokens(source, tokens), nil
+}

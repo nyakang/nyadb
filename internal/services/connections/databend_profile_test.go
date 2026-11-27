@@ -53,7 +53,7 @@ func TestDatabendProfilePreservesExplicitOriginalPackageAndTarget(t *testing.T) 
 			t.Fatal("ambiguous/cross-engine settings accepted")
 		}
 	}
-	if _, err := connections.ParseURI("databend://original:8000/default"); err == nil {
-		t.Fatal("URI publication preceded product acceptance")
+	if imported, err := connections.ParseURI("databend://original:8000/default"); err != nil || imported.Profile.Kind != connections.Databend || imported.Profile.Port != 8000 || imported.Profile.TLSMode != "verify-full" || imported.Profile.DatabendOptions.DriverVersion != "" {
+		t.Fatal("public URI changed original target or implicitly selected a driver", err)
 	}
 }

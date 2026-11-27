@@ -49,12 +49,18 @@ func ParseURI(raw string) (URIImport, error) {
 	if scheme, _, ok := strings.Cut(raw, ":"); ok && strings.EqualFold(scheme, "gaussdb") {
 		return parseRawGaussDBURI(raw)
 	}
+	jdbcDatabend := strings.HasPrefix(strings.ToLower(raw), "jdbc:databend://")
+	if jdbcDatabend {
+		raw = raw[len("jdbc:"):]
+	}
 	u, err := url.Parse(raw)
 	if err != nil || u.Opaque != "" || u.Fragment != "" || u.RawFragment != "" || strings.ContainsRune(raw, '#') {
 		return fail(ErrURI)
 	}
 	var kind Kind
 	switch strings.ToLower(u.Scheme) {
+	case "databend":
+		return parseDatabendURI(u, jdbcDatabend)
 	case "tdengine", "taosws", "taoswss", "ws", "wss":
 		return parseTDengineURI(u)
 	case "questdb":

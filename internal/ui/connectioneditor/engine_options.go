@@ -51,6 +51,10 @@ const (
 	ZooKeeperCAFile
 	ZooKeeperCertificateFile
 	ZooKeeperKeyFile
+	DatabendDriverPackageFile
+	DatabendCAFile
+	DatabendCertificateFile
+	DatabendKeyFile
 )
 
 func (s *State) SetEngineFilePicker(pick func(EngineFile, int, uint64)) { s.engineFilePicker = pick }
@@ -59,6 +63,28 @@ func (s *State) EngineFileVersion() uint64 { return s.engineFileVersion }
 
 func (s *State) SelectEngineFile(kind EngineFile, row int, version uint64, path string) {
 	if !s.active || version != s.engineFileVersion || path == "" {
+		return
+	}
+	if kind >= DatabendDriverPackageFile && kind <= DatabendKeyFile {
+		if s.connectionDraft.Kind != connections.Databend {
+			return
+		}
+		if kind == DatabendDriverPackageFile {
+			s.ImportDriverPackage(path)
+			return
+		}
+		if s.connectionDraft.TLSMode != "verify-full" {
+			return
+		}
+		s.cancelMySQLConnectionTest()
+		switch kind {
+		case DatabendCAFile:
+			s.connectionDraft.DatabendOptions.CAFile = path
+		case DatabendCertificateFile:
+			s.connectionDraft.DatabendOptions.ClientCertFile = path
+		case DatabendKeyFile:
+			s.connectionDraft.DatabendOptions.ClientKeyFile = path
+		}
 		return
 	}
 	if kind >= ZooKeeperDriverPackageFile && kind <= ZooKeeperKeyFile {
@@ -262,6 +288,9 @@ func (s *State) EngineFilePickerError(version uint64) {
 }
 
 func (s *State) initEngineOptionsInputs() {
+	if s.connectionDraft.Kind == connections.Databend {
+		s.initializeDatabendInputs()
+	}
 	if s.connectionDraft.Kind == connections.ZooKeeper {
 		s.initializeZooKeeperInputs()
 	}
@@ -350,6 +379,9 @@ func (s *State) initEngineOptionsInputs() {
 }
 
 func (s *State) advanceEngineOptions(p *connections.Profile) error {
+	if p.Kind == connections.Databend {
+		return s.advanceDatabendOptions(p)
+	}
 	if p.Kind == connections.ZooKeeper {
 		return s.advanceZooKeeperOptions(p)
 	}
@@ -501,6 +533,8 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 	formWidth := connectionScaledFormWidth(c, width)
 	labelWidth, fieldWidth := connectionFormLabelWidth, formWidth-connectionFormLabelWidth
 	switch s.connectionDraft.Kind {
+	case connections.Databend:
+		return s.databendOptions(c, width, tab)
 	case connections.ZooKeeper:
 		return s.zookeeperOptions(c, width, tab)
 	case connections.TDengine:

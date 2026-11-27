@@ -61,8 +61,8 @@ func TestRecentConnectionsDeduplicateAndKeepFiveNewest(t *testing.T) {
 
 func TestConnectionCatalogFiltering(t *testing.T) {
 	s := New()
-	if n := len(s.catalogItems("全部")); n != 43 {
-		t.Fatalf("catalog should offer 43 local choices including ZooKeeper, got %d", n)
+	if n := len(s.catalogItems("全部")); n != 44 {
+		t.Fatalf("catalog should offer 44 local choices including Databend, got %d", n)
 	}
 	s.search = "sql"
 	if items := s.catalogItems("全部"); len(items) != 6 {
@@ -123,7 +123,7 @@ func TestExpandedCatalogMirrorsObservedGroups(t *testing.T) {
 	if len(databaseCatalog) < 60 {
 		t.Fatalf("expected expanded connection browser with at least 60 choices, got %d", len(databaseCatalog))
 	}
-	if len(catalogVendors) < 12 || len(catalogEngines) != 43 {
+	if len(catalogVendors) < 12 || len(catalogEngines) != 44 {
 		t.Fatalf("missing engine/vendor filters: %d/%d", len(catalogEngines), len(catalogVendors))
 	}
 	seen := map[string]bool{}
@@ -230,5 +230,24 @@ func TestDamengNativeSearchAndSelection(t *testing.T) {
 		if s.Selected().Kind != connections.Dameng {
 			t.Fatal("native choice lost product identity")
 		}
+	}
+}
+
+func TestDatabendCatalogSelectionAndIndependentIdentity(t *testing.T) {
+	s := New()
+	s.search = "databend"
+	items := s.catalogItems("全部")
+	if len(items) != 1 || items[0].kind != connections.Databend {
+		t.Fatalf("Databend chooser entry missing: %+v", items)
+	}
+	var selected connections.Kind
+	s.chooseCatalogEntry(items[0], func(selection Choice) { selected = selection.Kind })
+	if selected != connections.Databend {
+		t.Fatal("chooser did not forward Databend identity")
+	}
+	s.search = ""
+	setCatalogFilter(s.engineFilters, "Databend", true)
+	if items := s.catalogItems("全部"); len(items) != 1 || items[0].kind != selected {
+		t.Fatal("engine filter lost Databend")
 	}
 }

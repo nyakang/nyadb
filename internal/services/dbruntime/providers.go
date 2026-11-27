@@ -9,6 +9,7 @@ import (
 	"github.com/nyakang/nyadb/internal/services/consul"
 	"github.com/nyakang/nyadb/internal/services/couchdb"
 	"github.com/nyakang/nyadb/internal/services/dameng"
+	"github.com/nyakang/nyadb/internal/services/databend"
 	"github.com/nyakang/nyadb/internal/services/doris"
 	"github.com/nyakang/nyadb/internal/services/duckdb"
 	"github.com/nyakang/nyadb/internal/services/easysearch"
@@ -35,6 +36,7 @@ import (
 )
 
 func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
+	m.Register(connections.Databend, databend.Provider{})
 	m.Register(connections.ZooKeeper, ProviderFunc(zookeeper.OpenSession))
 	m.Register(connections.TDengine, ProviderFunc(tdengine.OpenSession))
 	m.Register(connections.QuestDB, ProviderFunc(questdb.OpenSession))

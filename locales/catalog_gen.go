@@ -44619,3 +44619,295 @@ func DatabendDataMutationHistory() string { return In(i18n.Locale()).DatabendDat
 func (msgs Messages) DatabendDataMutationHistory() string {
 	return Catalog.Format(msgs.locale, "databendDataMutationHistory", nil)
 }
+
+// DatabendAuth says "Databend 认证方式"
+// in the language the app shows.
+func DatabendAuth() string { return In(i18n.Locale()).DatabendAuth() }
+
+// DatabendAuth says "Databend 认证方式"
+// in the language of msgs.
+func (msgs Messages) DatabendAuth() string {
+	return Catalog.Format(msgs.locale, "databendAuth", nil)
+}
+
+// DatabendDriverPackage says "Databend 驱动包"
+// in the language the app shows.
+func DatabendDriverPackage() string { return In(i18n.Locale()).DatabendDriverPackage() }
+
+// DatabendDriverPackage says "Databend 驱动包"
+// in the language of msgs.
+func (msgs Messages) DatabendDriverPackage() string {
+	return Catalog.Format(msgs.locale, "databendDriverPackage", nil)
+}
+
+// DatabendDriverUnsupported says "驱动包不包含 Databend 驱动。"
+// in the language the app shows.
+func DatabendDriverUnsupported() string { return In(i18n.Locale()).DatabendDriverUnsupported() }
+
+// DatabendDriverUnsupported says "驱动包不包含 Databend 驱动。"
+// in the language of msgs.
+func (msgs Messages) DatabendDriverUnsupported() string {
+	return Catalog.Format(msgs.locale, "databendDriverUnsupported", nil)
+}
+
+// DatabendDriverRequired says "请选择或导入已安装的 Databend 驱动包"
+// in the language the app shows.
+func DatabendDriverRequired() string { return In(i18n.Locale()).DatabendDriverRequired() }
+
+// DatabendDriverRequired says "请选择或导入已安装的 Databend 驱动包"
+// in the language of msgs.
+func (msgs Messages) DatabendDriverRequired() string {
+	return Catalog.Format(msgs.locale, "databendDriverRequired", nil)
+}
+
+// DatabendNumbersInvalid says "请检查 Databend 超时和连接上限"
+// in the language the app shows.
+func DatabendNumbersInvalid() string { return In(i18n.Locale()).DatabendNumbersInvalid() }
+
+// DatabendNumbersInvalid says "请检查 Databend 超时和连接上限"
+// in the language of msgs.
+func (msgs Messages) DatabendNumbersInvalid() string {
+	return Catalog.Format(msgs.locale, "databendNumbersInvalid", nil)
+}
+
+// DatabendProfileInvalid says "请检查 Databend 服务器、数据库和 TLS 设置"
+// in the language the app shows.
+func DatabendProfileInvalid() string { return In(i18n.Locale()).DatabendProfileInvalid() }
+
+// DatabendProfileInvalid says "请检查 Databend 服务器、数据库和 TLS 设置"
+// in the language of msgs.
+func (msgs Messages) DatabendProfileInvalid() string {
+	return Catalog.Format(msgs.locale, "databendProfileInvalid", nil)
+}
+
+// DatabendCredentialInvalid says "请检查 Databend 凭据"
+// in the language the app shows.
+func DatabendCredentialInvalid() string { return In(i18n.Locale()).DatabendCredentialInvalid() }
+
+// DatabendCredentialInvalid says "请检查 Databend 凭据"
+// in the language of msgs.
+func (msgs Messages) DatabendCredentialInvalid() string {
+	return Catalog.Format(msgs.locale, "databendCredentialInvalid", nil)
+}
+
+// DatabendTLS says "Databend TLS 模式"
+// in the language the app shows.
+func DatabendTLS() string { return In(i18n.Locale()).DatabendTLS() }
+
+// DatabendTLS says "Databend TLS 模式"
+// in the language of msgs.
+func (msgs Messages) DatabendTLS() string {
+	return Catalog.Format(msgs.locale, "databendTLS", nil)
+}
+
+// DatabendServerName says "Databend TLS 服务器名称"
+// in the language the app shows.
+func DatabendServerName() string { return In(i18n.Locale()).DatabendServerName() }
+
+// DatabendServerName says "Databend TLS 服务器名称"
+// in the language of msgs.
+func (msgs Messages) DatabendServerName() string {
+	return Catalog.Format(msgs.locale, "databendServerName", nil)
+}
+
+// DatabendCA says "Databend CA 证书"
+// in the language the app shows.
+func DatabendCA() string { return In(i18n.Locale()).DatabendCA() }
+
+// DatabendCA says "Databend CA 证书"
+// in the language of msgs.
+func (msgs Messages) DatabendCA() string {
+	return Catalog.Format(msgs.locale, "databendCA", nil)
+}
+
+// DatabendCertificate says "Databend 客户端证书"
+// in the language the app shows.
+func DatabendCertificate() string { return In(i18n.Locale()).DatabendCertificate() }
+
+// DatabendCertificate says "Databend 客户端证书"
+// in the language of msgs.
+func (msgs Messages) DatabendCertificate() string {
+	return Catalog.Format(msgs.locale, "databendCertificate", nil)
+}
+
+// DatabendKey says "Databend 客户端私钥"
+// in the language the app shows.
+func DatabendKey() string { return In(i18n.Locale()).DatabendKey() }
+
+// DatabendKey says "Databend 客户端私钥"
+// in the language of msgs.
+func (msgs Messages) DatabendKey() string {
+	return Catalog.Format(msgs.locale, "databendKey", nil)
+}
+
+// DatabendSelectCA says "选择 Databend CA 证书"
+// in the language the app shows.
+func DatabendSelectCA() string { return In(i18n.Locale()).DatabendSelectCA() }
+
+// DatabendSelectCA says "选择 Databend CA 证书"
+// in the language of msgs.
+func (msgs Messages) DatabendSelectCA() string {
+	return Catalog.Format(msgs.locale, "databendSelectCA", nil)
+}
+
+// DatabendSelectCertificate says "选择 Databend 客户端证书"
+// in the language the app shows.
+func DatabendSelectCertificate() string { return In(i18n.Locale()).DatabendSelectCertificate() }
+
+// DatabendSelectCertificate says "选择 Databend 客户端证书"
+// in the language of msgs.
+func (msgs Messages) DatabendSelectCertificate() string {
+	return Catalog.Format(msgs.locale, "databendSelectCertificate", nil)
+}
+
+// DatabendSelectKey says "选择 Databend 客户端私钥"
+// in the language the app shows.
+func DatabendSelectKey() string { return In(i18n.Locale()).DatabendSelectKey() }
+
+// DatabendSelectKey says "选择 Databend 客户端私钥"
+// in the language of msgs.
+func (msgs Messages) DatabendSelectKey() string {
+	return Catalog.Format(msgs.locale, "databendSelectKey", nil)
+}
+
+// DatabendImportDriver says "导入 Databend 驱动包"
+// in the language the app shows.
+func DatabendImportDriver() string { return In(i18n.Locale()).DatabendImportDriver() }
+
+// DatabendImportDriver says "导入 Databend 驱动包"
+// in the language of msgs.
+func (msgs Messages) DatabendImportDriver() string {
+	return Catalog.Format(msgs.locale, "databendImportDriver", nil)
+}
+
+// DatabendConnectTimeout says "Databend 连接超时（秒）"
+// in the language the app shows.
+func DatabendConnectTimeout() string { return In(i18n.Locale()).DatabendConnectTimeout() }
+
+// DatabendConnectTimeout says "Databend 连接超时（秒）"
+// in the language of msgs.
+func (msgs Messages) DatabendConnectTimeout() string {
+	return Catalog.Format(msgs.locale, "databendConnectTimeout", nil)
+}
+
+// DatabendRequestTimeout says "Databend 请求超时（秒）"
+// in the language the app shows.
+func DatabendRequestTimeout() string { return In(i18n.Locale()).DatabendRequestTimeout() }
+
+// DatabendRequestTimeout says "Databend 请求超时（秒）"
+// in the language of msgs.
+func (msgs Messages) DatabendRequestTimeout() string {
+	return Catalog.Format(msgs.locale, "databendRequestTimeout", nil)
+}
+
+// DatabendQueryTimeout says "Databend 查询超时（秒）"
+// in the language the app shows.
+func DatabendQueryTimeout() string { return In(i18n.Locale()).DatabendQueryTimeout() }
+
+// DatabendQueryTimeout says "Databend 查询超时（秒）"
+// in the language of msgs.
+func (msgs Messages) DatabendQueryTimeout() string {
+	return Catalog.Format(msgs.locale, "databendQueryTimeout", nil)
+}
+
+// DatabendMaxConnections says "Databend 连接上限"
+// in the language the app shows.
+func DatabendMaxConnections() string { return In(i18n.Locale()).DatabendMaxConnections() }
+
+// DatabendMaxConnections says "Databend 连接上限"
+// in the language of msgs.
+func (msgs Messages) DatabendMaxConnections() string {
+	return Catalog.Format(msgs.locale, "databendMaxConnections", nil)
+}
+
+// DatabendMaxConnectionsLabel says "连接上限"
+// in the language the app shows.
+func DatabendMaxConnectionsLabel() string { return In(i18n.Locale()).DatabendMaxConnectionsLabel() }
+
+// DatabendMaxConnectionsLabel says "连接上限"
+// in the language of msgs.
+func (msgs Messages) DatabendMaxConnectionsLabel() string {
+	return Catalog.Format(msgs.locale, "databendMaxConnectionsLabel", nil)
+}
+
+// DatabendMetadataReserve says "Databend 元数据保留连接"
+// in the language the app shows.
+func DatabendMetadataReserve() string { return In(i18n.Locale()).DatabendMetadataReserve() }
+
+// DatabendMetadataReserve says "Databend 元数据保留连接"
+// in the language of msgs.
+func (msgs Messages) DatabendMetadataReserve() string {
+	return Catalog.Format(msgs.locale, "databendMetadataReserve", nil)
+}
+
+// DatabendMetadataReserveLabel says "元数据保留连接"
+// in the language the app shows.
+func DatabendMetadataReserveLabel() string { return In(i18n.Locale()).DatabendMetadataReserveLabel() }
+
+// DatabendMetadataReserveLabel says "元数据保留连接"
+// in the language of msgs.
+func (msgs Messages) DatabendMetadataReserveLabel() string {
+	return Catalog.Format(msgs.locale, "databendMetadataReserveLabel", nil)
+}
+
+// DatabendSQLMaxConnections says "Databend SQL 连接上限"
+// in the language the app shows.
+func DatabendSQLMaxConnections() string { return In(i18n.Locale()).DatabendSQLMaxConnections() }
+
+// DatabendSQLMaxConnections says "Databend SQL 连接上限"
+// in the language of msgs.
+func (msgs Messages) DatabendSQLMaxConnections() string {
+	return Catalog.Format(msgs.locale, "databendSQLMaxConnections", nil)
+}
+
+// DatabendSQLMaxConnectionsLabel says "SQL 连接上限"
+// in the language the app shows.
+func DatabendSQLMaxConnectionsLabel() string {
+	return In(i18n.Locale()).DatabendSQLMaxConnectionsLabel()
+}
+
+// DatabendSQLMaxConnectionsLabel says "SQL 连接上限"
+// in the language of msgs.
+func (msgs Messages) DatabendSQLMaxConnectionsLabel() string {
+	return Catalog.Format(msgs.locale, "databendSQLMaxConnectionsLabel", nil)
+}
+
+// DatabendPoolWait says "Databend 连接等待（毫秒）"
+// in the language the app shows.
+func DatabendPoolWait() string { return In(i18n.Locale()).DatabendPoolWait() }
+
+// DatabendPoolWait says "Databend 连接等待（毫秒）"
+// in the language of msgs.
+func (msgs Messages) DatabendPoolWait() string {
+	return Catalog.Format(msgs.locale, "databendPoolWait", nil)
+}
+
+// DatabendPoolWaitLabel says "连接等待（毫秒）"
+// in the language the app shows.
+func DatabendPoolWaitLabel() string { return In(i18n.Locale()).DatabendPoolWaitLabel() }
+
+// DatabendPoolWaitLabel says "连接等待（毫秒）"
+// in the language of msgs.
+func (msgs Messages) DatabendPoolWaitLabel() string {
+	return Catalog.Format(msgs.locale, "databendPoolWaitLabel", nil)
+}
+
+// DatabendSessionToken says "本次 Databend 会话令牌"
+// in the language the app shows.
+func DatabendSessionToken() string { return In(i18n.Locale()).DatabendSessionToken() }
+
+// DatabendSessionToken says "本次 Databend 会话令牌"
+// in the language of msgs.
+func (msgs Messages) DatabendSessionToken() string {
+	return Catalog.Format(msgs.locale, "databendSessionToken", nil)
+}
+
+// DatabendServerNameLabel says "服务器名称："
+// in the language the app shows.
+func DatabendServerNameLabel() string { return In(i18n.Locale()).DatabendServerNameLabel() }
+
+// DatabendServerNameLabel says "服务器名称："
+// in the language of msgs.
+func (msgs Messages) DatabendServerNameLabel() string {
+	return Catalog.Format(msgs.locale, "databendServerNameLabel", nil)
+}

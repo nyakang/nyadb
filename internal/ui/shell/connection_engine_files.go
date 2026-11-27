@@ -5,6 +5,10 @@ import "github.com/nyakang/nyadb/internal/ui/connectioneditor"
 type EngineFile = connectioneditor.EngineFile
 
 const (
+	DatabendDriverPackageFile  = connectioneditor.DatabendDriverPackageFile
+	DatabendCAFile             = connectioneditor.DatabendCAFile
+	DatabendCertificateFile    = connectioneditor.DatabendCertificateFile
+	DatabendKeyFile            = connectioneditor.DatabendKeyFile
 	ZooKeeperDriverPackageFile = connectioneditor.ZooKeeperDriverPackageFile
 	ZooKeeperCAFile            = connectioneditor.ZooKeeperCAFile
 	ZooKeeperCertificateFile   = connectioneditor.ZooKeeperCertificateFile

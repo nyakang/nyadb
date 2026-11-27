@@ -314,6 +314,10 @@ func Run() error {
 				title = locales.Text("选择 H2 数据库文件")
 				filters = []mygo.FileFilter{{Name: "H2 databases", Extensions: []string{"mv.db", "h2.db"}}}
 			}
+			if kind == shell.DatabendDriverPackageFile {
+				title = locales.Text("导入 Databend 驱动包")
+				filters = []mygo.FileFilter{{Name: "NyaDB driver packages", Extensions: []string{"zip"}}}
+			}
 			if kind == shell.TrinoDriverPackageFile {
 				title = locales.Text("导入 Trino 驱动包")
 				filters = []mygo.FileFilter{{Name: "NyaDB driver packages", Extensions: []string{"zip"}}}
@@ -333,6 +337,12 @@ func Run() error {
 				title = locales.Text("选择 H2 TLS CA 证书")
 			}
 			switch kind {
+			case shell.DatabendCAFile:
+				title = locales.Text("选择 Databend CA 证书")
+			case shell.DatabendCertificateFile:
+				title = locales.Text("选择 Databend 客户端证书")
+			case shell.DatabendKeyFile:
+				title = locales.Text("选择 Databend 客户端私钥")
 			case shell.ZooKeeperCAFile:
 				title = locales.Text("选择 ZooKeeper CA 证书")
 			case shell.ZooKeeperCertificateFile:

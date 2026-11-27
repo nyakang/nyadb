@@ -40,8 +40,14 @@ func (s *State) engineSessionToolbar(c *ui.Context) bool {
 	}
 	status := s.sessions.StatusFor(p.ID)
 	ui.Column(c).Gap(5).Children(func() {
-		if (p.Kind == connections.ZooKeeper && p.ZooKeeperOptions.Auth != "none" || p.Kind == connections.TDengine || p.Kind == connections.QuestDB || p.Kind == connections.RQLite && p.RQLiteOptions.Auth == "basic" || p.Kind == connections.H2 || p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.SelectDB || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind.IsREST() || p.Kind == connections.MongoDB || p.Kind == connections.Redis || p.Kind == connections.Neo4j && p.Neo4jOptions.Auth == "basic" || p.Kind == connections.Cassandra && p.CassandraOptions.Auth == "password" || p.Kind == connections.Etcd && p.EtcdOptions.Auth == "basic" || p.Kind == connections.Consul && p.ConsulOptions.Auth == "token") && status != "已连接" && !(p.Kind == connections.Solr && p.SolrOptions.Auth == "none") && !(p.Kind == connections.CouchDB && p.CouchDBOptions.Auth == "none") && !(p.Kind == connections.Meilisearch && p.MeilisearchOptions.Auth == "none") && !(p.Kind == connections.Qdrant && p.QdrantOptions.Auth == "none") {
+		if (p.Kind == connections.Databend && p.DatabendOptions.Auth != "none" || p.Kind == connections.ZooKeeper && p.ZooKeeperOptions.Auth != "none" || p.Kind == connections.TDengine || p.Kind == connections.QuestDB || p.Kind == connections.RQLite && p.RQLiteOptions.Auth == "basic" || p.Kind == connections.H2 || p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.SelectDB || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind.IsREST() || p.Kind == connections.MongoDB || p.Kind == connections.Redis || p.Kind == connections.Neo4j && p.Neo4jOptions.Auth == "basic" || p.Kind == connections.Cassandra && p.CassandraOptions.Auth == "password" || p.Kind == connections.Etcd && p.EtcdOptions.Auth == "basic" || p.Kind == connections.Consul && p.ConsulOptions.Auth == "token") && status != "已连接" && !(p.Kind == connections.Solr && p.SolrOptions.Auth == "none") && !(p.Kind == connections.CouchDB && p.CouchDBOptions.Auth == "none") && !(p.Kind == connections.Meilisearch && p.MeilisearchOptions.Auth == "none") && !(p.Kind == connections.Qdrant && p.QdrantOptions.Auth == "none") {
 			label := locales.Text("PostgreSQL 会话密码")
+			if p.Kind == connections.Databend {
+				label = fmt.Sprintf(locales.Text("本次 %s 会话密码"), "Databend")
+				if p.DatabendOptions.Auth == "bearer" {
+					label = locales.Text("本次 Databend 会话令牌")
+				}
+			}
 			if p.Kind == connections.ZooKeeper {
 				label = fmt.Sprintf(locales.Text("本次 %s 会话密码"), "ZooKeeper")
 			}
@@ -167,6 +173,9 @@ func (s *State) objectCapabilitiesFor(id int64) contract.Capabilities {
 }
 func (s *State) sqlStatementAtCaret(id int64, source string, cursor int) string {
 	for _, p := range s.navigation.Profiles() {
+		if p.ID == id && p.Kind == connections.Databend {
+			return sqltext.DatabendStatementAt(source, cursor)
+		}
 		if p.ID == id && p.Kind == connections.Cassandra {
 			return sqltext.CassandraStatementAt(source, cursor)
 		}
@@ -206,6 +215,9 @@ func (s *State) sqlStatementAtCaret(id int64, source string, cursor int) string 
 
 func (s *State) sqlFormat(id int64, source string) (string, error) {
 	for _, p := range s.navigation.Profiles() {
+		if p.ID == id && p.Kind == connections.Databend {
+			return sqltext.FormatDatabend(source)
+		}
 		if p.ID == id && (p.Kind == connections.Neo4j || p.Kind == connections.Cassandra) {
 			return "", contract.ErrUnsupported
 		}

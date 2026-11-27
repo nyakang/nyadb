@@ -10,8 +10,7 @@ import (
 type Kind string
 
 const (
-	// Databend is an adapter identity; chooser and builtin publication require
-	// their own complete native workbench acceptance.
+	// Databend uses an explicitly pinned managed JDBC package.
 	Databend      Kind = "databend"
 	ZooKeeper     Kind = "zookeeper"
 	TDengine      Kind = "tdengine"

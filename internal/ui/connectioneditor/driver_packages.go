@@ -60,7 +60,7 @@ func (s *State) cancelDriverWork() {
 }
 
 func (s *State) startDriverWork(file string) {
-	if !s.active || s.uriOpen || s.connectionDraft.Kind != connections.H2 && s.connectionDraft.Kind != connections.ZooKeeper && (s.connectionDraft.Kind != connections.Trino || s.connectionDraft.TrinoOptions.Mode != "jdbc") {
+	if !s.active || s.uriOpen || s.connectionDraft.Kind != connections.H2 && s.connectionDraft.Kind != connections.Databend && s.connectionDraft.Kind != connections.ZooKeeper && (s.connectionDraft.Kind != connections.Trino || s.connectionDraft.TrinoOptions.Mode != "jdbc") {
 		return
 	}
 	s.cancelDriverWork()
@@ -173,7 +173,9 @@ func (s *State) consumeDriverWork() {
 				s.driverWork.packages = append(s.driverWork.packages, d)
 			}
 			if out.profile == selectedProfile {
-				if out.kind == connections.Trino {
+				if out.kind == connections.Databend {
+					s.selectDatabendDriver(d)
+				} else if out.kind == connections.Trino {
 					s.selectTrinoDriver(d)
 				} else if out.kind == connections.ZooKeeper {
 					s.selectZooKeeperDriver(d)
@@ -198,6 +200,9 @@ func (s *State) consumeDriverWork() {
 						s.driverWork.message = "驱动包不包含当前 H2 版本，请选择匹配的版本。"
 						if out.kind == connections.Trino {
 							s.driverWork.message = "驱动包不包含 Trino 驱动。"
+						}
+						if out.kind == connections.Databend {
+							s.driverWork.message = "驱动包不包含 Databend 驱动。"
 						}
 						if out.kind == connections.ZooKeeper {
 							s.driverWork.message = "驱动包不包含 ZooKeeper 原生驱动。"
@@ -236,6 +241,10 @@ func (s *State) selectH2Driver(d connections.ManagedDriver) {
 }
 
 func (s *State) currentDriverSelection() (version, digest, directory, profile string) {
+	if s.connectionDraft.Kind == connections.Databend {
+		a := s.connectionDraft.DatabendOptions
+		return a.DriverVersion, a.DriverSHA256, a.DriverDirectory, "databend"
+	}
 	if s.connectionDraft.Kind == connections.ZooKeeper {
 		a := s.connectionDraft.ZooKeeperOptions
 		return a.DriverVersion, a.DriverSHA256, a.DriverDirectory, "zookeeper-v1"
