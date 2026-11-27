@@ -114,7 +114,7 @@ func databendWorkbenchSQL(t *testing.T, f databendWorkbenchFixture, source strin
 	return nil
 }
 
-func databendWorkbenchState(t *testing.T, f databendWorkbenchFixture, endpoint string) (*State, *ui.Tester, connections.Profile, *ui.Services) {
+func databendWorkbenchState(t *testing.T, f databendWorkbenchFixture, endpoint string, observers ...func(string, agentbridge.Receipt)) (*State, *ui.Tester, connections.Profile, *ui.Services) {
 	t.Helper()
 	store, err := driverstore.New(filepath.Join(f.Directory, t.Name(), "store"))
 	if err != nil {
@@ -149,6 +149,9 @@ func databendWorkbenchState(t *testing.T, f databendWorkbenchFixture, endpoint s
 		raw := r.OriginalResponse()
 		hash := sha256.Sum256(raw)
 		databendWorkbenchJournal(t, f, "original-receipts.jsonl", map[string]any{"test": t.Name(), "method": "workbench-" + method, "receipt": r, "native_bytes": []byte(raw), "native_sha256": hex.EncodeToString(hash[:])})
+		for _, observe := range observers {
+			observe(method, r.Clone())
+		}
 	}})
 	u, err := url.Parse(endpoint)
 	if err != nil {

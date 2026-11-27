@@ -42,6 +42,9 @@ WORKBENCH_REQUIRED = [
     'TestDatabendWorkbenchOriginalParkedWriteAndRevokedMetadata',
     'TestDatabendWorkbenchOriginalUnknownReceiptGuardAndExplicitSQLRecovery',
     'TestDatabendWorkbenchOriginalBoundedFieldsCompleteEditingAndExport',
+    'TestDatabendWorkbenchOriginalIndependentReadCancellation',
+    'TestDatabendWorkbenchOriginalLateReadCannotReplaceNewGeneration',
+    'TestDatabendWorkbenchOriginalDisconnectWaitsForReadAndNeverReplaysSQL',
 ]
 
 
@@ -50,6 +53,66 @@ def verify_workbench_statement(executor, statement):
     original = json.loads(base64.b64decode(executor['native_bytes'], validate=True), parse_float=Decimal)
     if native.get('Receipt') != executor['receipt'] or native.get('Original') != original:
         raise RuntimeError('UI receipt changed or omitted its complete original executor response')
+
+
+def verify_workbench_read_lifecycle(directory, database, records):
+    reads = [json.loads(line) for line in (directory / 'workbench-read-lifecycle.jsonl').read_text().splitlines()]
+    held = [json.loads(line) for line in (directory / 'workbench-held-reads.jsonl').read_text().splitlines()]
+    generations = [json.loads(line) for line in (directory / 'workbench-generation-lifecycle.jsonl').read_text().splitlines()]
+    expected = {WORKBENCH_REQUIRED[4] + '/' + scope: scope for scope in ['page', 'count', 'field']}
+    if len(reads) != 3 or {r['test'] for r in reads} != set(expected):
+        raise RuntimeError('Independent original page/count/field cancellation coverage differs')
+    for row in reads:
+        scope = expected[row['test']]
+        if (row['scope'] != scope or row['object']['Schema'] != database or
+                row['object']['Name'] != 'workbench_read_' + scope + '53' or
+                row['count'] != (2 if scope == 'count' else 1) or row['matched_requests'] != (2 if scope == 'field' else 3) or
+                row.get('public_provider_registered') is not False or
+                any(row.get(k) is not True for k in ['cache_preserved', 'independent_read_survived',
+                                                    'late_result_rejected', 'explicit_refresh'])):
+            raise RuntimeError('Original read cancellation changed identity/cache or replayed a request')
+        canceled = [r for r in records if r['test'] == row['test'] and r['receipt']['CancellationRequested']]
+        if (len(canceled) != 1 or not canceled[0]['receipt']['Dispatched'] or
+                not canceled[0]['receipt']['ExecutorAcknowledged'] or canceled[0]['receipt']['ProcessExitConfirmed']):
+            raise RuntimeError('Original read cancellation lacks its live executor acknowledgement')
+    expected[WORKBENCH_REQUIRED[5]] = 'page'
+    expected[WORKBENCH_REQUIRED[6]] = 'page'
+    if len(held) != 5 or {r['test'] for r in held} != set(expected):
+        raise RuntimeError('Original delayed read response evidence is missing or duplicated')
+    ids = set()
+    for row in held:
+        raw = base64.b64decode(row['native_bytes'], validate=True)
+        value = json.loads(raw)
+        if (transport.sha(raw) != row['native_sha256'] or row['status'] != 200 or
+                value.get('error') is not None or row['scope'] != expected[row['test']] or
+                not re.fullmatch('[0-9a-f]{32}', row['query_id']) or value.get('id') != row['query_id'] or
+                row['query_id'] in ids or '"' + database + '"' not in row['sql']):
+            raise RuntimeError('Original delayed read bytes/query identity differ')
+        ids.add(row['query_id'])
+    if len(generations) != 1:
+        raise RuntimeError('Original workbench generation evidence missing or duplicated')
+    row = generations[0]
+    if (row['test'] != WORKBENCH_REQUIRED[5] or row['object']['Schema'] != database or
+            row['object']['Name'] != 'workbench_generation53' or row['replacement_rows'] != 2 or
+            not 0 < row['original_generation'] < row['replacement_generation'] or
+            row.get('public_provider_registered') is not False or
+            any(row.get(k) is not True for k in ['old_cache_preserved', 'old_document_revoked',
+                                                'replacement_survived_old_close', 'disconnect_disposed_data'])):
+        raise RuntimeError('Late original generation overwrote or disposed the replacement')
+    disconnects = [json.loads(line) for line in (directory / 'workbench-disconnect-lifecycle.jsonl').read_text().splitlines()]
+    if len(disconnects) != 1:
+        raise RuntimeError('Pending-read disconnect evidence missing or duplicated')
+    row = disconnects[0]
+    canceled = [r for r in records if r['test'] == WORKBENCH_REQUIRED[6] and r['receipt']['CancellationRequested']]
+    if (row['test'] != WORKBENCH_REQUIRED[6] or row['database'] != database or row['matched_requests'] != 2 or
+            row['rows'] != [['1']] or row.get('recovery_replayed') is not False or
+            row.get('public_provider_registered') is not False or
+            not 0 < row['original_generation'] < row['replacement_generation'] or
+            any(row.get(k) is not True for k in ['sql_text_retained', 'original_executor_acknowledged', 'data_disposed']) or
+            len(canceled) != 1 or not canceled[0]['receipt']['Dispatched'] or
+            not canceled[0]['receipt']['ExecutorAcknowledged'] or canceled[0]['receipt']['ProcessExitConfirmed']):
+        raise RuntimeError('Pending-read disconnect/recovery lost original acknowledgement or replayed SQL')
+    return {'reads': reads, 'generations': generations, 'disconnects': disconnects, 'held_query_ids': sorted(ids)}
 
 
 def verify_workbench_receipts(directory, database):
@@ -62,8 +125,10 @@ def verify_workbench_receipts(directory, database):
         transport.verify_receipt(record)
     for name in WORKBENCH_REQUIRED:
         methods = {r['method'] for r in records if r['test'] == name or r['test'].startswith(name + '/')}
-        if {'workbench-handshake', 'workbench-metadata-open', 'workbench-metadata-query',
-                'workbench-data-cursor', 'workbench-data-write'} - methods:
+        required = {'workbench-handshake', 'workbench-metadata-open', 'workbench-metadata-query', 'workbench-data-cursor'}
+        if name in WORKBENCH_REQUIRED[:4]:
+            required.add('workbench-data-write')
+        if required - methods:
             raise RuntimeError('Shared workbench lacks original connection/data/write receipts: ' + name)
     acceptance = [json.loads(line) for line in
                   (directory / 'workbench-acceptance.jsonl').read_text().splitlines()]
@@ -124,6 +189,9 @@ def verify_workbench_receipts(directory, database):
         sql = 'SELECT ' + ('id' if row['mode'] == 'unknown' else 'id,txt') + ' FROM "' + database + '".' + table + ' ORDER BY id'
         if independent.get((row['test'], sql)) != row['rows']:
             raise RuntimeError('Workbenches lack independent original persisted-row evidence')
+    disconnect_sql = 'SELECT id FROM "' + database + '".workbench_disconnect53 ORDER BY id'
+    if independent.get((WORKBENCH_REQUIRED[6], disconnect_sql)) != [['1']]:
+        raise RuntimeError('Disconnect recovery lacks independent native proof that SQL was not replayed')
     fields = [json.loads(line) for line in (directory / 'workbench-fields.jsonl').read_text().splitlines()]
     if (len(fields) != 1 or fields[0]['test'] != WORKBENCH_REQUIRED[3] or
             fields[0]['preview_units'] != 1024 or fields[0]['chunk_boundaries'] != [1024, 2048, 2052] or
@@ -141,7 +209,12 @@ def verify_workbench_receipts(directory, database):
               WORKBENCH_REQUIRED[1] + '/park': ['park'],
               WORKBENCH_REQUIRED[1] + '/metadata': ['metadata'],
               WORKBENCH_REQUIRED[2]: ['unknown-receipt', 'disconnected', 'recovered'],
-              WORKBENCH_REQUIRED[3]: ['bounded-inspector', 'complete-editor']}
+              WORKBENCH_REQUIRED[3]: ['bounded-inspector', 'complete-editor'],
+              WORKBENCH_REQUIRED[5]: ['generation-recovered'],
+              WORKBENCH_REQUIRED[6]: ['disconnect-recovered']}
+    for scope in ['page', 'count', 'field']:
+        phases[WORKBENCH_REQUIRED[4] + '/' + scope] = ['read-recovered']
+    read_lifecycle = verify_workbench_read_lifecycle(directory, database, records)
     captures = []
     for test, names in phases.items():
         for language in ['zh-Hans', 'en']:
@@ -155,6 +228,7 @@ def verify_workbench_receipts(directory, database):
                     captures.append({'path': str(path.relative_to(directory)), 'sha256': transport.sha(path.read_bytes())})
     return {'required_diagnostics': WORKBENCH_REQUIRED, 'original_receipts': len(records),
             'independent_http_receipts': len(http_records), 'captures': captures,
+            'read_lifecycle': read_lifecycle,
             'public_provider_registered': False}
 
 
@@ -607,7 +681,7 @@ def main():
         if args.workbench:
             result['private_workbench'] = verify_workbench_receipts(base, database)
         result['original_processes_exited'] = transport.verify_processes(base)
-        if result['original_processes_exited'] != (25 if args.workbench else 19 if args.data else 15 if args.provider else 5):
+        if result['original_processes_exited'] != (32 if args.workbench else 19 if args.data else 15 if args.provider else 5):
             raise RuntimeError('Original independent process lifecycle coverage differs')
         if verify_build(original, dbx, cache) != pins or verify_build(reproduced, dbx, cache) != pins:
             raise RuntimeError('Original managed artifacts/sources changed during product verification')

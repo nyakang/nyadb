@@ -20,6 +20,67 @@ with mock.patch.object(sys, 'path', [str(TOOLS), *sys.path]):
 
 
 class DatabendManagedDiagnosticTests(unittest.TestCase):
+    def test_read_lifecycle_rejects_wrong_owner_replay_and_unacknowledged_cancellation(self):
+        database = 'original_database'
+        reads, held, records = [], [], []
+        for i, scope in enumerate(['page', 'count', 'field']):
+            name = FIXTURE.WORKBENCH_REQUIRED[4] + '/' + scope
+            reads.append({'test': name, 'scope': scope, 'object': {
+                'Schema': database, 'Name': 'workbench_read_' + scope + '53'},
+                'count': 2 if scope == 'count' else 1, 'matched_requests': 2 if scope == 'field' else 3,
+                'cache_preserved': True, 'independent_read_survived': True,
+                'late_result_rejected': True, 'explicit_refresh': True, 'public_provider_registered': False})
+            record = self.receipt(name, 'workbench-data-cursor', {'rows': []})
+            record['receipt']['CancellationRequested'] = True
+            records.append(record)
+        record = self.receipt(FIXTURE.WORKBENCH_REQUIRED[6], 'workbench-data-cursor', {'rows': []})
+        record['receipt']['CancellationRequested'] = True
+        records.append(record)
+        disconnects = [{'test': FIXTURE.WORKBENCH_REQUIRED[6], 'database': database,
+                        'matched_requests': 2, 'rows': [['1']], 'recovery_replayed': False,
+                        'public_provider_registered': False, 'original_generation': 1,
+                        'replacement_generation': 2, 'sql_text_retained': True,
+                        'original_executor_acknowledged': True, 'data_disposed': True}]
+        for i, (name, scope) in enumerate([(r['test'], r['scope']) for r in reads] +
+                                          [(FIXTURE.WORKBENCH_REQUIRED[n], 'page') for n in [5, 6]]):
+            query_id = f'{i+1:032x}'
+            raw = json.dumps({'id': query_id, 'data': [['1']], 'error': None}).encode()
+            held.append({'test': name, 'scope': scope, 'sql': 'SELECT * FROM "' + database + '".t',
+                         'query_id': query_id, 'status': 200, 'native_bytes': base64.b64encode(raw).decode(),
+                         'native_sha256': FIXTURE.transport.sha(raw)})
+        generations = [{'test': FIXTURE.WORKBENCH_REQUIRED[5], 'object': {
+            'Schema': database, 'Name': 'workbench_generation53'}, 'replacement_rows': 2,
+            'original_generation': 1, 'replacement_generation': 2, 'old_cache_preserved': True,
+            'old_document_revoked': True, 'replacement_survived_old_close': True,
+            'disconnect_disposed_data': True, 'public_provider_registered': False}]
+        for change in ['none', 'owner', 'replay', 'missing_scope', 'duplicate', 'no_ack', 'exit',
+                       'wrong_bytes', 'query_id', 'old_generation', 'disposed_replacement', 'replayed_sql', 'disconnect_no_ack']:
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as directory:
+                r, h, g, evidence = copy.deepcopy((reads, held, generations, records))
+                disconnect = copy.deepcopy(disconnects)
+                if change == 'owner': r[0]['object']['Schema'] = 'other_database'
+                elif change == 'replay': r[0]['matched_requests'] += 1
+                elif change == 'missing_scope': r.pop()
+                elif change == 'duplicate': h[-1] = copy.deepcopy(h[0])
+                elif change == 'no_ack': evidence[0]['receipt']['ExecutorAcknowledged'] = False
+                elif change == 'exit': evidence[0]['receipt']['ProcessExitConfirmed'] = True
+                elif change == 'wrong_bytes': h[0]['native_sha256'] = '0' * 64
+                elif change == 'query_id': h[0]['query_id'] = 'f' * 32
+                elif change == 'old_generation': g[0]['replacement_generation'] = 1
+                elif change == 'disposed_replacement': g[0]['replacement_survived_old_close'] = False
+                elif change == 'replayed_sql': disconnect[0]['rows'].append(['999'])
+                elif change == 'disconnect_no_ack': evidence[-1]['receipt']['ExecutorAcknowledged'] = False
+                root = Path(directory)
+                for filename, rows in [('workbench-read-lifecycle.jsonl', r), ('workbench-held-reads.jsonl', h),
+                                       ('workbench-generation-lifecycle.jsonl', g),
+                                       ('workbench-disconnect-lifecycle.jsonl', disconnect)]:
+                    (root / filename).write_text(''.join(json.dumps(row) + '\n' for row in rows))
+                if change == 'none':
+                    FIXTURE.verify_workbench_read_lifecycle(root, database, evidence)
+                else:
+                    with self.assertRaises(RuntimeError):
+                        FIXTURE.verify_workbench_read_lifecycle(root, database, evidence)
+
     def test_copied_workbench_receipt_preserves_complete_original_response_and_exact_timings(self):
         wire = self.receipt(FIXTURE.WORKBENCH_REQUIRED[0], 'workbench-data-write',
                             {'rows': [[1]], 'query_timings_ms': {'jdbc_execute': 0.558238}})
