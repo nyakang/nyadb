@@ -13,15 +13,18 @@ import (
 )
 
 func dataQuery(m *contract.TableStructure, p *dataProjection, o contract.DataOptions) (string, error) {
+	return dataSelect(m, p, o, true)
+}
+func dataSelect(m *contract.TableStructure, p *dataProjection, o contract.DataOptions, paged bool) (string, error) {
 	if o.Condition != nil || o.UseKeyset || o.After != nil {
 		return "", contract.ErrUnsupported
 	}
-	if o.Object != (contract.ObjectRef{}) && o.Object != m.Object || o.Offset < 0 || o.Limit < 1 || o.Limit > contract.DataMaxPageSize {
+	if o.Object != (contract.ObjectRef{}) && o.Object != m.Object || o.Offset < 0 || o.Limit < 0 || paged && (o.Limit < 1 || o.Limit > contract.DataMaxPageSize) {
 		return "", connections.ErrInvalid
 	}
 	known := map[string]*insertType{}
-	for i, c := range p.columns {
-		known[c.Name] = p.types[i]
+	for _, c := range m.Columns {
+		known[c.Name], _ = parseInsertType(c.Type)
 	}
 	filters := append([]contract.DataFilterRule(nil), o.Filters...)
 	if o.FilterColumn != "" {
@@ -35,6 +38,9 @@ func dataQuery(m *contract.TableStructure, p *dataProjection, o contract.DataOpt
 		typ, ok := known[f.Column]
 		if !ok {
 			return "", connections.ErrInvalid
+		}
+		if typ == nil {
+			return "", contract.ErrUnsupported
 		}
 		op := ""
 		switch f.Mode {
@@ -81,6 +87,9 @@ func dataQuery(m *contract.TableStructure, p *dataProjection, o contract.DataOpt
 		if !ok {
 			return "", connections.ErrInvalid
 		}
+		if typ == nil {
+			return "", contract.ErrUnsupported
+		}
 		if typ.kind == contract.JSON || typ.kind == contract.Binary {
 			return "", contract.ErrUnsupported
 		}
@@ -97,7 +106,9 @@ func dataQuery(m *contract.TableStructure, p *dataProjection, o contract.DataOpt
 	if len(order) > 0 {
 		source += " ORDER BY " + strings.Join(order, ",")
 	}
-	source += fmt.Sprintf(" OFFSET %d LIMIT %d", o.Offset, o.Limit+1)
+	if paged {
+		source += fmt.Sprintf(" OFFSET %d LIMIT %d", o.Offset, o.Limit+1)
+	}
 	if len(source) > 8<<20 {
 		return "", contract.ErrDataPage
 	}
@@ -123,6 +134,14 @@ func (l *dataLease) page(ctx context.Context, id int64, db, table string, o cont
 		return nil, err
 	}
 	defer done()
+	l.mu.Lock()
+	if l.pageSequence == ^uint64(0) {
+		l.mu.Unlock()
+		return nil, contract.ErrSQLSessionLimit
+	}
+	l.pageSequence++
+	sequence := l.pageSequence
+	l.mu.Unlock()
 	start := time.Now()
 	m, err := l.session.TableMetadata(child, l.object)
 	if err != nil {
@@ -132,6 +151,7 @@ func (l *dataLease) page(ctx context.Context, id int64, db, table string, o cont
 	if err != nil {
 		return nil, err
 	}
+	p.selects = append(p.selects, p.rowDigest+" AS "+quoteName(dataDigestColumn))
 	source, err := dataQuery(m, p, o)
 	if err != nil {
 		return nil, err
@@ -140,7 +160,7 @@ func (l *dataLease) page(ctx context.Context, id int64, db, table string, o cont
 	if err != nil {
 		return nil, err
 	}
-	rows, err := p.decode(result)
+	rows, digests, err := p.decodeCaptured(result)
 	if err != nil {
 		return nil, err
 	}
@@ -158,6 +178,9 @@ func (l *dataLease) page(ctx context.Context, id int64, db, table string, o cont
 		rows = rows[:o.Limit]
 	}
 	page.Rows = rows
+	if err = l.publishGrants(child, sequence, m, page, digests); err != nil {
+		return nil, err
+	}
 	page.CompletedAt = time.Now()
 	page.Duration = time.Since(start)
 	return page, nil

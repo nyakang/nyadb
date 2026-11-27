@@ -23,6 +23,8 @@ type dataLease struct {
 	active                         int
 	plan                           *dataWritePlan
 	unresolved                     *jdbcplugin.Receipt
+	grants                         map[string]*dataReadGrant
+	pageSequence                   uint64
 }
 
 func (s *Session) dataOwnerLocked(parent context.Context, role string, pool chan struct{}) (*queryLease, error) {
@@ -61,6 +63,7 @@ func (s *Session) ReserveDataDocument(object contract.ObjectRef) (contract.DataD
 func (s *Session) DataDocumentCapabilities() contract.Capabilities {
 	c := s.Capabilities()
 	c.Count = true
+	c.Export, c.JSONL, c.FieldChunks = true, true, true
 	c.EditableTables = true
 	return c
 }
@@ -68,9 +71,10 @@ func (l *dataLease) Runtime() contract.DataRuntime {
 	c := l.session.DataDocumentCapabilities()
 	c.EditableTables = l.object.Kind == "table"
 	r := contract.DataRuntime{Capabilities: c, PageFailureRequiresReopen: true,
-		AdvancedLoader: l.page, Loader: l.load, Count: l.count, TableMetadata: l.metadata, TableInfo: l.info,
-		FilterModes:   []string{"equal", "not_equal", "less", "greater", "like", "is_null", "is_not_null"},
-		ExportFormats: []string{}, EditKinds: []string{"insert"}, PreviewEditKinds: []string{"insert"},
+		AdvancedLoader: l.page, Loader: l.load, Chunk: l.chunk, Count: l.count, TableMetadata: l.metadata, TableInfo: l.info,
+		FilterModes: []string{"equal", "not_equal", "less", "greater", "like", "is_null", "is_not_null"},
+		Exporter:    l.export, JSONL: l.jsonl,
+		ExportFormats: []string{"TXT", "CSV", "TSV", "JSON", "XML", "HTML"}, EditKinds: []string{"insert"}, PreviewEditKinds: []string{"insert"},
 		EditValueKinds: []contract.CellKind{contract.Null, contract.Text, contract.Integer, contract.Decimal, contract.Floating, contract.Boolean, contract.Binary, contract.DateTime, contract.JSON},
 		NativeReceipts: true, SequentialWrites: true, InsertOmittedValues: true,
 		MutationPresentation: &contract.DataMutationPresentation{Title: "确认 PrestoSQL 数据新增", Hint: "各 INSERT 语句独立执行，不提供批次事务。省略字段由原生连接器处理；显式 NULL 与省略不同。当前驱动不提供主键，已有行保持只读。未知或不完整回执保留草稿并禁止重放。", PreviewLabel: "PrestoSQL 原生 INSERT 完整预览", HistoryLabel: "已确认的 PrestoSQL 数据新增", CreateLabel: "新增记录"},
@@ -135,6 +139,7 @@ func (l *dataLease) Close() error {
 		l.plan = nil
 	}
 	l.unresolved = nil
+	l.grants = nil
 	l.mu.Unlock()
 	l.session.mu.Lock()
 	delete(l.session.dataLeases, l)

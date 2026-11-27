@@ -15,10 +15,11 @@ const dataPreviewUnits = 1024
 const dataPreviewBytes = 16 << 20
 
 type dataProjection struct {
-	columns []contract.StructureColumn
-	types   []*insertType
-	selects []string
-	limit   int
+	columns   []contract.StructureColumn
+	types     []*insertType
+	selects   []string
+	limit     int
+	rowDigest string
 }
 
 type projectionBuilder struct {
@@ -97,7 +98,7 @@ func (b *projectionBuilder) json(t *insertType, value string) (string, error) {
 }
 
 func newDataProjection(m *contract.TableStructure, limit int) (*dataProjection, error) {
-	if m == nil || len(m.Columns) == 0 || len(m.Columns) > 512 || limit < 1 || limit > contract.DataEditMaxBytes {
+	if m == nil || len(m.Columns) == 0 || len(m.Columns) > 512 || limit < 0 || limit > contract.DataEditMaxBytes {
 		return nil, contract.ErrDataPage
 	}
 	p := &dataProjection{limit: limit}
@@ -105,6 +106,7 @@ func newDataProjection(m *contract.TableStructure, limit int) (*dataProjection, 
 	for _, c := range m.Columns {
 		b.used[strings.ToLower(c.Name)] = true
 	}
+	var full []string
 	for i, c := range m.Columns {
 		typ, err := parseInsertType(c.Type)
 		if err != nil {
@@ -116,6 +118,7 @@ func newDataProjection(m *contract.TableStructure, limit int) (*dataProjection, 
 		if err != nil {
 			return nil, err
 		}
+		full = append(full, "CAST("+text+" AS JSON)")
 		limited := fmt.Sprintf("substr(%s,1,%d)", text, limit)
 		length := "length(" + text + ")"
 		if typ.kind == contract.Binary {
@@ -123,10 +126,14 @@ func newDataProjection(m *contract.TableStructure, limit int) (*dataProjection, 
 			length = "length(" + column + ")"
 		}
 		envelope := fmt.Sprintf("json_format(CAST(ARRAY[CAST(%s AS JSON),CAST(COALESCE(%s>%d,false) AS JSON)] AS JSON))", limited, length, limit)
+		if limit == 0 {
+			envelope = "json_format(CAST(ARRAY[CAST(" + text + " AS JSON),CAST(false AS JSON)] AS JSON))"
+		}
 		p.columns = append(p.columns, c)
 		p.types = append(p.types, typ)
 		p.selects = append(p.selects, envelope+" AS "+quoteName(fmt.Sprintf("__nyadb_cell_%d", i)))
 	}
+	p.rowDigest = "to_hex(sha256(to_utf8(json_format(CAST(ARRAY[" + strings.Join(full, ",") + "] AS JSON)))))"
 	return p, nil
 }
 
@@ -141,6 +148,9 @@ func (p *dataProjection) decode(result queryResult) ([][]contract.DataCell, erro
 	}
 	var rows [][]contract.DataCell
 	budget := dataPreviewBytes
+	if p.limit == 0 {
+		budget = 32 << 20
+	}
 	for _, row := range result.rows {
 		if len(row) != len(p.columns) {
 			return nil, ErrResponse
@@ -167,13 +177,13 @@ func (p *dataProjection) decode(result queryResult) ([][]contract.DataCell, erro
 				}
 				if value.Kind == contract.Binary {
 					decoded, err := base64.StdEncoding.Strict().DecodeString(value.Text)
-					if err != nil || len(decoded) > p.limit {
+					if err != nil || p.limit > 0 && len(decoded) > p.limit {
 						return nil, ErrResponse
 					}
 					value.Bytes = append([]byte{}, decoded...)
 					value.Text = ""
 				} else {
-					if utf8.RuneCountInString(value.Text) > p.limit {
+					if p.limit > 0 && utf8.RuneCountInString(value.Text) > p.limit {
 						return nil, ErrResponse
 					}
 					if !value.Truncated {
