@@ -34,6 +34,16 @@ type Messages struct{ locale string }
 // source language.
 func In(locale string) Messages { return Messages{locale} }
 
+// DatabendRenameScope says "…"
+// in the language the app shows.
+func DatabendRenameScope() string { return In(i18n.Locale()).DatabendRenameScope() }
+
+// DatabendRenameScope says "…"
+// in the language of msgs.
+func (msgs Messages) DatabendRenameScope() string {
+	return Catalog.Format(msgs.locale, "databendRenameScope", nil)
+}
+
 // EngineBoundDatabaseRequired says "请输入此连接绑定的 %s 数据库"
 // in the language the app shows.
 func EngineBoundDatabaseRequired() string { return In(i18n.Locale()).EngineBoundDatabaseRequired() }

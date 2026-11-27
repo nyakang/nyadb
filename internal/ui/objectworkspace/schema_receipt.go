@@ -182,7 +182,12 @@ func (s *State) schemaReceiptView(c *ui.Context, x *schemaDocumentOwner) {
 		ui.Text(c, x.transferError).SingleLine().Tooltip(x.transferError).TextColor(theme.Colors(c).Error)
 	}
 	preview := x.receiptPreview
-	ui.TextArea(c, &preview).Label(locales.Text("原始结构回执")).ReadOnly(true).Grow(1).MinHeight(40)
+	area := ui.TextArea(c.Key(fmt.Sprintf("schema-receipt/%s/%d", r.DocumentID, r.Sequence)), &preview).Label(locales.Text("原始结构回执")).ReadOnly(true).Grow(1).MinHeight(40)
+	seen := ui.Local(area, "schema-receipt-text", func() string { return "" })
+	if *seen != preview {
+		area.SetTextSelection(0, 0)
+		*seen = preview
+	}
 }
 
 func (s *State) schemaModalReceiptToggle(c *ui.Context, x *schemaDocumentOwner) bool {

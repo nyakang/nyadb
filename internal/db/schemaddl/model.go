@@ -39,9 +39,10 @@ type Snapshot struct {
 	Engine, Revision, DDL string
 	Exists                bool
 	Table                 Table
-	Postgres              *PostgreSQLCatalog `json:",omitempty"`
-	OpenGauss             *OpenGaussCatalog  `json:",omitempty"`
-	SQLite                *SQLiteCatalog     `json:",omitempty"`
+	Postgres              *PostgreSQLCatalog     `json:",omitempty"`
+	OpenGauss             *OpenGaussCatalog      `json:",omitempty"`
+	SQLite                *SQLiteCatalog         `json:",omitempty"`
+	Databend              *DatabendTableIdentity `json:",omitempty"`
 }
 
 func (t Table) Clone() Table {
@@ -64,6 +65,10 @@ func (s Snapshot) Clone() Snapshot {
 	s.Postgres = s.Postgres.Clone()
 	s.OpenGauss = s.OpenGauss.Clone()
 	s.SQLite = s.SQLite.Clone()
+	if s.Databend != nil {
+		identity := *s.Databend
+		s.Databend = &identity
+	}
 	return s
 }
 func Signature(v any) string {

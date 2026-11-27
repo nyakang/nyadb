@@ -25,17 +25,18 @@ type Provider struct {
 }
 
 type Session struct {
-	mu         sync.Mutex
-	ctx        context.Context
-	cancel     context.CancelFunc
-	closed     bool
-	dataLeases map[*dataLease]bool
-	profile    connections.Profile
-	process    *ManagedProcess
-	queries    *agentbridge.QueryPool
-	observe    func(string, agentbridge.Receipt)
-	once       sync.Once
-	err        error
+	mu              sync.Mutex
+	ctx             context.Context
+	cancel          context.CancelFunc
+	closed          bool
+	dataLeases      map[*dataLease]bool
+	schemaDocuments map[string]*schemaDocument
+	profile         connections.Profile
+	process         *ManagedProcess
+	queries         *agentbridge.QueryPool
+	observe         func(string, agentbridge.Receipt)
+	once            sync.Once
+	err             error
 }
 
 func (p Provider) Open(ctx context.Context, profile connections.Profile, secret string) (contract.Session, error) {
@@ -158,7 +159,7 @@ func (s *Session) Namespace(database string) contract.NamespaceRef {
 	return contract.NamespaceRef{ProfileID: s.ProfileID(), Schema: database}
 }
 func (s *Session) Capabilities() contract.Capabilities {
-	return contract.Capabilities{Query: true, Metadata: true, Schemas: true, EditableTables: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
+	return contract.Capabilities{Query: true, Metadata: true, Schemas: true, Objects: true, EditableTables: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
 }
 func (s *Session) ReserveQuery(document uint64) (contract.QueryLease, error) {
 	if !s.Alive() {
@@ -179,7 +180,14 @@ func (s *Session) Close() error {
 		for l := range s.dataLeases {
 			documents = append(documents, l)
 		}
+		var schemas []*schemaDocument
+		for _, d := range s.schemaDocuments {
+			schemas = append(schemas, d)
+		}
 		s.mu.Unlock()
+		for _, d := range schemas {
+			_ = d.Close()
+		}
 		for _, l := range documents {
 			_ = l.Close()
 		}

@@ -1,4 +1,5 @@
 {
+  "databendRenameScope": "Rename in the original database and verify table identity and the complete definition. Checks do not lock concurrent changes; unverified receipts cannot be replayed.",
   "engineBoundDatabaseRequired": "Enter the database bound to this %s connection",
   "etcdNewKVRequest": "New KV Request",
   "mysqlFamilyDisconnected": "%s disconnected",

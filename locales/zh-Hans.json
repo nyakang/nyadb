@@ -1,4 +1,5 @@
 {
+  "databendRenameScope": "在原数据库中重命名并核验表身份和完整定义。检查不锁定并发更改；未核验的回执禁止重放。",
   "engineBoundDatabaseRequired": "请输入此连接绑定的 %s 数据库",
   "etcdNewKVRequest": "新建 KV 请求",
   "mysqlFamilyDisconnected": "%s 已断开",

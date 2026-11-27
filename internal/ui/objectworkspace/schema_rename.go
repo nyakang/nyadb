@@ -123,6 +123,10 @@ func (s *State) schemaRenameRequest(x *schemaRenameOperation) (contract.SchemaRe
 		return contract.SchemaRenameRequest{}, "", errors.New("read the original table before renaming")
 	}
 	r := contract.SchemaRenameRequest{Original: x.original.Clone(), Destination: strings.TrimSpace(x.destination)}
+	if r.Original.Schema.Engine == "databend" {
+		sql, err := schemaddl.PlanDatabendRename(r.Original.Schema, r.Original.Target.Object.Schema, r.Destination)
+		return r, sql, err
+	}
 	if r.Original.Schema.Engine == "sqlite" {
 		desired := r.Original.Schema.Table.Clone()
 		desired.Name = r.Destination
@@ -275,7 +279,7 @@ func (s *State) consumeSchemaRename(services ui.Services) {
 			}
 		} else if reply.err != nil {
 			x.err = reply.err.Error()
-		} else if reply.snapshot.Target != x.target || !reply.snapshot.Schema.Exists || (reply.snapshot.Schema.Engine != "opengauss" && reply.snapshot.Schema.Engine != "sqlite") || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.Table.Name != x.target.Object.Name {
+		} else if reply.snapshot.Target != x.target || !reply.snapshot.Schema.Exists || (reply.snapshot.Schema.Engine != "opengauss" && reply.snapshot.Schema.Engine != "sqlite" && reply.snapshot.Schema.Engine != "databend") || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.Table.Name != x.target.Object.Name {
 			x.err = "original table snapshot is incomplete or unavailable"
 		} else {
 			snapshot := reply.snapshot.Clone()
@@ -294,11 +298,19 @@ func (s *State) schemaRenameModal(c *ui.Context) {
 		return
 	}
 	theme.Modal(c, &x.open, func() {
-		ui.Column(c).Width(700).MaxWidthPercent(92).Height(420).MaxHeightPercent(92).Gap(8).Children(func() {
+		height := float32(420)
+		if x.original != nil && x.original.Schema.Engine == "databend" {
+			height = 520
+		}
+		ui.Column(c).Width(700).MaxWidthPercent(92).Height(height).MaxHeightPercent(92).Gap(8).Children(func() {
 			ui.Text(c, locales.Text("重命名表")).Bold()
 			ui.Text(c, fmt.Sprintf("#%d · %s / %s · %s", x.target.Object.ProfileID, x.target.Object.Catalog, x.target.Object.Schema, x.target.Object.Name)).SingleLine().Tooltip(x.target.Object.Name)
 			ui.TextInput(c, &x.destination).Label(locales.Text("目标表名称")).Disabled(x.busy)
-			ui.Text(c, locales.Text("在同一模式中事务重命名，保留原表、索引、序列和依赖身份。"))
+			if x.original != nil && x.original.Schema.Engine == "databend" {
+				ui.Text(c, locales.Text("在原数据库中重命名并核验表身份和完整定义。检查不锁定并发更改；未核验的回执禁止重放。"))
+			} else if x.original != nil {
+				ui.Text(c, locales.Text("在同一模式中事务重命名，保留原表、索引、序列和依赖身份。"))
+			}
 			ui.Text(c, locales.Text("成功后关闭原名称下的数据和结构标签；未保存内容须先处理。"))
 			if x.err != "" {
 				ui.Text(c, x.err).SingleLine().Tooltip(x.err).TextColor(theme.Colors(c).Error)
