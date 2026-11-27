@@ -45071,3 +45071,43 @@ func DatabendTruncateWarning() string { return In(i18n.Locale()).DatabendTruncat
 func (msgs Messages) DatabendTruncateWarning() string {
 	return Catalog.Format(msgs.locale, "databendTruncateWarning", nil)
 }
+
+// PrestosqlDataMutationTitle says "确认 PrestoSQL 数据新增"
+// in the language the app shows.
+func PrestosqlDataMutationTitle() string { return In(i18n.Locale()).PrestosqlDataMutationTitle() }
+
+// PrestosqlDataMutationTitle says "确认 PrestoSQL 数据新增"
+// in the language of msgs.
+func (msgs Messages) PrestosqlDataMutationTitle() string {
+	return Catalog.Format(msgs.locale, "prestosqlDataMutationTitle", nil)
+}
+
+// PrestosqlDataMutationPreview says "PrestoSQL 原生 INSERT 完整预览"
+// in the language the app shows.
+func PrestosqlDataMutationPreview() string { return In(i18n.Locale()).PrestosqlDataMutationPreview() }
+
+// PrestosqlDataMutationPreview says "PrestoSQL 原生 INSERT 完整预览"
+// in the language of msgs.
+func (msgs Messages) PrestosqlDataMutationPreview() string {
+	return Catalog.Format(msgs.locale, "prestosqlDataMutationPreview", nil)
+}
+
+// PrestosqlDataMutationHistory says "已确认的 PrestoSQL 数据新增"
+// in the language the app shows.
+func PrestosqlDataMutationHistory() string { return In(i18n.Locale()).PrestosqlDataMutationHistory() }
+
+// PrestosqlDataMutationHistory says "已确认的 PrestoSQL 数据新增"
+// in the language of msgs.
+func (msgs Messages) PrestosqlDataMutationHistory() string {
+	return Catalog.Format(msgs.locale, "prestosqlDataMutationHistory", nil)
+}
+
+// PrestosqlDataReadScope says "PrestoSQL 分页读取当前可见数据；跨页不提供一致快照。"
+// in the language the app shows.
+func PrestosqlDataReadScope() string { return In(i18n.Locale()).PrestosqlDataReadScope() }
+
+// PrestosqlDataReadScope says "PrestoSQL 分页读取当前可见数据；跨页不提供一致快照。"
+// in the language of msgs.
+func (msgs Messages) PrestosqlDataReadScope() string {
+	return Catalog.Format(msgs.locale, "prestosqlDataReadScope", nil)
+}

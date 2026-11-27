@@ -36,8 +36,11 @@ type Session struct {
 	metadata     *process
 	metadataOps  sync.Mutex
 	queries      map[uint64]*queryLease
+	dataLeases   map[*dataLease]bool
 	nextOwner    uint64
 	slots        chan struct{}
+	dataSlots    chan struct{}
+	auxSlots     chan struct{}
 	namespaces   map[string]contract.NamespaceRef
 	once         sync.Once
 	closeErr     error
@@ -65,6 +68,7 @@ func (p Provider) OpenManaged(ctx context.Context, profileID int64, config conne
 	}
 	s := &Session{profileID: profileID, config: c, provider: p, connection: connection,
 		metadata: original, queries: map[uint64]*queryLease{}, slots: make(chan struct{}, c.MaxQueryProcesses),
+		dataLeases: map[*dataLease]bool{}, dataSlots: make(chan struct{}, c.MaxQueryProcesses), auxSlots: make(chan struct{}, 2),
 		namespaces: map[string]contract.NamespaceRef{}}
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	if c.Catalog != "" && c.Schema != "" {
@@ -131,11 +135,18 @@ func (s *Session) Close() error {
 		for _, q := range s.queries {
 			leases = append(leases, q)
 		}
+		data := make([]*dataLease, 0, len(s.dataLeases))
+		for d := range s.dataLeases {
+			data = append(data, d)
+		}
 		s.connection = nil
 		s.namespaces = nil
 		s.mu.Unlock()
 		for _, q := range leases {
 			q.Release()
+		}
+		for _, d := range data {
+			_ = d.Close()
 		}
 		s.work.Wait()
 		s.closeErr = s.metadata.runtime.Close()

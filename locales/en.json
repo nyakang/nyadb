@@ -4424,5 +4424,9 @@
   "databendServerNameLabel": "Server name:",
   "databendTruncateCompleted": "Table truncated",
   "databendTruncateConfirm": "Confirm table truncation",
-  "databendTruncateWarning": "Use TRUNCATE to empty the original table and retain its structure, then verify the original table identity and empty result. The server provides no deleted-row count. Checks do not lock concurrent changes; an unverified receipt cannot be replayed, and cancellation does not mean rollback."
+  "databendTruncateWarning": "Use TRUNCATE to empty the original table and retain its structure, then verify the original table identity and empty result. The server provides no deleted-row count. Checks do not lock concurrent changes; an unverified receipt cannot be replayed, and cancellation does not mean rollback.",
+  "prestosqlDataMutationTitle": "Confirm PrestoSQL inserts",
+  "prestosqlDataMutationPreview": "Complete native PrestoSQL INSERT preview",
+  "prestosqlDataMutationHistory": "Acknowledged PrestoSQL inserts",
+  "prestosqlDataReadScope": "PrestoSQL pages read currently visible data without a consistent snapshot across pages."
 }

@@ -4424,5 +4424,9 @@
   "databendServerNameLabel": "服务器名称：",
   "databendTruncateCompleted": "截断表成功",
   "databendTruncateConfirm": "确认截断表",
-  "databendTruncateWarning": "使用 TRUNCATE 清空原表并保留结构，核验原表身份和空表结果。服务器不返回删除行数；检查不锁定并发更改，未核验的回执禁止重放，取消不表示回滚。"
+  "databendTruncateWarning": "使用 TRUNCATE 清空原表并保留结构，核验原表身份和空表结果。服务器不返回删除行数；检查不锁定并发更改，未核验的回执禁止重放，取消不表示回滚。",
+  "prestosqlDataMutationTitle": "确认 PrestoSQL 数据新增",
+  "prestosqlDataMutationPreview": "PrestoSQL 原生 INSERT 完整预览",
+  "prestosqlDataMutationHistory": "已确认的 PrestoSQL 数据新增",
+  "prestosqlDataReadScope": "PrestoSQL 分页读取当前可见数据；跨页不提供一致快照。"
 }

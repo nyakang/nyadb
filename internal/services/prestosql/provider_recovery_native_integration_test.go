@@ -34,11 +34,15 @@ type providerRelay struct {
 	writes         atomic.Int64
 }
 
-func newProviderRelay(t *testing.T, endpoint string) *providerRelay {
+func newProviderRelay(t *testing.T, endpoint string, insertPrefix ...string) *providerRelay {
 	t.Helper()
 	target, err := url.Parse(endpoint)
 	if err != nil {
 		t.Fatal(err)
+	}
+	prefix := "INSERT INTO memory.default.uncertain_provider64"
+	if len(insertPrefix) == 1 {
+		prefix = insertPrefix[0]
 	}
 	r := &providerRelay{}
 	proxy := httputil.NewSingleHostReverseProxy(target)
@@ -95,7 +99,7 @@ func newProviderRelay(t *testing.T, endpoint string) *providerRelay {
 				return
 			}
 			request.Body = io.NopCloser(bytes.NewReader(raw))
-			if strings.HasPrefix(strings.TrimSpace(string(raw)), "INSERT INTO memory.default.uncertain_provider64") {
+			if strings.HasPrefix(strings.TrimSpace(string(raw)), prefix) {
 				r.writes.Add(1)
 			}
 		}

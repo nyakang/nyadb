@@ -25,6 +25,7 @@ type queryLease struct {
 	cancel               context.CancelFunc
 	released, lost, slot bool
 	original             *process
+	pool                 chan struct{}
 }
 
 func (q *queryLease) CheckQueryLease() error {
@@ -65,17 +66,21 @@ func (q *queryLease) connect(ctx context.Context) (*process, error) {
 		return original, nil
 	}
 	s := q.session
+	pool := q.pool
+	if pool == nil {
+		pool = s.slots
+	}
 	wait, cancel := context.WithTimeout(ctx, time.Duration(s.config.PoolWaitMillis)*time.Millisecond)
 	defer cancel()
 	select {
 	case <-wait.Done():
 		return nil, wait.Err()
-	case s.slots <- struct{}{}:
+	case pool <- struct{}{}:
 	}
 	keep := false
 	defer func() {
 		if !keep {
-			<-s.slots
+			<-pool
 		}
 	}()
 	if ctx.Err() != nil {
@@ -98,6 +103,7 @@ func (q *queryLease) connect(ctx context.Context) (*process, error) {
 		return nil, errors.Join(err, ctx.Err())
 	}
 	q.original, q.slot = original, true
+	q.pool = pool
 	q.mu.Unlock()
 	keep = true
 	return original, nil
@@ -129,7 +135,7 @@ func (q *queryLease) Release() {
 		_ = original.runtime.Close()
 	}
 	if slot {
-		<-q.session.slots
+		<-q.pool
 	}
 	q.ops.Unlock()
 	q.session.mu.Lock()
@@ -137,6 +143,29 @@ func (q *queryLease) Release() {
 		delete(q.session.queries, q.document)
 	}
 	q.session.mu.Unlock()
+}
+
+// executeNative is for one generated statement on a captured data owner.
+// It retains the original receipt even when cancellation accompanies an ACK.
+func (q *queryLease) executeNative(ctx context.Context, request jdbcplugin.Query) (queryResult, jdbcplugin.Receipt, error) {
+	q.ops.Lock()
+	defer q.ops.Unlock()
+	child, done, err := q.request(ctx)
+	if err != nil {
+		return queryResult{}, jdbcplugin.Receipt{}, err
+	}
+	defer done()
+	original, err := q.connect(child)
+	if err != nil {
+		return queryResult{}, jdbcplugin.Receipt{}, err
+	}
+	result, receipt, err := original.query(child, request)
+	if errors.Is(err, contract.ErrSQLSessionLost) || !original.runtime.Client.Alive() {
+		q.mu.Lock()
+		q.lost = true
+		q.mu.Unlock()
+	}
+	return result, receipt, err
 }
 
 func (q *queryLease) Replace() (contract.QueryLease, error) {
