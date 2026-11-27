@@ -4421,5 +4421,8 @@
   "databendPoolWait": "Databend Connection wait (ms)",
   "databendPoolWaitLabel": "Connection wait (ms)",
   "databendSessionToken": "Databend session token",
-  "databendServerNameLabel": "Server name:"
+  "databendServerNameLabel": "Server name:",
+  "databendTruncateCompleted": "Table truncated",
+  "databendTruncateConfirm": "Confirm table truncation",
+  "databendTruncateWarning": "Use TRUNCATE to empty the original table and retain its structure, then verify the original table identity and empty result. The server provides no deleted-row count. Checks do not lock concurrent changes; an unverified receipt cannot be replayed, and cancellation does not mean rollback."
 }

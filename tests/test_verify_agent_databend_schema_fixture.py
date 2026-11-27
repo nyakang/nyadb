@@ -112,5 +112,27 @@ class DatabendSchemaReceiptVerifierTests(unittest.TestCase):
                 schema.verify_receipt(changed, 'committed', True, 'clear', 2)
 
 
+    def test_truncate_has_original_ddl_ack_and_never_invents_delete_counts(self):
+        r = self.receipt()
+        r.update(Operation='truncate', Destination='t', ResetIdentity=False,
+                 Statements=['TRUNCATE TABLE "original"."t"'])
+        r['Original']['Schema'].update(Table={'Name': 't'}, Exists=True, DDL='original complete declaration')
+        r['Actual'] = copy.deepcopy(r['Original'])
+        schema.verify_receipt(r, 'committed', True, 'truncate')
+        for mutate in [lambda v: v.update(Rows=2), lambda v: v.update(ResetIdentity=True),
+                       lambda v: v['Actual']['Schema'].update(DDL='different declaration'),
+                       lambda v: v.update(Statements=['DELETE FROM "original"."t"'])]:
+            changed = copy.deepcopy(r)
+            mutate(changed)
+            with self.assertRaises(RuntimeError):
+                schema.verify_receipt(changed, 'committed', True, 'truncate')
+        n = json.loads(r['NativeJSON'])
+        n['Receipt']['Result'].update(columns=['number of rows deleted'], column_types=['uint64'], rows=[[2]])
+        n['Original']['result'] = copy.deepcopy(n['Receipt']['Result'])
+        r['NativeJSON'] = json.dumps(n)
+        with self.assertRaises(RuntimeError):
+            schema.verify_receipt(r, 'committed', True, 'truncate')
+
+
 if __name__ == '__main__':
     unittest.main()

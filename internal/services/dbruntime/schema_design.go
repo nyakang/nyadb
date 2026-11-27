@@ -107,6 +107,29 @@ func (s *session) bindSchemaDesign(raw contract.SchemaDesignOperations, document
 			return s.schemaDesignOutcome(raw.Drop(ctx, r.Clone()), expected)
 		}
 	}
+	if raw.CanTruncate != nil {
+		ops.CanTruncate = func(t contract.SchemaDesignTarget) bool {
+			if s.schemaDesignTarget(t) != nil || !s.Capabilities().Objects {
+				return false
+			}
+			t.Generation = s.raw.Generation()
+			return raw.CanTruncate(t)
+		}
+	}
+	if raw.Truncate != nil {
+		ops.Truncate = func(ctx context.Context, original contract.SchemaDesignSnapshot) contract.SchemaDesignOutcome {
+			if err := s.schemaDesignTarget(original.Target); err != nil {
+				return contract.SchemaDesignOutcome{State: "not_executed", Error: err}
+			}
+			if !s.Capabilities().Objects {
+				return contract.SchemaDesignOutcome{State: "not_executed", Error: contract.ErrUnsupported}
+			}
+			r := original.Clone()
+			r.Target.Generation = s.raw.Generation()
+			expected := contract.SchemaDesignWriteReceipt{DocumentID: documentID, Operation: "truncate", Original: r.Clone(), Destination: r.Target.Object.Name}
+			return s.schemaDesignOutcome(raw.Truncate(ctx, r.Clone()), expected)
+		}
+	}
 	if raw.CanCopy != nil {
 		ops.CanCopy = func(t contract.SchemaDesignTarget) bool {
 			if s.schemaDesignTarget(t) != nil || !s.Capabilities().Objects {
@@ -204,7 +227,7 @@ func (s *session) schemaDesignOutcome(out contract.SchemaDesignOutcome, expected
 			return actual.Schema.Exists
 		case "rename":
 			return actual.Schema.Exists && actual.Schema.Table.Name == expected.Destination
-		case "clear":
+		case "clear", "truncate":
 			return actual.Schema.Exists && actual.Schema.Table.Name == expected.Destination && actual.Schema.Engine == expected.Original.Schema.Engine
 		}
 		if expected.DocumentID != "" {

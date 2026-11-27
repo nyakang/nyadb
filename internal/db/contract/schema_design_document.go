@@ -42,11 +42,12 @@ type SchemaDesignDocumentsProvider interface {
 // I/O. They do not expose session-level executors or transfer a document proof.
 // Each executor still validates the original complete request after admission.
 type SchemaDesignDocumentFeatures struct {
-	CanApply  func(SchemaDesignTarget) bool
-	CanDrop   func(SchemaDesignTarget) bool
-	CanCopy   func(SchemaDesignTarget) bool
-	CanRename func(SchemaDesignTarget) bool
-	CanClear  func(SchemaDesignTarget) bool
+	CanApply    func(SchemaDesignTarget) bool
+	CanDrop     func(SchemaDesignTarget) bool
+	CanCopy     func(SchemaDesignTarget) bool
+	CanRename   func(SchemaDesignTarget) bool
+	CanClear    func(SchemaDesignTarget) bool
+	CanTruncate func(SchemaDesignTarget) bool
 }
 
 type SchemaDesignDocumentFeaturesProvider interface {

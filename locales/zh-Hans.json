@@ -4421,5 +4421,8 @@
   "databendPoolWait": "Databend 连接等待（毫秒）",
   "databendPoolWaitLabel": "连接等待（毫秒）",
   "databendSessionToken": "本次 Databend 会话令牌",
-  "databendServerNameLabel": "服务器名称："
+  "databendServerNameLabel": "服务器名称：",
+  "databendTruncateCompleted": "截断表成功",
+  "databendTruncateConfirm": "确认截断表",
+  "databendTruncateWarning": "使用 TRUNCATE 清空原表并保留结构，核验原表身份和空表结果。服务器不返回删除行数；检查不锁定并发更改，未核验的回执禁止重放，取消不表示回滚。"
 }

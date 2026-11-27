@@ -122,11 +122,11 @@ func (d *schemaDocument) Operations() contract.SchemaDesignOperations {
 	if closed {
 		return contract.SchemaDesignOperations{}
 	}
-	return contract.SchemaDesignOperations{Snapshot: d.snapshot, CanRename: d.writable, Rename: d.rename, CanDrop: d.writable, Drop: d.drop, CanCopy: d.writable, Copy: d.copy, CanClear: d.writable, Clear: d.clear}
+	return contract.SchemaDesignOperations{Snapshot: d.snapshot, CanRename: d.writable, Rename: d.rename, CanDrop: d.writable, Drop: d.drop, CanCopy: d.writable, Copy: d.copy, CanClear: d.writable, Clear: d.clear, CanTruncate: d.writable, Truncate: d.truncate}
 }
 func (s *Session) SchemaDesignDocumentFeatures() contract.SchemaDesignDocumentFeatures {
 	can := func(t contract.SchemaDesignTarget) bool { return s.checkSchemaTarget(t) == nil }
-	return contract.SchemaDesignDocumentFeatures{CanRename: can, CanDrop: can, CanCopy: can, CanClear: can}
+	return contract.SchemaDesignDocumentFeatures{CanRename: can, CanDrop: can, CanCopy: can, CanClear: can, CanTruncate: can}
 }
 func (s *Session) SchemaDesign() contract.SchemaDesignOperations {
 	return contract.SchemaDesignOperations{Snapshot: func(ctx context.Context, t contract.SchemaDesignTarget) (contract.SchemaDesignSnapshot, error) {

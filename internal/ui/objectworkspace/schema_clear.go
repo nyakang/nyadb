@@ -26,6 +26,7 @@ type schemaClearReply struct {
 	err      error
 }
 type schemaClearOperation struct {
+	truncate                                                 bool
 	completed                                                bool
 	owner                                                    *schemaDocumentOwner
 	applied                                                  *contract.SchemaClearRequest
@@ -40,6 +41,46 @@ type schemaClearOperation struct {
 	confirmation, err                                        string
 	cancel                                                   context.CancelFunc
 	results                                                  <-chan schemaClearReply
+}
+
+func (x *schemaClearOperation) operation() string {
+	if x.truncate {
+		return "truncate"
+	}
+	return "clear"
+}
+
+func (x *schemaClearOperation) title() string {
+	if x.truncate {
+		return locales.Text("截断表")
+	}
+	return locales.Text("清空表")
+}
+
+func (x *schemaClearOperation) completedText() string {
+	if x.truncate {
+		return locales.Text("截断表成功")
+	}
+	return locales.Text("清空表成功")
+}
+
+func (x *schemaClearOperation) confirmationText() string {
+	if x.truncate {
+		return locales.Text("确认截断表")
+	}
+	return locales.Text("确认清空表")
+}
+
+func (s *State) CanTruncateTable(profile int64, database, table string) bool {
+	if s.CanChangeTable(profile) {
+		return true
+	}
+	if s.tablePending || s.nativeTablePending() {
+		return false
+	}
+	w := s.session()
+	ops, target := s.schemaBinding(profile, database, table)
+	return w.Connected && w.ProfileID == profile && target.Generation != 0 && s.operationAvailable("truncate_table", target) && ops.Snapshot != nil && (ops.CanTruncate != nil && ops.Truncate != nil && ops.CanTruncate(target) || s.deps.Availability != nil && s.capabilities(profile).Objects && s.schemaDocumentsAvailable(profile))
 }
 
 func (s *State) CanClearTable(profile int64, database, table string) bool {
@@ -62,7 +103,16 @@ func (s *State) schemaClearValid(x *schemaClearOperation) bool {
 	return w.Connected && w.ProfileID == x.target.Object.ProfileID && w.Generation == x.generation && actual == x.target
 }
 func (s *State) beginSchemaClear(profile int64, database, table string) {
-	if !s.CanClearTable(profile, database, table) || s.CanChangeTable(profile) {
+	s.beginSchemaEmpty(profile, database, table, false)
+}
+
+func (s *State) beginSchemaEmpty(profile int64, database, table string, truncate bool) {
+	available := s.CanClearTable(profile, database, table)
+	operation := "clear"
+	if truncate {
+		available, operation = s.CanTruncateTable(profile, database, table), "truncate"
+	}
+	if !available || s.CanChangeTable(profile) {
 		return
 	}
 	s.closeSchemaClear()
@@ -70,20 +120,20 @@ func (s *State) beginSchemaClear(profile int64, database, table string) {
 	s.closeSchemaCopy()
 	s.closeSchemaRename()
 	ops, target := s.schemaBinding(profile, database, table)
-	owner, err := s.reserveSchemaDocument(s.nextSchemaDocumentID("clear"), target)
+	owner, err := s.reserveSchemaDocument(s.nextSchemaDocumentID(operation), target)
 	if err != nil {
 		s.report(schemaDesignError(err))
 		return
 	}
 	if owner != nil {
 		ops = owner.lease.Operations()
-		if ops.Snapshot == nil || ops.Clear == nil {
+		if ops.Snapshot == nil || truncate && ops.Truncate == nil || !truncate && ops.Clear == nil {
 			owner.close()
 			s.report(schemaDesignError(contract.ErrUnsupported))
 			return
 		}
 	}
-	s.schemaClear = &schemaClearOperation{owner: owner, target: target, generation: s.session().Generation, database: database, ops: ops, open: true}
+	s.schemaClear = &schemaClearOperation{truncate: truncate, owner: owner, target: target, generation: s.session().Generation, database: database, ops: ops, open: true}
 }
 func (s *State) closeSchemaClear() {
 	x := s.schemaClear
@@ -124,6 +174,13 @@ func (s *State) schemaClearRequest(x *schemaClearOperation) (contract.SchemaClea
 		return contract.SchemaClearRequest{}, contract.ErrUnsupported
 	}
 	r := contract.SchemaClearRequest{Original: x.original.Clone(), ResetIdentity: x.resetIdentity}
+	if x.truncate {
+		if r.ResetIdentity || r.Original.Schema.Engine != "databend" {
+			return r, contract.ErrUnsupported
+		}
+		_, err := schemaddl.PlanDatabendTruncate(r.Original.Schema, r.Original.Target.Object.Schema)
+		return r, err
+	}
 	if r.Original.Schema.Engine == "databend" {
 		_, err := schemaddl.PlanDatabendClear(r.Original.Schema, r.Original.Target.Object.Schema, r.ResetIdentity)
 		return r, err
@@ -145,12 +202,13 @@ func (s *State) applySchemaClear(services ui.Services) {
 	}
 	x.guardAttempt++
 	attempt := x.guardAttempt
+	operation := x.operation()
 	next := func(services ui.Services) {
 		if s.schemaClear != x || x.guardAttempt != attempt || !x.open || x.busy || x.blocked || x.confirmation != x.target.Object.Name || !s.schemaClearValid(x) {
 			return
 		}
 		current, err := s.schemaClearRequest(x)
-		if err != nil || schemaddl.Signature(current) != schemaddl.Signature(request) {
+		if err != nil || x.operation() != operation || schemaddl.Signature(current) != schemaddl.Signature(request) {
 			x.guarding, x.blocked = false, true
 			x.err = schemaDesignError(schemaddl.ErrConflict)
 			return
@@ -162,7 +220,13 @@ func (s *State) applySchemaClear(services ui.Services) {
 		captured := request.Clone()
 		x.applied = &captured
 		run, r := x.ops.Clear, request.Clone()
-		complete := s.beginActivity(x.target.Object.ProfileID, x.generation, x.database, x.target.Object.Name, "table", "clear")
+		if x.truncate {
+			truncate := x.ops.Truncate
+			run = func(ctx context.Context, r contract.SchemaClearRequest) contract.SchemaDesignOutcome {
+				return truncate(ctx, r.Original.Clone())
+			}
+		}
+		complete := s.beginActivity(x.target.Object.ProfileID, x.generation, x.database, x.target.Object.Name, "table", x.operation())
 		go func() {
 			defer cancel()
 			result := run(ctx, r)
@@ -230,7 +294,7 @@ func (s *State) consumeSchemaClear(services ui.Services) {
 		if reply.outcome != nil {
 			out := reply.outcome.Clone()
 			if x.owner != nil {
-				expected := contract.SchemaDesignWriteReceipt{Operation: "clear"}
+				expected := contract.SchemaDesignWriteReceipt{Operation: x.operation()}
 				if x.applied != nil {
 					expected.Original = x.applied.Original.Clone()
 					expected.ResetIdentity = x.applied.ResetIdentity
@@ -240,7 +304,7 @@ func (s *State) consumeSchemaClear(services ui.Services) {
 			}
 			x.applying = false
 			if out.Error != nil {
-				s.report(locales.Text("清空表") + ": " + x.database + "." + x.target.Object.Name + " · " + out.Error.Error())
+				s.report(x.title() + ": " + x.database + "." + x.target.Object.Name + " · " + out.Error.Error())
 			}
 			// Preserve a late mutation receipt for its captured original scope.
 			// The host separately checks original published/context generations.
@@ -264,7 +328,7 @@ func (s *State) consumeSchemaClear(services ui.Services) {
 				} else {
 					x.completed, x.owner.showReceipt, x.err = true, true, ""
 				}
-				s.report(locales.Text("清空表成功") + ": " + x.database + "." + x.target.Object.Name)
+				s.report(x.completedText() + ": " + x.database + "." + x.target.Object.Name)
 				return
 			}
 			if out.Error != nil {
@@ -299,9 +363,11 @@ func (s *State) schemaClearModal(c *ui.Context) {
 	}
 	theme.Modal(c, &x.open, func() {
 		ui.Column(c).Width(800).MaxWidthPercent(92).Height(620).MaxHeightPercent(90).Gap(gap).Children(func() {
-			ui.Text(c, locales.Text("清空表")).Bold()
+			ui.Text(c, x.title()).Bold()
 			ui.Text(c, fmt.Sprintf("#%d · %s / %s · %s", x.target.Object.ProfileID, x.target.Object.Catalog, x.target.Object.Schema, x.target.Object.Name)).SingleLine().Tooltip(x.target.Object.Name)
-			if databend {
+			if x.truncate {
+				ui.Text(c, locales.Text("使用 TRUNCATE 清空原表并保留结构，核验原表身份和空表结果。服务器不返回删除行数；检查不锁定并发更改，未核验的回执禁止重放，取消不表示回滚。"))
+			} else if databend {
 				ui.Text(c, locales.Text("使用 DELETE 删除原表全部行并保留结构，核验原表身份和空表结果。检查不锁定并发更改；未核验的原始回执禁止重放，取消不表示回滚。"))
 			} else {
 				ui.Text(c, locales.Text("事务清空所有行；保留表结构、索引和触发器。"))
@@ -319,7 +385,7 @@ func (s *State) schemaClearModal(c *ui.Context) {
 				ui.Text(c, locales.Text("正在等待结构操作回执…"))
 			}
 			if x.completed {
-				ui.Text(c, locales.Text("清空表成功"))
+				ui.Text(c, x.completedText())
 			} else if x.owner != nil && x.owner.blocked {
 				ui.Text(c, locales.Text("原始结构写入未核验；读取不会解除写入保护。"))
 			} else if x.blocked {
@@ -328,6 +394,9 @@ func (s *State) schemaClearModal(c *ui.Context) {
 			raw := ""
 			if x.original != nil {
 				raw = "DELETE FROM " + schemaddl.Quote(schemaSQLQualifier(*x.original)) + "." + schemaddl.Quote(x.target.Object.Name)
+				if x.truncate {
+					raw = "TRUNCATE TABLE " + schemaddl.Quote(schemaSQLQualifier(*x.original)) + "." + schemaddl.Quote(x.target.Object.Name)
+				}
 
 				raw += ";"
 				if x.resetIdentity && resetAvailable {
@@ -355,7 +424,7 @@ func (s *State) schemaClearModal(c *ui.Context) {
 				if ui.Button(c, locales.Text("重新读取结构")).Disabled(x.busy || x.completed || !s.schemaClearValid(x)).Clicked() {
 					s.readSchemaClear(c.Services())
 				}
-				if ui.PrimaryButton(c, locales.Text("确认清空表")).Disabled(x.busy || x.blocked || x.original == nil || x.confirmation != x.target.Object.Name || !s.schemaClearValid(x)).Clicked() {
+				if ui.PrimaryButton(c, x.confirmationText()).Disabled(x.busy || x.blocked || x.original == nil || x.confirmation != x.target.Object.Name || !s.schemaClearValid(x)).Clicked() {
 					s.applySchemaClear(c.Services())
 				}
 			})

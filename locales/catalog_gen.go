@@ -45041,3 +45041,33 @@ func DatabendServerNameLabel() string { return In(i18n.Locale()).DatabendServerN
 func (msgs Messages) DatabendServerNameLabel() string {
 	return Catalog.Format(msgs.locale, "databendServerNameLabel", nil)
 }
+
+// DatabendTruncateCompleted says "截断表成功"
+// in the language the app shows.
+func DatabendTruncateCompleted() string { return In(i18n.Locale()).DatabendTruncateCompleted() }
+
+// DatabendTruncateCompleted says "截断表成功"
+// in the language of msgs.
+func (msgs Messages) DatabendTruncateCompleted() string {
+	return Catalog.Format(msgs.locale, "databendTruncateCompleted", nil)
+}
+
+// DatabendTruncateConfirm says "确认截断表"
+// in the language the app shows.
+func DatabendTruncateConfirm() string { return In(i18n.Locale()).DatabendTruncateConfirm() }
+
+// DatabendTruncateConfirm says "确认截断表"
+// in the language of msgs.
+func (msgs Messages) DatabendTruncateConfirm() string {
+	return Catalog.Format(msgs.locale, "databendTruncateConfirm", nil)
+}
+
+// DatabendTruncateWarning says "使用 TRUNCATE …"
+// in the language the app shows.
+func DatabendTruncateWarning() string { return In(i18n.Locale()).DatabendTruncateWarning() }
+
+// DatabendTruncateWarning says "使用 TRUNCATE …"
+// in the language of msgs.
+func (msgs Messages) DatabendTruncateWarning() string {
+	return Catalog.Format(msgs.locale, "databendTruncateWarning", nil)
+}

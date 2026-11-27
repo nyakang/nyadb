@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify Databend original table rename/drop/copy/clear, failure receipts and public workbench on an owned native server."""
+"""Verify Databend original database creation and table operations on owned native servers."""
 import argparse
 import base64
 import json
@@ -13,10 +13,12 @@ import urllib.request
 import verify_agent_databend_managed_fixture as managed
 import verify_agent_databend_transport_fixture as transport
 import verify_agent_databend_database_create_fixture as database_create
+import verify_agent_databend_truncate_fixture as truncate
 
 ROOT = managed.ROOT
 REQUIRED = [('./internal/services/databend', name) for name in ['TestDatabendSchemaOriginalRenameIdentityAndGuards','TestDatabendSchemaOriginalLostReplyNeverReplays','TestDatabendSchemaOriginalCancellationAndCloseWaitForSettlement', 'TestDatabendSchemaOriginalDropIdentityViewsAndRecreation', 'TestDatabendSchemaOriginalDropLostReplyAndConcurrentMove', 'TestDatabendSchemaOriginalDropCancelledVerificationAndClose', 'TestDatabendSchemaCopyStructureDataAndOriginalGuards', 'TestDatabendSchemaCopyLostReplyMultiplicityAndConcurrentIdentity', 'TestDatabendSchemaCopyCancellationAndCloseWaitForSettlement', 'TestDatabendSchemaClearOriginalCountIdentityAndGuards', 'TestDatabendSchemaClearLostReplyConcurrentIdentityAndNewRows', 'TestDatabendSchemaClearCancellationAndCloseWaitForSettlement']] + [('./internal/ui/shell', 'TestDatabendNativePublicSchemaRenamePreviewReceiptAndParkedCleanup'), ('./internal/ui/shell', 'TestDatabendNativePublicSchemaDropConfirmationReceiptAndParkedCleanup'), ('./internal/ui/shell', 'TestDatabendNativePublicSchemaCopyDataPreviewReceiptAndParkedCompletion'), ('./internal/ui/shell', 'TestDatabendNativePublicSchemaCopyStructurePreviewReceiptAndParkedCompletion'), ('./internal/ui/shell', 'TestDatabendNativePublicSchemaClearConfirmationReceiptAndParkedRefresh')]
 REQUIRED += database_create.REQUIRED
+REQUIRED += truncate.REQUIRED
 
 
 def verify_receipt(receipt, state, verified, operation='rename', rows=0):
@@ -39,6 +41,10 @@ def verify_receipt(receipt, state, verified, operation='rename', rows=0):
         sql = 'DELETE FROM ' + quote(target['Object']['Schema']) + '.' + quote(target['Object']['Name'])
         if destination != target['Object']['Name'] or receipt.get('ResetIdentity') is not False:
             raise RuntimeError('Original clear reset/destination semantics differ')
+    if operation == 'truncate':
+        sql = 'TRUNCATE TABLE ' + quote(target['Object']['Schema']) + '.' + quote(target['Object']['Name'])
+        if destination != target['Object']['Name'] or receipt.get('ResetIdentity') is not False or rows != 0:
+            raise RuntimeError('Original truncate acquired DELETE counts or identity-reset semantics')
     if operation == 'copy':
         columns = identity.get('Columns')
         if (not columns or any(c.get('Generated') is not False for c in columns) or
@@ -78,7 +84,7 @@ def verify_receipt(receipt, state, verified, operation='rename', rows=0):
                 (operation != 'copy' and actual['Schema']['Databend'] != identity) or actual['Schema']['Exists'] is not (operation != 'drop') or
                 (operation == 'drop' and actual['Schema']['DDL'] != '')):
             raise RuntimeError('Verified destination lost original native incarnation')
-        if operation == 'clear' and actual != original:
+        if operation in ('clear', 'truncate') and actual != original:
             raise RuntimeError('Clear lost the complete original table identity/definition')
         if operation == 'copy':
             actual_identity = actual['Schema']['Databend']
@@ -143,7 +149,9 @@ def verify_schema(base):
     images.update(cleared.pop('image_sha256'))
     created = database_create.verify_database_create(base)
     images.update(created.pop('image_sha256'))
-    return {'public': public, 'drop': drop, 'copy': copied, 'clear': cleared, 'database_create': created, 'image_sha256': images, 'original_data_preserved': True, 'unknown_not_replayed': True}
+    truncated = truncate.verify_truncate(base)
+    images.update(truncated.pop('image_sha256'))
+    return {'public': public, 'drop': drop, 'copy': copied, 'clear': cleared, 'database_create': created, 'truncate': truncated, 'image_sha256': images, 'original_data_preserved': True, 'unknown_not_replayed': True}
 
 
 def verify_drop(base):
@@ -396,7 +404,7 @@ def main():
             raise RuntimeError('Original rename fixture process count differs')
         if managed.verify_build(original, dbx, cache) != pins or managed.verify_build(reproduced, dbx, cache) != pins:
             raise RuntimeError('Original package changed during schema acceptance')
-        result.update(status='passed', public_acceptance=True, unverified=['native TLS/cloud/warehouse/tenant/routes', 'other native versions and operating systems', 'other database engines/catalogs/creation options; structure editing; TRUNCATE UI; non-FUSE tables; copy of generated/floating/complex columns; tenant-global program identity; concurrent DDL isolation'])
+        result.update(status='passed', public_acceptance=True, unverified=['native TLS/cloud/warehouse/tenant/routes', 'other native versions and operating systems', 'other database engines/catalogs/creation options; structure editing; non-FUSE tables; copy of generated/floating/complex columns; tenant-global program identity; concurrent DDL isolation'])
     except BaseException as error:
         result.update(status='failed', error=str(error))
         raise

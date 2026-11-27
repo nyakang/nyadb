@@ -96,5 +96,10 @@ type SchemaDesignOperations struct {
 	Rename    func(context.Context, SchemaRenameRequest) SchemaDesignOutcome
 	CanClear  func(SchemaDesignTarget) bool
 	Clear     func(context.Context, SchemaClearRequest) SchemaDesignOutcome
+	// Truncate is an explicit native operation, distinct from DELETE and from
+	// sequence reset. Rows is the native acknowledgement count, not an inferred
+	// count of deleted records. Providers declare support independently.
+	CanTruncate func(SchemaDesignTarget) bool
+	Truncate    func(context.Context, SchemaDesignSnapshot) SchemaDesignOutcome
 }
 type SchemaDesignProvider interface{ SchemaDesign() SchemaDesignOperations }

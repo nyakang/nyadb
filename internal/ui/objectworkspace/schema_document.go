@@ -157,8 +157,8 @@ func schemaSQLQualifier(snapshot contract.SchemaDesignSnapshot) string {
 
 func (s *State) SchemaTableOriginalOutcome(operation string) *contract.SchemaDesignOutcome {
 	switch operation {
-	case "clear":
-		if s.schemaClear != nil {
+	case "clear", "truncate":
+		if s.schemaClear != nil && s.schemaClear.operation() == operation {
 			return s.schemaClear.owner.original()
 		}
 	case "drop":

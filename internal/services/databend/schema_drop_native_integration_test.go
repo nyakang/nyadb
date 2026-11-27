@@ -50,6 +50,11 @@ func TestDatabendSchemaOriginalDropIdentityViewsAndRecreation(t *testing.T) {
 	if _, err := q.Execute(context.Background(), f.Database, "SELECT * FROM drop_dependent58"); err == nil {
 		t.Fatal("dependent view unexpectedly remained queryable")
 	}
+	// The original JDBC agent may quarantine a failed query session, including
+	// when its native query ID is interpreted as a connection SQLSTATE. Keep
+	// that disposition intact and use an explicitly new lease for recreation.
+	q.Release()
+	q = reserveNativeQuery(t, s, 2)
 	retained := lease.OriginalOutcome()
 	_, _ = lease.Operations().Snapshot(context.Background(), snapshot.Target)
 	if !reflect.DeepEqual(retained, lease.OriginalOutcome()) {

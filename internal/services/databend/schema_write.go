@@ -88,6 +88,8 @@ func (d *schemaDocument) writeSchema(ctx context.Context, request contract.Schem
 		}
 	case "clear":
 		sql, err = schemaddl.PlanDatabendClear(r.Original.Schema, r.Original.Target.Object.Schema, false)
+	case "truncate":
+		sql, err = schemaddl.PlanDatabendTruncate(r.Original.Schema, r.Original.Target.Object.Schema)
 	case "drop":
 		sql, err = schemaddl.PlanDatabendDrop(r.Original.Schema, r.Original.Target.Object.Schema)
 	default:
@@ -185,7 +187,7 @@ func (d *schemaDocument) writeSchema(ctx context.Context, request contract.Schem
 		}
 		out.Error = errors.Join(out.Error, readErr, child.Err())
 	}
-	if out.State == "committed" && operation == "clear" {
+	if out.State == "committed" && (operation == "clear" || operation == "truncate") {
 		actual, readErr := d.verifyClear(child, original, r.Original)
 		out.Error = errors.Join(out.Error, readErr, child.Err())
 		if out.Error == nil {

@@ -16,6 +16,10 @@ func (d *schemaDocument) clear(ctx context.Context, request contract.SchemaClear
 	return d.writeSchema(ctx, contract.SchemaCopyRequest{Original: r.Original, Destination: r.Original.Target.Object.Name}, "clear")
 }
 
+func (d *schemaDocument) truncate(ctx context.Context, original contract.SchemaDesignSnapshot) contract.SchemaDesignOutcome {
+	return d.writeSchema(ctx, contract.SchemaCopyRequest{Original: original.Clone(), Destination: original.Target.Object.Name}, "truncate")
+}
+
 func (d *schemaDocument) verifyClear(ctx context.Context, original *ManagedSession, before contract.SchemaDesignSnapshot) (contract.SchemaDesignSnapshot, error) {
 	var empty contract.SchemaDesignSnapshot
 	current, err := d.s.readSchemaSnapshot(ctx, original, before.Target, d.key[:])

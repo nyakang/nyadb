@@ -179,7 +179,7 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 	if m.Item(locales.Text("清空表")).Disabled(!s.CanClearTable(profileID, database, name)).Chosen() {
 		begin(mysqlsvc.MySQLTableDeleteRows)
 	}
-	if m.Item(locales.Text("截断表")).Disabled(!ready).Chosen() {
+	if m.Item(locales.Text("截断表")).Disabled(!s.CanTruncateTable(profileID, database, name)).Chosen() {
 		begin(mysqlsvc.MySQLTableTruncate)
 	}
 	m.Submenu(locales.Text("复制表"), func(sub *ui.Menu) {
@@ -277,6 +277,10 @@ func (s *State) BeginTableChange(profileID int64, database, name string, action 
 		return
 	}
 	if s.nativeTablePending() {
+		return
+	}
+	if action == mysqlsvc.MySQLTableTruncate && !s.CanChangeTable(profileID) {
+		s.beginSchemaEmpty(profileID, database, name, true)
 		return
 	}
 	if action == mysqlsvc.MySQLTableDeleteRows && !s.CanChangeTable(profileID) {
