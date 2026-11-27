@@ -24,10 +24,10 @@ type dataGrant struct {
 
 func dataMetadataSignature(m *contract.TableStructure) string {
 	raw, _ := json.Marshal(struct {
-		Object  contract.ObjectRef
-		Columns []contract.StructureColumn
-		DDL     string
-	}{m.Object, m.Columns, m.Definition})
+		Object           contract.ObjectRef
+		Columns          []contract.StructureColumn
+		DDL, Incarnation string
+	}{m.Object, m.Columns, m.Definition, m.Incarnation})
 	h := sha256.Sum256(raw)
 	return hex.EncodeToString(h[:])
 }

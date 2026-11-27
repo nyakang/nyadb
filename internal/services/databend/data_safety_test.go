@@ -127,6 +127,13 @@ func TestSignedOriginalRowsRejectForeignTamperedValuesAndMetadata(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Databend can reuse a hidden row ID when an identically defined table is
+	// recreated. Equal row values, DDL and names must not authorize that table.
+	recreated := *m
+	recreated.Incarnation = "replacement-native-table-id"
+	if err := validateDataGrant(g, &recreated, g.Digests, g.RowID); !errors.Is(err, contract.ErrDataConflict) {
+		t.Fatal("recreated table reused signed original row", err)
+	}
 	foreign, _ := safetyLease(t)
 	foreign.key[0] = 43
 	if _, err := foreign.grant(s.Ref); !errors.Is(err, contract.ErrDataConflict) {

@@ -45,6 +45,9 @@ WORKBENCH_REQUIRED = [
     'TestDatabendWorkbenchOriginalIndependentReadCancellation',
     'TestDatabendWorkbenchOriginalLateReadCannotReplaceNewGeneration',
     'TestDatabendWorkbenchOriginalDisconnectWaitsForReadAndNeverReplaysSQL',
+    'TestDatabendWorkbenchOriginalSameStatementZeroGuard',
+    'TestDatabendWorkbenchOriginalRecreatedTableRejectsOldConfirmation',
+    'TestDatabendWorkbenchOriginalWriteCancellationAndDisconnectGuard',
 ]
 
 
@@ -103,16 +106,139 @@ def verify_workbench_read_lifecycle(directory, database, records):
     if len(disconnects) != 1:
         raise RuntimeError('Pending-read disconnect evidence missing or duplicated')
     row = disconnects[0]
-    canceled = [r for r in records if r['test'] == WORKBENCH_REQUIRED[6] and r['receipt']['CancellationRequested']]
+    cancellations = [r for r in records if r['test'] == WORKBENCH_REQUIRED[6] and r['receipt']['CancellationRequested']]
+    # Disconnect can also cancel an inspector metadata read. Require exactly
+    # the held data cursor's acknowledgement, and independently account for
+    # every other dispatched reader; a background receipt cannot replace it.
+    canceled = [r for r in cancellations if r['method'] == 'workbench-data-cursor']
     if (row['test'] != WORKBENCH_REQUIRED[6] or row['database'] != database or row['matched_requests'] != 2 or
             row['rows'] != [['1']] or row.get('recovery_replayed') is not False or
             row.get('public_provider_registered') is not False or
             not 0 < row['original_generation'] < row['replacement_generation'] or
             any(row.get(k) is not True for k in ['sql_text_retained', 'original_executor_acknowledged', 'data_disposed']) or
+            any(r['receipt']['Dispatched'] and (not r['receipt']['ExecutorAcknowledged'] or
+                r['receipt']['ProcessExitConfirmed']) for r in cancellations) or
             len(canceled) != 1 or not canceled[0]['receipt']['Dispatched'] or
             not canceled[0]['receipt']['ExecutorAcknowledged'] or canceled[0]['receipt']['ProcessExitConfirmed']):
         raise RuntimeError('Pending-read disconnect/recovery lost original acknowledgement or replayed SQL')
     return {'reads': reads, 'generations': generations, 'disconnects': disconnects, 'held_query_ids': sorted(ids)}
+
+
+def verify_workbench_write_faults(directory, database, records, independent):
+    def journal(name):
+        return [json.loads(line, parse_float=Decimal) for line in (directory / name).read_text().splitlines()]
+    rows = journal('workbench-write-faults.jsonl')
+    native = journal('workbench-native-writes.jsonl')
+    incarnations = journal('workbench-table-incarnations.jsonl')
+    expected = {WORKBENCH_REQUIRED[7]: ('zero_guard', 'workbench_zero54', 1, 2, 0)}
+    for mode in ['insert', 'update', 'prefix']:
+        expected[WORKBENCH_REQUIRED[8] + '/' + mode] = ('recreate_' + mode, 'workbench_recreate_' + mode + '54',
+                                                       1 if mode == 'prefix' else 0, 1 if mode == 'insert' else 2, 1)
+    for mode in ['cancel', 'disconnect']:
+        expected[WORKBENCH_REQUIRED[9] + '/' + mode] = (mode, 'workbench_write_' + mode + '54', 1, 2, 1)
+    if len(rows) != len(expected) or {r['test'] for r in rows} != set(expected):
+        raise RuntimeError('Original write fault coverage missing or duplicated')
+    if len(native) != 4 or len(incarnations) != 3 or {r['test'] for r in incarnations} != {
+            WORKBENCH_REQUIRED[8] + '/' + mode for mode in ['insert', 'update', 'prefix']}:
+        raise RuntimeError('Original native writes/table incarnations missing or duplicated')
+    query_ids = set()
+    for row in rows:
+        mode, table, sent, total, affected = expected[row['test']]
+        preview, receipt = row['preview'], row['receipt']['Receipt']
+        obj = preview['Object']
+        wanted_rows = ([['1', 'first'], ['1', 'first'], ['2', 'second']] if mode == 'zero_guard' else
+                       [['1', 'changed'], ['2', 'second']] if mode in ['cancel', 'disconnect'] else
+                       [['1', 'first'], ['2', 'second']])
+        sql = 'SELECT id,txt FROM "' + database + '".' + table + ' ORDER BY id' + (',txt' if mode == 'zero_guard' else '')
+        if (row['mode'] != mode or obj['Schema'] != database or obj['Name'] != table or obj['Kind'] != 'table' or
+                obj['ProfileID'] <= 0 or obj.get('Catalog', '') != '' or receipt['Object'] != obj or
+                row['writes'] != sent or row['rows'] != wanted_rows or independent.get((row['test'], sql)) != wanted_rows or
+                row['receipt']['Request'] != preview or not re.fullmatch('[0-9a-f]{64}', preview['Metadata']) or
+                not re.fullmatch('[1-9][0-9]*', preview['Incarnation']) or
+                len(receipt['Statements']) != total or len(preview['Statements']) != total or
+                any(row.get(k) is not True for k in ['draft_retained', 'cache_preserved', 'write_blocked'])):
+            raise RuntimeError('Original write fault changed confirmation, destination, draft or persisted rows')
+        executed = [r for r in records if r['test'] == row['test'] and r['method'] == 'workbench-data-write']
+        http = [r for r in native if r['test'] == row['test']]
+        if len(executed) != sent or len(http) != sent:
+            raise RuntimeError('Original write fault replayed or omitted native statement')
+        for i, statement in enumerate(receipt['Statements']):
+            kind = 'insert' if mode == 'recreate_insert' else 'update'
+            if (statement['EditIndex'] != i or statement['Destination'] != obj or statement['Kind'] != kind or
+                    statement['State'] != ('acknowledged' if i < sent else 'not_sent') or
+                    statement['AffectedRows'] != (affected if i < sent else 0)):
+                raise RuntimeError('Original prefix acknowledgement/zero count/unsent suffix differs')
+            if i >= sent:
+                if statement.get('NativeJSON'):
+                    raise RuntimeError('Unsent suffix has fabricated executor evidence')
+                continue
+            verify_workbench_statement(executed[i], statement)
+            original = executed[i]['receipt']
+            if (not original['Dispatched'] or not original['ExecutorAcknowledged'] or original['ProcessExitConfirmed'] or
+                    original['Result'].get('rows') != [[affected]] or
+                    original['Result'].get('columns') != ['number of rows updated'] or
+                    original['Result'].get('column_types') != ['uint64'] or
+                    original['Result'].get('affected_rows') != 0 or original['Result'].get('truncated') is not False):
+                raise RuntimeError('Write fault lacks original live native count acknowledgement')
+            wire = http[i]
+            raw = base64.b64decode(wire['native_bytes'], validate=True)
+            value = json.loads(raw)
+            if (transport.sha(raw) != wire['native_sha256'] or wire['status'] != 200 or value.get('error') is not None or
+                    wire['sql'] != preview['Statements'][i]['SQL'] or not re.fullmatch('[0-9a-f]{32}', wire['query_id']) or
+                    value.get('id') != wire['query_id'] or wire['query_id'] in query_ids):
+                raise RuntimeError('Write fault native bytes/query identity or confirmed SQL differs')
+            query_ids.add(wire['query_id'])
+        if mode in ['cancel', 'disconnect'] and (not executed[0]['receipt']['CancellationRequested'] or
+                not 0 < row['original_generation'] == row['current_generation'] or
+                row.get('waited_for_original') is not True or row.get('disconnect_guarded') is not True):
+            raise RuntimeError('Canceled original write lost acknowledgement or disconnect guard')
+        if mode.startswith('recreate_'):
+            evidence = next(r for r in incarnations if r['test'] == row['test'])
+            before, after = evidence['original'], evidence['replacement']
+            if (len(before) != 1 or len(after) != 1 or len(before[0]) != 1 or len(after[0]) != 1 or
+                    before == after or before[0][0] != preview['Incarnation'] or
+                    not re.fullmatch('[1-9][0-9]*', after[0][0]) or
+                    evidence['original_ddl'] != evidence['replacement_ddl'] or len(evidence['original_ddl']) != 1):
+                raise RuntimeError('Recreated table lacks distinct native incarnation with identical definition')
+            for observed in [evidence['original_rows'], evidence['replacement_rows']]:
+                if len(observed) != 2 or any(len(r) != 2 or r[0] != str(i + 1) or
+                        not re.fullmatch('[0-9]+', r[1]) for i, r in enumerate(observed)):
+                    raise RuntimeError('Recreated table lacks its original hidden row identities')
+            identity_sql = "SELECT table_id FROM system.tables WHERE database='" + database + "' AND name='" + table + "'"
+            row_sql = 'SELECT id,_row_id FROM "' + database + '".' + table + ' ORDER BY id'
+            ddl_sql = 'SHOW CREATE TABLE "' + database + '".' + table
+            if (independent.get((row['test'], identity_sql)) != before + after or
+                    independent.get((row['test'], ddl_sql)) != evidence['original_ddl'] + evidence['replacement_ddl'] or
+                    independent.get((row['test'], row_sql)) != evidence['original_rows'] + evidence['replacement_rows']):
+                raise RuntimeError('Recreated table identity/row IDs lack independent original HTTP evidence')
+    return {'faults': rows, 'incarnations': incarnations, 'native_query_ids': sorted(query_ids)}
+
+
+def verify_workbench_independent_write(directory, database, records, independent, lifecycle):
+    rows = [json.loads(line, parse_float=Decimal) for line in (directory / 'workbench-independent-write.jsonl').read_text().splitlines()]
+    if len(rows) != 1:
+        raise RuntimeError('Independent document write evidence missing or duplicated')
+    row = rows[0]
+    original, other = row['original_object'], row['independent_object']
+    unknown = next(r for r in lifecycle if r['mode'] == 'unknown')
+    writes = [r for r in records if r['test'] == row['test'] and r['method'] == 'workbench-data-write']
+    receipt = row['independent_receipt']['Receipt']
+    statements = receipt['Statements']
+    sql = 'SELECT id FROM "' + database + '".workbench_independent54 ORDER BY id'
+    if (row['test'] != WORKBENCH_REQUIRED[2] or row['original_writes'] != 2 or len(writes) != 3 or
+            row['original_receipt'] != unknown['receipt'] or original != unknown['receipt']['Receipt']['Object'] or
+            other != {**original, 'Name': 'workbench_independent54'} or original['Name'] != 'workbench_unknown52' or
+            other['Schema'] != database or receipt['Object'] != other or len(statements) != 1 or
+            statements[0]['State'] != 'acknowledged' or statements[0]['AffectedRows'] != 1 or
+            statements[0]['Destination'] != other or statements[0]['Kind'] != 'insert' or
+            row['independent_rows'] != [['54']] or independent.get((row['test'], sql)) != [['54']] or
+            row.get('unknown_receipt_unchanged') is not True or row.get('original_draft_retained') is not True):
+        raise RuntimeError('Independent document changed/unlocked the original unknown write')
+    verify_workbench_statement(writes[-1], statements[0])
+    result = writes[-1]['receipt']['Result']
+    if result.get('columns') != ['number of rows inserted'] or result.get('rows') != [[1]]:
+        raise RuntimeError('Independent document lacks native one-row insertion acknowledgement')
+    return row
 
 
 def verify_workbench_receipts(directory, database):
@@ -126,7 +252,7 @@ def verify_workbench_receipts(directory, database):
     for name in WORKBENCH_REQUIRED:
         methods = {r['method'] for r in records if r['test'] == name or r['test'].startswith(name + '/')}
         required = {'workbench-handshake', 'workbench-metadata-open', 'workbench-metadata-query', 'workbench-data-cursor'}
-        if name in WORKBENCH_REQUIRED[:4]:
+        if name in WORKBENCH_REQUIRED[:4] + WORKBENCH_REQUIRED[7:]:
             required.add('workbench-data-write')
         if required - methods:
             raise RuntimeError('Shared workbench lacks original connection/data/write receipts: ' + name)
@@ -167,7 +293,7 @@ def verify_workbench_receipts(directory, database):
         dispatched = [r for r in records if r['test'] == row['test'] and
                       r['method'] == 'workbench-data-write' and r['receipt']['Dispatched']]
         sent = [s for s in row['receipt']['Receipt']['Statements'] if s['State'] != 'not_sent']
-        if len(dispatched) != len(sent):
+        if len(dispatched) != len(sent) + (1 if row['mode'] == 'unknown' else 0):
             raise RuntimeError('UI receipt does not correspond to original dispatched executors')
         for executor, statement in zip(dispatched, sent):
             verify_workbench_statement(executor, statement)
@@ -192,6 +318,8 @@ def verify_workbench_receipts(directory, database):
     disconnect_sql = 'SELECT id FROM "' + database + '".workbench_disconnect53 ORDER BY id'
     if independent.get((WORKBENCH_REQUIRED[6], disconnect_sql)) != [['1']]:
         raise RuntimeError('Disconnect recovery lacks independent native proof that SQL was not replayed')
+    write_faults = verify_workbench_write_faults(directory, database, records, independent)
+    independent_write = verify_workbench_independent_write(directory, database, records, independent, lifecycle)
     fields = [json.loads(line) for line in (directory / 'workbench-fields.jsonl').read_text().splitlines()]
     if (len(fields) != 1 or fields[0]['test'] != WORKBENCH_REQUIRED[3] or
             fields[0]['preview_units'] != 1024 or fields[0]['chunk_boundaries'] != [1024, 2048, 2052] or
@@ -208,10 +336,15 @@ def verify_workbench_receipts(directory, database):
     phases = {WORKBENCH_REQUIRED[0]: ['grid', 'inspector', 'editor', 'preview', 'receipt'],
               WORKBENCH_REQUIRED[1] + '/park': ['park'],
               WORKBENCH_REQUIRED[1] + '/metadata': ['metadata'],
-              WORKBENCH_REQUIRED[2]: ['unknown-receipt', 'disconnected', 'recovered'],
+              WORKBENCH_REQUIRED[2]: ['unknown-receipt', 'independent-write', 'disconnected', 'recovered'],
               WORKBENCH_REQUIRED[3]: ['bounded-inspector', 'complete-editor'],
               WORKBENCH_REQUIRED[5]: ['generation-recovered'],
-              WORKBENCH_REQUIRED[6]: ['disconnect-recovered']}
+              WORKBENCH_REQUIRED[6]: ['disconnect-recovered'],
+              WORKBENCH_REQUIRED[7]: ['zero-guard']}
+    for mode in ['insert', 'update', 'prefix']:
+        phases[WORKBENCH_REQUIRED[8] + '/' + mode] = ['recreated-table']
+    for mode in ['cancel', 'disconnect']:
+        phases[WORKBENCH_REQUIRED[9] + '/' + mode] = ['write-acknowledged']
     for scope in ['page', 'count', 'field']:
         phases[WORKBENCH_REQUIRED[4] + '/' + scope] = ['read-recovered']
     read_lifecycle = verify_workbench_read_lifecycle(directory, database, records)
@@ -229,6 +362,7 @@ def verify_workbench_receipts(directory, database):
     return {'required_diagnostics': WORKBENCH_REQUIRED, 'original_receipts': len(records),
             'independent_http_receipts': len(http_records), 'captures': captures,
             'read_lifecycle': read_lifecycle,
+            'write_faults': write_faults, 'independent_write': independent_write,
             'public_provider_registered': False}
 
 
@@ -662,11 +796,11 @@ def main():
             verify_named_acceptance((base / 'runtime-go-test.log').read_text(), RUNTIME_REQUIRED)
         if args.workbench:
             env['NYADB_DATABEND_WORKBENCH_IT'] = '1'
-            shell_command = ['go', 'test', '-count=1', '-v', '-timeout=15m']
+            shell_command = ['go', 'test', '-count=1', '-v', '-timeout=25m']
             if args.race:
                 shell_command.append('-race')
             shell_command += ['-run', '^TestDatabendWorkbenchOriginal', './internal/ui/shell']
-            if transport.run_diagnostics(shell_command, env, base / 'shell-go-test.log', timeout=1020):
+            if transport.run_diagnostics(shell_command, env, base / 'shell-go-test.log', timeout=1620):
                 raise RuntimeError('Original shared workbench diagnostics failed; inspect ' + str(base / 'shell-go-test.log'))
             verify_named_acceptance((base / 'shell-go-test.log').read_text(), WORKBENCH_REQUIRED)
         required = REQUIRED + (PROVIDER_REQUIRED if args.provider else []) + (DATA_REQUIRED if args.data else [])
@@ -681,7 +815,7 @@ def main():
         if args.workbench:
             result['private_workbench'] = verify_workbench_receipts(base, database)
         result['original_processes_exited'] = transport.verify_processes(base)
-        if result['original_processes_exited'] != (32 if args.workbench else 19 if args.data else 15 if args.provider else 5):
+        if result['original_processes_exited'] != (38 if args.workbench else 19 if args.data else 15 if args.provider else 5):
             raise RuntimeError('Original independent process lifecycle coverage differs')
         if verify_build(original, dbx, cache) != pins or verify_build(reproduced, dbx, cache) != pins:
             raise RuntimeError('Original managed artifacts/sources changed during product verification')

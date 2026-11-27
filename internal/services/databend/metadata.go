@@ -179,6 +179,10 @@ func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (out 
 func (s *Session) readTableMetadata(child context.Context, original *ManagedSession, o contract.ObjectRef) (*contract.TableStructure, error) {
 	var out *contract.TableStructure
 	err := func() error {
+		incarnation, err := s.readTableIncarnation(child, original, o)
+		if err != nil {
+			return err
+		}
 		name := quoteName(o.Schema) + "." + quoteName(o.Name)
 		q, err := s.query(child, original, "DESCRIBE "+name, 513)
 		if err != nil {
@@ -233,10 +237,40 @@ func (s *Session) readTableMetadata(child context.Context, original *ManagedSess
 			return contract.ErrUnsupported
 		}
 		v.Definition = ddl.Sets[0].Rows[0][1].Text
+		// DESCRIBE and SHOW CREATE are independent observations. Do not bind a
+		// mixed snapshot, or a recreated table with identical DDL, to old rows
+		// or an immutable write confirmation. This is not a metadata lock: a
+		// concurrent change after the final observation still lacks isolation.
+		current, err := s.readTableIncarnation(child, original, o)
+		if err != nil {
+			return err
+		}
+		if current != incarnation {
+			return contract.ErrDataConflict
+		}
+		v.Incarnation = incarnation
 		out = v
 		return nil
 	}()
 	return out, err
+}
+
+func (s *Session) readTableIncarnation(ctx context.Context, original *ManagedSession, o contract.ObjectRef) (string, error) {
+	// Cast before JDBC decoding so the unsigned native identifier is never
+	// mistaken for a signed driver value. Match literal qualified names.
+	q, err := s.query(ctx, original, "SELECT to_string(table_id) AS __nyadb_table_id FROM system.tables WHERE database="+quoteText(o.Schema)+" AND name="+quoteText(o.Name), 2)
+	if err != nil {
+		return "", err
+	}
+	if q.Truncated || len(q.Sets) != 1 || len(q.Sets[0].Columns) != 1 || q.Sets[0].Columns[0].Name != "__nyadb_table_id" || len(q.Sets[0].Rows) != 1 || len(q.Sets[0].Rows[0]) != 1 {
+		return "", contract.ErrDataConflict
+	}
+	cell := q.Sets[0].Rows[0][0]
+	id, err := strconv.ParseUint(cell.Text, 10, 64)
+	if cell.Kind != contract.Text || cell.Truncated || err != nil || id == 0 || strconv.FormatUint(id, 10) != cell.Text {
+		return "", contract.ErrUnsupported
+	}
+	return cell.Text, nil
 }
 
 var _ contract.MetadataProvider = (*Session)(nil)

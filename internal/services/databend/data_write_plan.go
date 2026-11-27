@@ -117,10 +117,11 @@ func (l *dataLease) previewEdits(ctx context.Context, id int64, db, table string
 		raw, err = json.Marshal(struct {
 			Object        contract.ObjectRef
 			Metadata      string
+			Incarnation   string
 			Statements    []dataStatement
 			Scope         string
 			OptimizerSkip string
-		}{l.object, metadata, statements, "Independent native statements; original field text digests and same-statement uniqueness guard; no transaction or concurrent isolation guarantee", "PushDownFilterScan"})
+		}{l.object, metadata, m.Incarnation, statements, "Independent native statements; original field text digests and same-statement uniqueness guard; no transaction or concurrent isolation guarantee", "PushDownFilterScan"})
 		if err != nil || len(raw)+snapshotBytes > dataWritePlanMaxBytes {
 			return contract.ErrDataEditLimit
 		}

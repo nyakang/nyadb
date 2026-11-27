@@ -358,6 +358,10 @@ type SequenceInfo struct {
 }
 
 type TableStructure struct {
+	// Incarnation is an optional opaque server identity for this particular
+	// object instance. Identical names and definitions do not imply the same
+	// instance after drop/recreate. It is not a navigation key or row locator.
+	Incarnation                     string
 	StorageOptions, ExternalOptions []string
 	Distribution, ExternalServer    string
 	Object                          ObjectRef

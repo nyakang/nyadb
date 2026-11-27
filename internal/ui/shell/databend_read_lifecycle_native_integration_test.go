@@ -215,7 +215,7 @@ func TestDatabendWorkbenchOriginalIndependentReadCancellation(t *testing.T) {
 			if n := d.Inspector().Count(); n == nil || *n != want || d.Error() != "" || int64(len(d.Page().Rows)) != want {
 				t.Fatal("late canceled reader changed new count/page", d.Error())
 			}
-			databendWorkbenchCapture(t, f, s, "read-recovered")
+			databendWorkbenchCapture(t, f, tt, "read-recovered")
 			databendWorkbenchJournal(t, f, "workbench-read-lifecycle.jsonl", map[string]any{"test": t.Name(), "scope": scope, "object": d.Object(), "count": want, "cache_preserved": true, "independent_read_survived": true, "late_result_rejected": true, "explicit_refresh": true, "matched_requests": gate.requests.Load(), "public_provider_registered": false})
 		})
 	}
@@ -291,7 +291,7 @@ func TestDatabendWorkbenchOriginalLateReadCannotReplaceNewGeneration(t *testing.
 	if current == d || len(current.Page().Rows) != 2 || current.Error() != "" {
 		t.Fatal("explicit replacement document failed", current.Error())
 	}
-	databendWorkbenchCapture(t, f, s, "generation-recovered")
+	databendWorkbenchCapture(t, f, tt, "generation-recovered")
 	s.disconnectMySQLProfile(p.ID)
 	tt.Frame()
 	if s.runtime.IsConnected(p.ID) || current.Page() != nil {
@@ -360,6 +360,6 @@ func TestDatabendWorkbenchOriginalDisconnectWaitsForReadAndNeverReplaysSQL(t *te
 	if q.Editor.Buffer.String() != source || q.Result() != nil || len(rows) != 1 || rows[0][0] != "1" || gate.requests.Load() != 2 || s.runtime.Generation(p.ID) <= generation {
 		t.Fatal("explicit recovery replayed canceled data or unexecuted SQL", rows)
 	}
-	databendWorkbenchCapture(t, f, s, "disconnect-recovered")
+	databendWorkbenchCapture(t, f, tt, "disconnect-recovered")
 	databendWorkbenchJournal(t, f, "workbench-disconnect-lifecycle.jsonl", map[string]any{"test": t.Name(), "database": f.Database, "original_generation": generation, "replacement_generation": s.runtime.Generation(p.ID), "matched_requests": gate.requests.Load(), "sql_text_retained": true, "original_executor_acknowledged": true, "data_disposed": true, "recovery_replayed": false, "rows": rows, "public_provider_registered": false})
 }

@@ -230,13 +230,22 @@ func databendWorkbenchData(t *testing.T, s *State, tt *ui.Tester, services ui.Se
 	return d
 }
 
-func databendWorkbenchCapture(t *testing.T, f databendWorkbenchFixture, s *State, phase string, labels ...string) {
+func databendWorkbenchCapture(t *testing.T, f databendWorkbenchFixture, tt *ui.Tester, phase string, labels ...string) {
 	t.Helper()
-	defer i18n.SetLocaleFunc(nil)
+	defer func() {
+		i18n.SetLocaleFunc(nil)
+		tt.SetLocale("zh-Hans")
+		tt.SetSize(1280, 800)
+		tt.Frame()
+	}()
 	for _, language := range []string{"zh-Hans", "en"} {
 		i18n.SetLocaleFunc(func() string { return language })
 		for _, size := range [][2]int{{1280, 800}, {720, 520}} {
-			tt := ui.NewTester(s.View, size[0], size[1])
+			// Resize the owning window; extra testers would leave live handle
+			// bindings that make subsequent windowless focus ambiguous.
+			tt.SetLocale(language)
+			tt.SetSize(size[0], size[1])
+			tt.Frame()
 			out := filepath.Join(f.Directory, "workbench", t.Name(), language)
 			if err := os.MkdirAll(out, 0700); err != nil {
 				t.Fatal(err)
@@ -312,7 +321,7 @@ func TestDatabendWorkbenchOriginalTypedGridPagingConfirmationAndReceipts(t *test
 	if cells[0].Value.Text != "18446744073709551615" || cells[3].Value.Text != "9007199254740993.12345678901234567890" || !bytes.Equal(cells[2].Value.Bytes, []byte{0, 255, 128}) || cells[4].Value.Kind != contract.JSON || cells[4].Value.Text != "null" || cells[5].Value.Kind != contract.Null || cells[6].Value.Kind != contract.JSON || cells[7].Value.Kind != contract.JSON {
 		t.Fatal("actual typed grid lost original values", cells)
 	}
-	databendWorkbenchCapture(t, f, s, "grid")
+	databendWorkbenchCapture(t, f, tt, "grid")
 	databendWorkbenchClick(t, tt, "original 猫")
 	databendWorkbenchClick(t, tt, "字段信息")
 	databendWorkbenchClick(t, tt, "读取所选字段下一段")
@@ -320,10 +329,10 @@ func TestDatabendWorkbenchOriginalTypedGridPagingConfirmationAndReceipts(t *test
 	if d.Inspector().ChunkText() != "original 猫" || d.Inspector().ChunkError() != "" {
 		t.Fatal("actual explicit original field read", d.Inspector().ChunkError())
 	}
-	databendWorkbenchCapture(t, f, s, "inspector", "读取所选字段下一段", "复制此片段")
+	databendWorkbenchCapture(t, f, tt, "inspector", "读取所选字段下一段", "复制此片段")
 	databendWorkbenchClick(t, tt, "单元格编辑器")
 	databendWorkbenchWait(t, tt, func() bool { return tt.HasText(locales.Text("单元格编辑器内容")) && !d.Busy() })
-	databendWorkbenchCapture(t, f, s, "editor", "单元格编辑器内容")
+	databendWorkbenchCapture(t, f, tt, "editor", "单元格编辑器内容")
 	taskPanelField(t, tt, "单元格编辑器内容", "changed 喵")
 	s.dataWorkspace.EditCell(*services, d, 0, "payload", contract.Cell{Kind: contract.Binary, Bytes: []byte{0, 255, 1}})
 	s.dataWorkspace.EditCell(*services, d, 0, "exact", contract.Cell{Kind: contract.Decimal, Text: "9007199254740993.12345678901234567891"})
@@ -332,7 +341,7 @@ func TestDatabendWorkbenchOriginalTypedGridPagingConfirmationAndReceipts(t *test
 	if !strings.Contains(preview, "changed 喵") || !strings.Contains(preview, "9007199254740993.12345678901234567891") {
 		t.Fatal("immutable exact original preview lost values", preview)
 	}
-	databendWorkbenchCapture(t, f, s, "preview", "复制完整预览", "取消", "确认并提交更改")
+	databendWorkbenchCapture(t, f, tt, "preview", "复制完整预览", "取消", "确认并提交更改")
 	if rows := databendWorkbenchSQL(t, f, `SELECT txt FROM "`+f.Database+`".workbench_items52`); len(rows) != 1 || rows[0][0] != "original 猫" {
 		t.Fatal("preview executed a write", rows)
 	}
@@ -346,7 +355,7 @@ func TestDatabendWorkbenchOriginalTypedGridPagingConfirmationAndReceipts(t *test
 		t.Fatal("actual UI empty-map typed update changed original values", rows)
 	}
 	databendWorkbenchClick(t, tt, "原生顺序写入回执")
-	databendWorkbenchCapture(t, f, s, "receipt", "复制完整回执", "导出完整回执", "关闭")
+	databendWorkbenchCapture(t, f, tt, "receipt", "复制完整回执", "导出完整回执", "关闭")
 	databendWorkbenchClick(t, tt, "复制完整回执")
 	receipt := tt.Clipboard()
 	var envelope struct {
@@ -469,7 +478,7 @@ func TestDatabendWorkbenchOriginalParkedWriteAndRevokedMetadata(t *testing.T) {
 				t.Fatal("original suffix receipt missing", receipt)
 			}
 			databendWorkbenchClick(t, tt, "关闭")
-			databendWorkbenchCapture(t, f, s, mode)
+			databendWorkbenchCapture(t, f, tt, mode)
 			databendWorkbenchJournal(t, f, "workbench-lifecycle.jsonl", map[string]any{"test": t.Name(), "mode": mode, "writes": writes.Load(), "receipt": json.RawMessage(receipt), "original_only": true, "rows": rows})
 		})
 	}
@@ -499,6 +508,7 @@ func databendWorkbenchForward(t *testing.T, f databendWorkbenchFixture, req *htt
 func TestDatabendWorkbenchOriginalUnknownReceiptGuardAndExplicitSQLRecovery(t *testing.T) {
 	f := databendWorkbenchOriginal(t)
 	databendWorkbenchSQL(t, f, `CREATE TABLE "`+f.Database+`".workbench_unknown52 (id UInt64 NOT NULL)`)
+	databendWorkbenchSQL(t, f, `CREATE TABLE "`+f.Database+`".workbench_independent54 (id UInt64 NOT NULL)`)
 	var writes atomic.Int32
 	proxy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		raw, _ := io.ReadAll(req.Body)
@@ -539,7 +549,7 @@ func TestDatabendWorkbenchOriginalUnknownReceiptGuardAndExplicitSQLRecovery(t *t
 			t.Fatal("unknown UI receipt lost ordered state", state, receipt)
 		}
 	}
-	databendWorkbenchCapture(t, f, s, "unknown-receipt", "复制完整回执", "关闭")
+	databendWorkbenchCapture(t, f, tt, "unknown-receipt", "复制完整回执", "关闭")
 	databendWorkbenchClick(t, tt, "关闭")
 	rows := databendWorkbenchSQL(t, f, `SELECT id FROM "`+f.Database+`".workbench_unknown52 ORDER BY id`)
 	if len(rows) != 2 || rows[0][0] != "1" || rows[1][0] != "2" {
@@ -551,6 +561,24 @@ func TestDatabendWorkbenchOriginalUnknownReceiptGuardAndExplicitSQLRecovery(t *t
 	if s.dataWorkspace.CanSave(d) || writes.Load() != 2 {
 		t.Fatal("later read reauthorized unknown write")
 	}
+	// A separate document may write while this original unknown receipt remains
+	// blocked. Its successful acknowledgement must never unlock the old draft.
+	independent := databendWorkbenchData(t, s, tt, *services, p, "workbench_independent54")
+	databendWorkbenchClick(t, tt, "添加记录")
+	s.dataWorkspace.EditCell(*services, independent, 0, "id", contract.Cell{Kind: contract.Integer, Text: "54"})
+	databendWorkbenchConfirm(t, s, tt, independent)
+	independentReceipt, _ := databendWorkbenchWriteReceipt(t, tt)
+	independentRows := databendWorkbenchSQL(t, f, `SELECT id FROM "`+f.Database+`".workbench_independent54 ORDER BY id`)
+	if len(independentRows) != 1 || independentRows[0][0] != "54" || independent.HasDraft() || !d.HasDraft() || s.dataWorkspace.CanSave(d) || writes.Load() != 2 {
+		t.Fatal("independent write lost isolation from original unknown receipt", independentRows)
+	}
+	databendWorkbenchCapture(t, f, tt, "independent-write")
+	s.selectTab(original.id)
+	retainedReceipt, _ := databendWorkbenchWriteReceipt(t, tt)
+	if retainedReceipt != receipt || d.Page() != page || s.dataWorkspace.CanSave(d) {
+		t.Fatal("independent document rewrote or unlocked original unknown receipt")
+	}
+	databendWorkbenchJournal(t, f, "workbench-independent-write.jsonl", map[string]any{"test": t.Name(), "original_object": d.Object(), "independent_object": independent.Object(), "original_receipt": json.RawMessage(receipt), "independent_receipt": json.RawMessage(independentReceipt), "independent_rows": independentRows, "unknown_receipt_unchanged": true, "original_draft_retained": true, "original_writes": writes.Load()})
 	s.disconnectMySQLProfile(p.ID)
 	tt.Frame()
 	if !s.runtime.IsConnected(p.ID) || s.tabIndex(original.id) < 0 {
@@ -586,7 +614,7 @@ func TestDatabendWorkbenchOriginalUnknownReceiptGuardAndExplicitSQLRecovery(t *t
 	if !q.NeedsRecovery() || q.Editor.Buffer.String() != source {
 		t.Fatal("original SQL text/recovery lost on disconnect")
 	}
-	databendWorkbenchCapture(t, f, s, "disconnected")
+	databendWorkbenchCapture(t, f, tt, "disconnected")
 	secret, err := os.ReadFile(f.PasswordFile)
 	if err != nil {
 		t.Fatal(err)
@@ -599,7 +627,7 @@ func TestDatabendWorkbenchOriginalUnknownReceiptGuardAndExplicitSQLRecovery(t *t
 	if q.Result() != nil || q.Editor.Buffer.String() != source || writes.Load() != 2 || s.runtime.Generation(p.ID) <= gen {
 		t.Fatal("explicit original recovery replayed or lost SQL")
 	}
-	databendWorkbenchCapture(t, f, s, "recovered")
+	databendWorkbenchCapture(t, f, tt, "recovered")
 	databendWorkbenchJournal(t, f, "workbench-lifecycle.jsonl", map[string]any{"test": t.Name(), "mode": "unknown", "writes": writes.Load(), "receipt": json.RawMessage(receipt), "rows": rows, "draft_guard": true, "sql_text_retained": true, "recovery_replayed": false, "original_generation": gen, "replacement_generation": s.runtime.Generation(p.ID)})
 }
 
@@ -627,7 +655,7 @@ func TestDatabendWorkbenchOriginalBoundedFieldsCompleteEditingAndExport(t *testi
 	if complete.String() != original {
 		t.Fatal("bounded original fragments changed Unicode or suffix")
 	}
-	databendWorkbenchCapture(t, f, s, "bounded-inspector", "读取所选字段下一段", "复制此片段")
+	databendWorkbenchCapture(t, f, tt, "bounded-inspector", "读取所选字段下一段", "复制此片段")
 	databendWorkbenchClick(t, tt, "单元格编辑器")
 	databendWorkbenchWait(t, tt, func() bool { return !d.Busy() && tt.HasText(locales.Text("单元格编辑器内容")) })
 	databendWorkbenchClick(t, tt, "单元格编辑器内容")
@@ -636,7 +664,7 @@ func TestDatabendWorkbenchOriginalBoundedFieldsCompleteEditingAndExport(t *testi
 	if tt.Clipboard() != original {
 		t.Fatal("complete original editor reused bounded preview")
 	}
-	databendWorkbenchCapture(t, f, s, "complete-editor", "单元格编辑器内容")
+	databendWorkbenchCapture(t, f, tt, "complete-editor", "单元格编辑器内容")
 	tt.Type(original + " 改")
 	tt.Frame()
 	databendWorkbenchConfirm(t, s, tt, d)

@@ -20,6 +20,123 @@ with mock.patch.object(sys, 'path', [str(TOOLS), *sys.path]):
 
 
 class DatabendManagedDiagnosticTests(unittest.TestCase):
+    def test_independent_write_cannot_replace_unknown_receipt(self):
+        name, database = FIXTURE.WORKBENCH_REQUIRED[2], 'native_database'
+        original = {'ProfileID': 7, 'Catalog': '', 'Schema': database, 'Kind': 'table', 'Name': 'workbench_unknown52'}
+        other = {**original, 'Name': 'workbench_independent54'}
+        unknown = {'Receipt': {'Object': original, 'Statements': [{'State': 'unknown'}]}}
+        writes = [self.receipt(name, 'workbench-data-write', {
+            'rows': [[1]], 'columns': ['number of rows inserted'], 'query_timings_ms': {'jdbc_execute': i}})
+            for i in [1, 2, 54]]
+        statement = {'Kind': 'insert', 'Destination': other, 'State': 'acknowledged', 'AffectedRows': 1,
+                     'NativeJSON': json.dumps({'Receipt': writes[-1]['receipt'],
+                                              'Original': json.loads(base64.b64decode(writes[-1]['native_bytes']))})}
+        evidence = {'test': name, 'original_object': original, 'independent_object': other, 'original_writes': 2,
+                    'original_receipt': unknown, 'independent_receipt': {'Receipt': {'Object': other, 'Statements': [statement]}},
+                    'independent_rows': [['54']], 'unknown_receipt_unchanged': True, 'original_draft_retained': True}
+        lifecycle = [{'mode': 'unknown', 'receipt': copy.deepcopy(unknown)}]
+        sql = 'SELECT id FROM "' + database + '".workbench_independent54 ORDER BY id'
+        for change in ['none', 'unlocked', 'lost_draft', 'changed_original', 'foreign_document', 'replayed', 'readback', 'wrong_executor']:
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as directory:
+                row, records = copy.deepcopy((evidence, writes))
+                http = {(name, sql): [['54']]}
+                if change == 'unlocked': row['unknown_receipt_unchanged'] = False
+                elif change == 'lost_draft': row['original_draft_retained'] = False
+                elif change == 'changed_original': row['original_receipt']['Receipt']['Statements'][0]['State'] = 'acknowledged'
+                elif change == 'foreign_document': row['independent_object']['ProfileID'] = 8
+                elif change == 'replayed': records.append(copy.deepcopy(records[0]))
+                elif change == 'readback': http[(name, sql)] = [['55']]
+                elif change == 'wrong_executor': records[-1] = records[0]
+                root = Path(directory)
+                (root / 'workbench-independent-write.jsonl').write_text(json.dumps(row) + '\n')
+                if change == 'none':
+                    FIXTURE.verify_workbench_independent_write(root, database, records, http, lifecycle)
+                else:
+                    with self.assertRaises(RuntimeError):
+                        FIXTURE.verify_workbench_independent_write(root, database, records, http, lifecycle)
+
+    def test_write_faults_require_original_counts_incarnations_and_unsent_suffix(self):
+        database = 'native_database'
+        faults, native, incarnations, records, independent = [], [], [], [], {}
+        cases = [(FIXTURE.WORKBENCH_REQUIRED[7], 'zero_guard', 'workbench_zero54', 1, 2, 0)]
+        for mode in ['insert', 'update', 'prefix']:
+            cases.append((FIXTURE.WORKBENCH_REQUIRED[8] + '/' + mode, 'recreate_' + mode,
+                          'workbench_recreate_' + mode + '54', int(mode == 'prefix'), 1 if mode == 'insert' else 2, 1))
+        for mode in ['cancel', 'disconnect']:
+            cases.append((FIXTURE.WORKBENCH_REQUIRED[9] + '/' + mode, mode, 'workbench_write_' + mode + '54', 1, 2, 1))
+        for name, mode, table, sent, total, affected in cases:
+            obj = {'ProfileID': 1, 'Catalog': '', 'Schema': database, 'Kind': 'table', 'Name': table}
+            plan = {'Object': obj, 'Metadata': 'a' * 64, 'Incarnation': '100',
+                    'Statements': [{'SQL': f'UPDATE "{database}"."{table}" SET id={i}'} for i in range(total)]}
+            statements = []
+            for i in range(total):
+                item = {'EditIndex': i, 'Kind': 'insert' if mode == 'recreate_insert' else 'update',
+                        'Destination': obj, 'State': 'acknowledged' if i < sent else 'not_sent',
+                        'AffectedRows': affected if i < sent else 0, 'NativeJSON': ''}
+                if i < sent:
+                    record = self.receipt(name, 'workbench-data-write',
+                                          {'columns': ['number of rows updated'], 'rows': [[affected]],
+                                           'column_types': ['uint64'], 'affected_rows': 0, 'truncated': False},
+                                          canceled=mode in ['cancel', 'disconnect'])
+                    records.append(record)
+                    item['NativeJSON'] = json.dumps({'Receipt': record['receipt'],
+                                                     'Original': json.loads(base64.b64decode(record['native_bytes']))})
+                    query_id = f'{len(native)+1:032x}'
+                    raw = json.dumps({'id': query_id, 'data': [[str(affected)]], 'error': None}).encode()
+                    native.append({'test': name, 'sql': plan['Statements'][i]['SQL'], 'query_id': query_id,
+                                   'status': 200, 'native_bytes': base64.b64encode(raw).decode(),
+                                   'native_sha256': FIXTURE.transport.sha(raw)})
+                statements.append(item)
+            rows = ([['1', 'first'], ['1', 'first'], ['2', 'second']] if mode == 'zero_guard' else
+                    [['1', 'changed'], ['2', 'second']] if mode in ['cancel', 'disconnect'] else
+                    [['1', 'first'], ['2', 'second']])
+            faults.append({'test': name, 'mode': mode, 'preview': plan,
+                           'receipt': {'Request': copy.deepcopy(plan), 'Receipt': {'Object': obj, 'Statements': statements}},
+                           'writes': sent, 'rows': rows, 'draft_retained': True, 'cache_preserved': True, 'write_blocked': True,
+                           'original_generation': 2, 'current_generation': 2, 'waited_for_original': True, 'disconnect_guarded': True})
+            sql = f'SELECT id,txt FROM "{database}".{table} ORDER BY id' + (',txt' if mode == 'zero_guard' else '')
+            independent[(name, sql)] = rows
+            if mode.startswith('recreate_'):
+                ddl, row_ids = [[table, 'CREATE TABLE same_definition']], [['1', '0'], ['2', '1']]
+                incarnations.append({'test': name, 'original': [['100']], 'replacement': [['200']],
+                                     'original_ddl': ddl, 'replacement_ddl': copy.deepcopy(ddl),
+                                     'original_rows': row_ids, 'replacement_rows': copy.deepcopy(row_ids)})
+                independent[(name, f"SELECT table_id FROM system.tables WHERE database='{database}' AND name='{table}'")] = [['100'], ['200']]
+                independent[(name, f'SHOW CREATE TABLE "{database}".{table}')] = ddl + ddl
+                independent[(name, f'SELECT id,_row_id FROM "{database}".{table} ORDER BY id')] = row_ids + row_ids
+        for change in ['none', 'zero_becomes_one', 'sent_suffix', 'missing_incarnation', 'same_incarnation',
+                       'different_ddl', 'identity_http', 'request', 'no_ack', 'no_cancel', 'process_exit',
+                       'changed_native_bytes', 'changed_sql', 'duplicate_query', 'draft_lost', 'scope_missing', 'replayed']:
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as directory:
+                f, n, inc, r, http = copy.deepcopy((faults, native, incarnations, records, independent))
+                if change == 'zero_becomes_one': f[0]['receipt']['Receipt']['Statements'][0]['AffectedRows'] = 1
+                elif change == 'sent_suffix': f[0]['receipt']['Receipt']['Statements'][1]['State'] = 'acknowledged'
+                elif change == 'missing_incarnation': f[0]['preview']['Incarnation'] = ''
+                elif change == 'same_incarnation': inc[0]['replacement'] = inc[0]['original']
+                elif change == 'different_ddl': inc[0]['replacement_ddl'][0][1] += ' changed'
+                elif change == 'identity_http':
+                    key = next(k for k in http if k[1].startswith('SELECT table_id'))
+                    http[key] = [['100'], ['201']]
+                elif change == 'request': f[0]['receipt']['Request']['Metadata'] = 'b' * 64
+                elif change == 'no_ack': r[0]['receipt']['ExecutorAcknowledged'] = False
+                elif change == 'no_cancel': r[-1]['receipt']['CancellationRequested'] = False
+                elif change == 'process_exit': r[0]['receipt']['ProcessExitConfirmed'] = True
+                elif change == 'changed_native_bytes': n[0]['native_sha256'] = '0' * 64
+                elif change == 'changed_sql': n[0]['sql'] += ' changed'
+                elif change == 'duplicate_query': n[-1]['query_id'] = n[0]['query_id']
+                elif change == 'draft_lost': f[0]['draft_retained'] = False
+                elif change == 'scope_missing': f.pop()
+                elif change == 'replayed': r.append(copy.deepcopy(r[0]))
+                root = Path(directory)
+                for name, rows in [('workbench-write-faults.jsonl', f), ('workbench-native-writes.jsonl', n),
+                                   ('workbench-table-incarnations.jsonl', inc)]:
+                    (root / name).write_text(''.join(json.dumps(row) + '\n' for row in rows))
+                if change == 'none':
+                    FIXTURE.verify_workbench_write_faults(root, database, r, http)
+                else:
+                    with self.assertRaises(RuntimeError):
+                        FIXTURE.verify_workbench_write_faults(root, database, r, http)
+
     def test_read_lifecycle_rejects_wrong_owner_replay_and_unacknowledged_cancellation(self):
         database = 'original_database'
         reads, held, records = [], [], []
@@ -54,7 +171,8 @@ class DatabendManagedDiagnosticTests(unittest.TestCase):
             'old_document_revoked': True, 'replacement_survived_old_close': True,
             'disconnect_disposed_data': True, 'public_provider_registered': False}]
         for change in ['none', 'owner', 'replay', 'missing_scope', 'duplicate', 'no_ack', 'exit',
-                       'wrong_bytes', 'query_id', 'old_generation', 'disposed_replacement', 'replayed_sql', 'disconnect_no_ack']:
+                       'wrong_bytes', 'query_id', 'old_generation', 'disposed_replacement', 'replayed_sql', 'disconnect_no_ack',
+                       'background_ack', 'background_no_ack', 'background_replaces_cursor']:
             with self.subTest(change=change), tempfile.TemporaryDirectory() as directory:
                 r, h, g, evidence = copy.deepcopy((reads, held, generations, records))
                 disconnect = copy.deepcopy(disconnects)
@@ -70,12 +188,18 @@ class DatabendManagedDiagnosticTests(unittest.TestCase):
                 elif change == 'disposed_replacement': g[0]['replacement_survived_old_close'] = False
                 elif change == 'replayed_sql': disconnect[0]['rows'].append(['999'])
                 elif change == 'disconnect_no_ack': evidence[-1]['receipt']['ExecutorAcknowledged'] = False
+                elif change in ['background_ack', 'background_no_ack', 'background_replaces_cursor']:
+                    background = self.receipt(FIXTURE.WORKBENCH_REQUIRED[6], 'workbench-metadata-query',
+                                              {'columns': ['Field'], 'rows': [['id']]}, canceled=True)
+                    if change == 'background_no_ack': background['receipt']['ExecutorAcknowledged'] = False
+                    if change == 'background_replaces_cursor': evidence.pop()
+                    evidence.append(background)
                 root = Path(directory)
                 for filename, rows in [('workbench-read-lifecycle.jsonl', r), ('workbench-held-reads.jsonl', h),
                                        ('workbench-generation-lifecycle.jsonl', g),
                                        ('workbench-disconnect-lifecycle.jsonl', disconnect)]:
                     (root / filename).write_text(''.join(json.dumps(row) + '\n' for row in rows))
-                if change == 'none':
+                if change in ['none', 'background_ack']:
                     FIXTURE.verify_workbench_read_lifecycle(root, database, evidence)
                 else:
                     with self.assertRaises(RuntimeError):
