@@ -33,21 +33,37 @@ func DatabendTableBody(ddl, name string) (string, error) {
 	return "", ErrUnsupported
 }
 
-func PlanDatabendRename(original Snapshot, database, destination string) (string, error) {
+func validateDatabendOriginal(original Snapshot, database string) error {
 	i := original.Databend
 	if original.Engine != "databend" || !original.Exists || original.Revision == "" || i == nil || i.Database != database ||
-		original.Postgres != nil || original.OpenGauss != nil || original.SQLite != nil ||
-		!databendIdentifier(database) || !databendIdentifier(destination) || destination == original.Table.Name {
-		return "", ErrUnsupported
+		original.Postgres != nil || original.OpenGauss != nil || original.SQLite != nil || !databendIdentifier(database) {
+		return ErrUnsupported
 	}
 	id, err := strconv.ParseUint(i.TableID, 10, 64)
 	if err != nil || id == 0 || strconv.FormatUint(id, 10) != i.TableID {
-		return "", ErrUnsupported
+		return ErrUnsupported
 	}
-	if _, err := DatabendTableBody(original.DDL, original.Table.Name); err != nil {
+	_, err = DatabendTableBody(original.DDL, original.Table.Name)
+	return err
+}
+
+func PlanDatabendRename(original Snapshot, database, destination string) (string, error) {
+	if err := validateDatabendOriginal(original, database); err != nil {
 		return "", err
+	}
+	if !databendIdentifier(destination) || destination == original.Table.Name {
+		return "", ErrUnsupported
 	}
 	// Native ALTER TABLE requires an unqualified destination, in the source
 	// database. Qualification here is not interchangeable with PostgreSQL SQL.
 	return "ALTER TABLE " + Quote(database) + "." + Quote(original.Table.Name) + " RENAME TO " + Quote(destination), nil
+}
+
+func PlanDatabendDrop(original Snapshot, database string) (string, error) {
+	if err := validateDatabendOriginal(original, database); err != nil {
+		return "", err
+	}
+	// No IF EXISTS: an absent/replaced original cannot acknowledge this request.
+	// Databend does not provide PostgreSQL RESTRICT/CASCADE dependency semantics.
+	return "DROP TABLE " + Quote(database) + "." + Quote(original.Table.Name), nil
 }

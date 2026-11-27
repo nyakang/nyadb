@@ -34,6 +34,16 @@ type Messages struct{ locale string }
 // source language.
 func In(locale string) Messages { return Messages{locale} }
 
+// DatabendDropScope says "删除原表及数据；引用它的视图可能失效。检查不锁定并发更改；未核验的回执禁止重放。"
+// in the language the app shows.
+func DatabendDropScope() string { return In(i18n.Locale()).DatabendDropScope() }
+
+// DatabendDropScope says "删除原表及数据；引用它的视图可能失效。检查不锁定并发更改；未核验的回执禁止重放。"
+// in the language of msgs.
+func (msgs Messages) DatabendDropScope() string {
+	return Catalog.Format(msgs.locale, "databendDropScope", nil)
+}
+
 // DatabendRenameScope says "…"
 // in the language the app shows.
 func DatabendRenameScope() string { return In(i18n.Locale()).DatabendRenameScope() }

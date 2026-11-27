@@ -44,7 +44,17 @@ func (s *Session) schemaNameAbsent(ctx context.Context, original *ManagedSession
 	return nil
 }
 
-func (d *schemaDocument) rename(ctx context.Context, request contract.SchemaRenameRequest) (out contract.SchemaDesignOutcome) {
+func (d *schemaDocument) rename(ctx context.Context, request contract.SchemaRenameRequest) contract.SchemaDesignOutcome {
+	return d.writeSchema(ctx, request.Clone(), "rename")
+}
+
+func (d *schemaDocument) drop(ctx context.Context, original contract.SchemaDesignSnapshot) contract.SchemaDesignOutcome {
+	return d.writeSchema(ctx, contract.SchemaRenameRequest{Original: original.Clone(), Destination: original.Target.Object.Name}, "drop")
+}
+
+// Both single-statement operations retain the same original document, proof and
+// settlement rules. The operation selects a fixed planner, never arbitrary SQL.
+func (d *schemaDocument) writeSchema(ctx context.Context, request contract.SchemaRenameRequest, operation string) (out contract.SchemaDesignOutcome) {
 	r := request.Clone()
 	out.State = "not_executed"
 	child, done, err := d.admission(ctx, r.Original.Target)
@@ -57,7 +67,15 @@ func (d *schemaDocument) rename(ctx context.Context, request contract.SchemaRena
 		out.Error = contract.ErrSchemaCommitUncertain
 		return
 	}
-	sql, err := schemaddl.PlanDatabendRename(r.Original.Schema, r.Original.Target.Object.Schema, r.Destination)
+	var sql string
+	switch operation {
+	case "rename":
+		sql, err = schemaddl.PlanDatabendRename(r.Original.Schema, r.Original.Target.Object.Schema, r.Destination)
+	case "drop":
+		sql, err = schemaddl.PlanDatabendDrop(r.Original.Schema, r.Original.Target.Object.Schema)
+	default:
+		err = contract.ErrUnsupported
+	}
 	if err != nil {
 		out.Error = err
 		return
@@ -93,9 +111,11 @@ func (d *schemaDocument) rename(ctx context.Context, request contract.SchemaRena
 	}
 	destination := r.Original.Target
 	destination.Object.Name = r.Destination
-	if err = d.s.schemaNameAbsent(child, original, destination.Object); err != nil {
-		out.Error = err
-		return
+	if operation == "rename" {
+		if err = d.s.schemaNameAbsent(child, original, destination.Object); err != nil {
+			out.Error = err
+			return
+		}
 	}
 	// These observations are prechecks, not concurrent DDL locks. Verification
 	// below checks native incarnation and all declaration bytes independently.
@@ -108,7 +128,7 @@ func (d *schemaDocument) rename(ctx context.Context, request contract.SchemaRena
 		return
 	}
 	receipt, callErr := original.Call(child, "execute_query", map[string]any{"sql": sql, "maxRows": 1, "timeoutSecs": d.s.profile.DatabendOptions.QueryTimeoutSeconds})
-	d.s.observed("schema-rename", receipt)
+	d.s.observed("schema-"+operation, receipt)
 	if !receipt.Dispatched {
 		out.Error = errors.Join(callErr, agentbridge.ErrNativeResult)
 		return
@@ -120,7 +140,7 @@ func (d *schemaDocument) rename(ctx context.Context, request contract.SchemaRena
 		out.State = "not_executed"
 	}
 	out.Error = callErr
-	if out.State == "committed" {
+	if out.State == "committed" && operation == "rename" {
 		actual, readErr := d.s.readSchemaSnapshot(child, original, destination, d.key[:])
 		if readErr == nil {
 			before, _ := schemaddl.DatabendTableBody(r.Original.Schema.DDL, r.Original.Schema.Table.Name)
@@ -139,6 +159,19 @@ func (d *schemaDocument) rename(ctx context.Context, request contract.SchemaRena
 		}
 		out.Error = errors.Join(out.Error, readErr, child.Err())
 	}
+	if out.State == "committed" && operation == "drop" {
+		readErr := d.s.schemaNameAbsent(child, original, r.Original.Target.Object)
+		if readErr == nil {
+			readErr = d.s.schemaIncarnationAbsent(child, original, r.Original.Schema.Databend.TableID)
+		}
+		out.Error = errors.Join(out.Error, readErr, child.Err())
+		if out.Error == nil {
+			actual := r.Original.Clone()
+			actual.Schema.Exists, actual.Schema.DDL = false, ""
+			actual.Schema.Revision = sealSchema(actual, d.key[:])
+			out.Actual, out.Verified = &actual, true
+		}
+	}
 	if out.State == "uncertain" || out.State == "committed" && !out.Verified {
 		out.Error = errors.Join(out.Error, contract.ErrSchemaCommitUncertain)
 	}
@@ -149,7 +182,7 @@ func (d *schemaDocument) rename(ctx context.Context, request contract.SchemaRena
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.sequence++
-	out.Receipt = &contract.SchemaDesignWriteReceipt{DocumentID: d.id, Sequence: d.sequence, Operation: "rename", Original: r.Original.Clone(), Destination: r.Destination, Statements: []string{sql}, NativeJSON: string(raw), State: out.State, Verified: out.Verified, Actual: out.Actual}
+	out.Receipt = &contract.SchemaDesignWriteReceipt{DocumentID: d.id, Sequence: d.sequence, Operation: operation, Original: r.Original.Clone(), Destination: r.Destination, Statements: []string{sql}, NativeJSON: string(raw), State: out.State, Verified: out.Verified, Actual: out.Actual}
 	retained := out.Clone()
 	d.original = &retained
 	if out.State == "uncertain" || out.State == "committed" && !out.Verified {
@@ -159,4 +192,20 @@ func (d *schemaDocument) rename(ctx context.Context, request contract.SchemaRena
 		d.target = destination
 	}
 	return out.Clone()
+}
+
+// A successful DROP must also remove the captured incarnation from the active
+// catalog. A concurrent rename must not masquerade as an absent original.
+func (s *Session) schemaIncarnationAbsent(ctx context.Context, original *ManagedSession, id string) error {
+	q, err := s.query(ctx, original, "SELECT to_string(table_id) AS __nyadb_table_id FROM system.tables WHERE to_string(table_id)="+quoteText(id), 2)
+	if err != nil {
+		return err
+	}
+	if q.Truncated || len(q.Sets) != 1 || len(q.Sets[0].Columns) != 1 || q.Sets[0].Columns[0].Name != "__nyadb_table_id" {
+		return contract.ErrUnsupported
+	}
+	if len(q.Sets[0].Rows) != 0 {
+		return schemaddl.ErrConflict
+	}
+	return nil
 }

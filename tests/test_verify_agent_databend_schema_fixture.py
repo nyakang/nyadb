@@ -59,6 +59,21 @@ class DatabendSchemaReceiptVerifierTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             schema.verify_receipt(r, 'uncertain', False)
 
+    def test_drop_requires_original_absent_incarnation_and_unconditional_statement(self):
+        r = self.receipt()
+        r.update(Operation='drop', Destination='t', Statements=['DROP TABLE "original"."t"'])
+        r['Actual'] = copy.deepcopy(r['Original'])
+        r['Actual']['Schema'].update(Table={'Name': 't'}, Exists=False, DDL='')
+        schema.verify_receipt(r, 'committed', True, 'drop')
+        for mutate in [lambda v: v['Actual']['Schema'].update(Exists=True),
+                       lambda v: v['Actual']['Schema']['Databend'].update(TableID='72'),
+                       lambda v: v.update(Statements=['DROP TABLE IF EXISTS "original"."t"']),
+                       lambda v: v.update(Destination='different')]:
+            changed = copy.deepcopy(r)
+            mutate(changed)
+            with self.assertRaises(RuntimeError):
+                schema.verify_receipt(changed, 'committed', True, 'drop')
+
 
 if __name__ == '__main__':
     unittest.main()

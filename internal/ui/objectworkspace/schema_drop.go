@@ -246,7 +246,7 @@ func (s *State) consumeSchemaDrop(services ui.Services) {
 			}
 		} else if reply.err != nil {
 			x.err = reply.err.Error()
-		} else if reply.snapshot.Target != x.target || !reply.snapshot.Schema.Exists || (reply.snapshot.Schema.Engine != "sqlite" && reply.snapshot.Schema.Engine != "postgresql" && reply.snapshot.Schema.Engine != "opengauss") || reply.snapshot.Schema.Engine == "opengauss" && reply.snapshot.Schema.OpenGauss == nil || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.Table.Name != x.target.Object.Name {
+		} else if reply.snapshot.Target != x.target || !reply.snapshot.Schema.Exists || (reply.snapshot.Schema.Engine != "sqlite" && reply.snapshot.Schema.Engine != "postgresql" && reply.snapshot.Schema.Engine != "opengauss" && reply.snapshot.Schema.Engine != "databend") || reply.snapshot.Schema.Engine == "opengauss" && reply.snapshot.Schema.OpenGauss == nil || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.Table.Name != x.target.Object.Name {
 			x.err = errors.New("original table snapshot is incomplete or unavailable").Error()
 		} else {
 			snapshot := reply.snapshot.Clone()
@@ -265,10 +265,18 @@ func (s *State) schemaDropModal(c *ui.Context) {
 		return
 	}
 	theme.Modal(c, &x.open, func() {
-		ui.Column(c).Width(680).MaxWidthPercent(92).Height(430).MaxHeightPercent(90).Gap(10).Children(func() {
+		height := float32(430)
+		if x.original != nil && x.original.Schema.Engine == "databend" {
+			height = 540
+		}
+		ui.Column(c).Width(680).MaxWidthPercent(92).Height(height).MaxHeightPercent(90).Gap(10).Children(func() {
 			ui.Text(c, locales.Text("删除表")).Bold()
 			ui.Text(c, fmt.Sprintf("#%d · %s / %s · %s", x.target.Object.ProfileID, x.target.Object.Catalog, x.target.Object.Schema, x.target.Object.Name)).SingleLine().Tooltip(x.target.Object.Name)
-			ui.Text(c, locales.Text("事务删除原表及其索引、触发器和数据；存在外键、视图或触发器依赖时拒绝删除。"))
+			if x.original != nil && x.original.Schema.Engine == "databend" {
+				ui.Text(c, locales.Text("删除原表及数据；引用它的视图可能失效。检查不锁定并发更改；未核验的回执禁止重放。"))
+			} else if x.original != nil {
+				ui.Text(c, locales.Text("事务删除原表及其索引、触发器和数据；存在外键、视图或触发器依赖时拒绝删除。"))
+			}
 			if x.err != "" {
 				ui.Text(c, x.err).SingleLine().Tooltip(x.err).TextColor(theme.Colors(c).Error)
 			}
@@ -293,8 +301,10 @@ func (s *State) schemaDropModal(c *ui.Context) {
 			if !s.schemaModalReceiptToggle(c, x.owner) {
 				ui.TextArea(c, &raw).Label(locales.Text("删除 SQL 预览")).ReadOnly(true).Grow(1).MinHeight(40)
 			}
-			ui.Text(c, locales.Text("请输入原表名称以确认此操作："))
-			ui.TextInput(c, &x.confirmation).Label(locales.Text("确认原表名称")).Disabled(x.busy || x.original == nil)
+			if !x.completed {
+				ui.Text(c, locales.Text("请输入原表名称以确认此操作："))
+				ui.TextInput(c, &x.confirmation).Label(locales.Text("确认原表名称")).Disabled(x.busy || x.original == nil)
+			}
 			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Children(func() {
 				if ui.Button(c, locales.Text("取消")).Disabled(x.cancelRequested).Clicked() {
 					if x.busy && x.applying {

@@ -35,3 +35,19 @@ func TestDatabendRenamePreservesOpaqueDefinitionAndQualifiedSource(t *testing.T)
 		}
 	}
 }
+
+func TestDatabendDropUsesExactOriginalWithoutConditionalOrCascade(t *testing.T) {
+	original := Snapshot{Engine: "databend", Exists: true, Revision: "document proof", Table: Table{Name: `drop_%猫"table`}, Databend: &DatabendTableIdentity{Database: "db", TableID: "71"}}
+	original.DDL = "CREATE TABLE " + Quote(original.Table.Name) + " (\n  id BIGINT UNSIGNED NULL\n) ENGINE=FUSE"
+	sql, err := PlanDatabendDrop(original, "db")
+	if err != nil || sql != "DROP TABLE \"db\"."+Quote(original.Table.Name) {
+		t.Fatal(sql, err)
+	}
+	for _, mutate := range []func(*Snapshot){func(s *Snapshot) { s.Databend.TableID = "0" }, func(s *Snapshot) { s.Exists = false }, func(s *Snapshot) { s.Engine = "sqlite" }, func(s *Snapshot) { s.Databend.Database = "foreign" }, func(s *Snapshot) { s.Revision = "" }} {
+		changed := original.Clone()
+		mutate(&changed)
+		if _, err := PlanDatabendDrop(changed, "db"); err == nil {
+			t.Fatal("unsupported original drop admitted")
+		}
+	}
+}

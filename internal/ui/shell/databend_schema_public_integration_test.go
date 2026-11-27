@@ -23,49 +23,8 @@ import (
 func TestDatabendNativePublicSchemaRenamePreviewReceiptAndParkedCleanup(t *testing.T) {
 	f := databendfixture.Read(t)
 	wf := databendWorkbenchFixture{Endpoint: f.Endpoint, Username: f.Username, PasswordFile: f.PasswordFile, Archive: f.Archive, SHA256: f.SHA256, Version: f.Version, Directory: f.Directory, Database: f.Database}
-	directory := filepath.Join(f.Directory, t.Name(), "store")
-	store, err := driverstore.New(directory)
-	if err != nil {
-		t.Fatal(err)
-	}
-	driver, err := store.Import(context.Background(), driverstore.Product{Key: "databend", Runtime: "java", MainClass: "com.dbx.agent.databend.DatabendAgent"}, f.Archive)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if err := store.Remove(context.Background(), "databend", f.Version); err != nil {
-			t.Error(err)
-		}
-	})
-	s, _, profiles, _ := profileTestState(t)
-	dbruntime.RegisterBuiltins(s.runtime, nil)
-	endpoint, _ := url.Parse(f.Endpoint)
-	uri := &url.URL{Scheme: "databend", Host: endpoint.Host, Path: "/" + f.Database, RawQuery: "ssl=false", User: url.User(f.Username)}
-	parsed, err := connections.ParseURI(uri.String())
-	if err != nil {
-		t.Fatal(err)
-	}
-	p := parsed.Profile
-	p.Name = "Public Databend schema"
-	p.DatabendOptions.DriverVersion, p.DatabendOptions.DriverSHA256, p.DatabendOptions.DriverDirectory = driver.Version, driver.SHA256, driver.Directory
-	p, err = profiles.Create(context.Background(), p)
-	if err != nil {
-		t.Fatal(err)
-	}
-	s.loadProfiles()
-	s.selectProfileByName(p.Name)
-	observer := f.Observe(directory)
-	s.sessions.SetEngineRuntime(sessionbrowser.EngineRuntime{Open: func(ctx context.Context, p connections.Profile, secret string) (contract.Session, error) {
-		return s.runtime.ConnectSession(driverstore.WithRuntimeObserver(ctx, observer), p, secret)
-	}, Connect: s.runtime.Connect, Session: s.runtime.Session, Disconnect: s.runtime.Disconnect, Close: s.runtime.Close, IsConnected: s.runtime.IsConnected})
-	s.sessions.Current().Password = f.Secret(t)
-	var services ui.Services
-	tt := ui.NewTester(func(c *ui.Context) { services = c.Services(); s.View(c) }, 1280, 800)
-	databendWorkbenchClick(t, tt, "连接所选数据库")
-	databendWorkbenchWait(t, tt, func() bool { return s.sessions.StatusFor(p.ID) != "连接中" })
-	if !s.runtime.IsConnected(p.ID) {
-		t.Fatal("public schema session failed", s.sessions.Current().Error)
-	}
+	s, tt, p, host := databendSchemaPublicState(t, f)
+	services := *host
 	name, destination := `public_%猫"original`, `public_%猫"renamed`
 	qualified := func(name string) string { return schemaddl.Quote(f.Database) + "." + schemaddl.Quote(name) }
 	query := func(sql string) [][]string { return databendWorkbenchSQL(t, wf, sql) }
@@ -79,8 +38,8 @@ func TestDatabendNativePublicSchemaRenamePreviewReceiptAndParkedCleanup(t *testi
 	other := databendWorkbenchData(t, s, tt, services, p, "managed_values")
 	activeID := s.currentTab().id
 	workspace := s.objectWorkspace
-	if !workspace.CanRenameTable(p.ID, f.Database, name) || workspace.CanDropTable(p.ID, f.Database, name) || workspace.CanClearTable(p.ID, f.Database, name) || workspace.CanCopyTable(p.ID, f.Database, name) || workspace.CanCreateTable(p.ID, f.Database) || workspace.CanChangeTable(p.ID) {
-		t.Fatal("public object capability exposure differs from implemented rename")
+	if !workspace.CanRenameTable(p.ID, f.Database, name) || !workspace.CanDropTable(p.ID, f.Database, name) || workspace.CanClearTable(p.ID, f.Database, name) || workspace.CanCopyTable(p.ID, f.Database, name) || workspace.CanCreateTable(p.ID, f.Database) || workspace.CanChangeTable(p.ID) {
+		t.Fatal("public object capability exposure differs from implemented rename/drop")
 	}
 	if ops := s.runtime.SchemaDesign(p.ID); ops.Rename != nil || ops.Apply != nil || ops.Drop != nil {
 		t.Fatal("session-level schema executor exposed")
@@ -169,4 +128,52 @@ func TestDatabendNativePublicSchemaRenamePreviewReceiptAndParkedCleanup(t *testi
 	}
 	databendWorkbenchCapture(t, wf, tt, "rename-complete")
 	f.Journal(t, "public-schema.jsonl", map[string]any{"test": t.Name(), "public_provider_registered": true, "receipt": receipt, "before": before, "after": after, "preview_cancelled": true, "parked_retained": true, "original_tabs_closed": true, "unrelated_tab_preserved": true, "processes": f.Starts.Load()})
+}
+
+func databendSchemaPublicState(t *testing.T, f *databendfixture.Fixture) (*State, *ui.Tester, connections.Profile, *ui.Services) {
+	t.Helper()
+	directory := filepath.Join(f.Directory, t.Name(), "store")
+	store, err := driverstore.New(directory)
+	if err != nil {
+		t.Fatal(err)
+	}
+	driver, err := store.Import(context.Background(), driverstore.Product{Key: "databend", Runtime: "java", MainClass: "com.dbx.agent.databend.DatabendAgent"}, f.Archive)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := store.Remove(context.Background(), "databend", f.Version); err != nil {
+			t.Error(err)
+		}
+	})
+	s, _, profiles, _ := profileTestState(t)
+	dbruntime.RegisterBuiltins(s.runtime, nil)
+	endpoint, _ := url.Parse(f.Endpoint)
+	uri := &url.URL{Scheme: "databend", Host: endpoint.Host, Path: "/" + f.Database, RawQuery: "ssl=false", User: url.User(f.Username)}
+	parsed, err := connections.ParseURI(uri.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := parsed.Profile
+	p.Name = "Public Databend schema"
+	p.DatabendOptions.DriverVersion, p.DatabendOptions.DriverSHA256, p.DatabendOptions.DriverDirectory = driver.Version, driver.SHA256, driver.Directory
+	p, err = profiles.Create(context.Background(), p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.loadProfiles()
+	s.selectProfileByName(p.Name)
+	observer := f.Observe(directory)
+	s.sessions.SetEngineRuntime(sessionbrowser.EngineRuntime{Open: func(ctx context.Context, p connections.Profile, secret string) (contract.Session, error) {
+		return s.runtime.ConnectSession(driverstore.WithRuntimeObserver(ctx, observer), p, secret)
+	}, Connect: s.runtime.Connect, Session: s.runtime.Session, Disconnect: s.runtime.Disconnect, Close: s.runtime.Close, IsConnected: s.runtime.IsConnected})
+	s.sessions.Current().Password = f.Secret(t)
+	var services ui.Services
+	tt := ui.NewTester(func(c *ui.Context) { services = c.Services(); s.View(c) }, 1280, 800)
+	databendWorkbenchClick(t, tt, "连接所选数据库")
+	databendWorkbenchWait(t, tt, func() bool { return s.sessions.StatusFor(p.ID) != "连接中" })
+	if !s.runtime.IsConnected(p.ID) {
+		t.Fatal("public schema session failed", s.sessions.Current().Error)
+	}
+	return s, tt, p, &services
 }
