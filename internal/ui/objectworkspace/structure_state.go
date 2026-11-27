@@ -24,66 +24,71 @@ type Session struct {
 }
 
 type Dependencies struct {
-	GraphSchemaManagementFor func(int64) (contract.GraphSchemaManagementProvider, error)
-	GraphSchemaChanged       func(ui.Services, GraphSchemaEvent)
-	SnapshotManagementFor    func(int64) (contract.SnapshotProvider, error)
-	BeforeSnapshots          func(ui.Services, uint64, int64, uint64, contract.SnapshotPlan, func(ui.Services)) bool
-	SnapshotsChanged         func(ui.Services, SnapshotManagementEvent)
-	SnapshotFiles            SnapshotFiles
-	CollectionManagementFor  func(int64) (contract.CollectionManagementProvider, error)
-	BeforeCollections        func(ui.Services, uint64, int64, uint64, contract.CollectionManagementPlan, func(ui.Services)) bool
-	CollectionsChanged       func(ui.Services, CollectionManagementEvent)
-	KeysDocumentsFor         func(int64) (contract.KeysDocumentsProvider, error)
-	DocumentActive           func(uint64) bool
-	SettingsDocumentsFor     func(int64) (contract.SettingsDocumentsProvider, error)
-	SettingsChanged          func(ui.Services, SettingsEvent)
-	TaskDocumentsFor         func(int64) (contract.TaskDocumentsProvider, error)
-	BeforeNamespace          func(ui.Services, uint64, contract.TaskMutationPlan, func(ui.Services)) bool
-	NamespaceChanged         func(ui.Services, NamespaceEvent)
-	MetadataFor              func(int64) (contract.MetadataProvider, error)
-	NamespaceLabel           func(contract.NamespaceRef) string
-	ProfileName              func(int64) string
-	EditFocus                *string
-	EditTarget               func(theme.EditTarget)
-	Engine                   func(int64) string
-	FieldTypes               func(int64) []string
-	OpenDesign               func(ui.Services, int64, string, string)
-	BackupsFor               func(int64) contract.BackupOperations
-	BeforeRestore            func(ui.Services, contract.BackupPlan, func(ui.Services)) bool
-	RestoreGuardPending      func(contract.BackupPlan) bool
-	BackupCompleted          func(ui.Services, BackupEvent)
-	MaintenanceFor           func(int64) contract.MaintenanceOperations
-	Maintained               func(ui.Services, MaintenanceEvent)
-	Availability             func(int64, string, contract.SchemaDesignTarget) contract.Availability
-	Namespace                func(int64, string) contract.NamespaceRef
-	SchemaDesignFor          func(int64) contract.SchemaDesignOperations
-	SchemaDocumentsFor       func(int64) (contract.SchemaDesignDocumentsProvider, error)
-	SchemaTarget             func(int64, string, string) contract.SchemaDesignTarget
-	SchemaDesigned           func(ui.Services, SchemaDesignEvent)
-	SchemaDropped            func(ui.Services, SchemaDropEvent)
-	SchemaCopied             func(ui.Services, SchemaCopyEvent)
-	SchemaRenamed            func(ui.Services, SchemaRenameEvent)
-	SchemaCleared            func(ui.Services, SchemaClearEvent)
-	BeforeClear              func(ui.Services, int64, string, string, func(ui.Services)) bool
-	ClearGuardPending        func(int64, string) bool
-	BeforeDrop               func(ui.Services, int64, string, string, func(ui.Services)) bool
-	BeforeCopy               func(ui.Services, int64, string, string, func(ui.Services)) bool
-	BeforeRename             func(ui.Services, int64, string, string, func(ui.Services)) bool
-	TableGuardPending        func(int64, string, string) bool
-	ViewDesignFor            func(int64) contract.ViewDesignOperations
-	ViewTarget               func(int64, string, string) contract.SchemaDesignTarget
-	ViewChanged              func(ui.Services, ViewEvent)
-	RenameSchema             func(ui.Services, int64, string, string, string)
-	Favorite                 func(ui.Services, int64, string, string, string)
-	CanFavorite              func() bool
-	SearchRuntime            func(int64) (ObjectSearchRuntime, error)
-	OpenSearchObject         func(ui.Services, int64, uint64, ObjectSearchEntry)
-	RecordActivity           contract.ActivityRecorder
-	TableProfiles            func(int64, string, string) ([]TableProfile, error)
-	OpenTableProfile         func(ui.Services, int64, string, string, string)
-	AdministrationFor        func(int64) mysqlsvc.Administration
-	LoadObjectGroups         func(int64, string) map[string]string
-	SaveObjectGroups         func(int64, string, map[string]string)
+	DatabaseCreateProfileActive func(int64) bool
+	DatabaseCreateConnection    func(*ui.Context, int64)
+	DatabaseCreateTarget        func(int64, string) contract.DatabaseCreateTarget
+	DatabaseCreateFor           func(int64) (contract.DatabaseCreateDocumentsProvider, error)
+	DatabaseCreated             func(ui.Services, DatabaseCreateEvent)
+	GraphSchemaManagementFor    func(int64) (contract.GraphSchemaManagementProvider, error)
+	GraphSchemaChanged          func(ui.Services, GraphSchemaEvent)
+	SnapshotManagementFor       func(int64) (contract.SnapshotProvider, error)
+	BeforeSnapshots             func(ui.Services, uint64, int64, uint64, contract.SnapshotPlan, func(ui.Services)) bool
+	SnapshotsChanged            func(ui.Services, SnapshotManagementEvent)
+	SnapshotFiles               SnapshotFiles
+	CollectionManagementFor     func(int64) (contract.CollectionManagementProvider, error)
+	BeforeCollections           func(ui.Services, uint64, int64, uint64, contract.CollectionManagementPlan, func(ui.Services)) bool
+	CollectionsChanged          func(ui.Services, CollectionManagementEvent)
+	KeysDocumentsFor            func(int64) (contract.KeysDocumentsProvider, error)
+	DocumentActive              func(uint64) bool
+	SettingsDocumentsFor        func(int64) (contract.SettingsDocumentsProvider, error)
+	SettingsChanged             func(ui.Services, SettingsEvent)
+	TaskDocumentsFor            func(int64) (contract.TaskDocumentsProvider, error)
+	BeforeNamespace             func(ui.Services, uint64, contract.TaskMutationPlan, func(ui.Services)) bool
+	NamespaceChanged            func(ui.Services, NamespaceEvent)
+	MetadataFor                 func(int64) (contract.MetadataProvider, error)
+	NamespaceLabel              func(contract.NamespaceRef) string
+	ProfileName                 func(int64) string
+	EditFocus                   *string
+	EditTarget                  func(theme.EditTarget)
+	Engine                      func(int64) string
+	FieldTypes                  func(int64) []string
+	OpenDesign                  func(ui.Services, int64, string, string)
+	BackupsFor                  func(int64) contract.BackupOperations
+	BeforeRestore               func(ui.Services, contract.BackupPlan, func(ui.Services)) bool
+	RestoreGuardPending         func(contract.BackupPlan) bool
+	BackupCompleted             func(ui.Services, BackupEvent)
+	MaintenanceFor              func(int64) contract.MaintenanceOperations
+	Maintained                  func(ui.Services, MaintenanceEvent)
+	Availability                func(int64, string, contract.SchemaDesignTarget) contract.Availability
+	Namespace                   func(int64, string) contract.NamespaceRef
+	SchemaDesignFor             func(int64) contract.SchemaDesignOperations
+	SchemaDocumentsFor          func(int64) (contract.SchemaDesignDocumentsProvider, error)
+	SchemaTarget                func(int64, string, string) contract.SchemaDesignTarget
+	SchemaDesigned              func(ui.Services, SchemaDesignEvent)
+	SchemaDropped               func(ui.Services, SchemaDropEvent)
+	SchemaCopied                func(ui.Services, SchemaCopyEvent)
+	SchemaRenamed               func(ui.Services, SchemaRenameEvent)
+	SchemaCleared               func(ui.Services, SchemaClearEvent)
+	BeforeClear                 func(ui.Services, int64, string, string, func(ui.Services)) bool
+	ClearGuardPending           func(int64, string) bool
+	BeforeDrop                  func(ui.Services, int64, string, string, func(ui.Services)) bool
+	BeforeCopy                  func(ui.Services, int64, string, string, func(ui.Services)) bool
+	BeforeRename                func(ui.Services, int64, string, string, func(ui.Services)) bool
+	TableGuardPending           func(int64, string, string) bool
+	ViewDesignFor               func(int64) contract.ViewDesignOperations
+	ViewTarget                  func(int64, string, string) contract.SchemaDesignTarget
+	ViewChanged                 func(ui.Services, ViewEvent)
+	RenameSchema                func(ui.Services, int64, string, string, string)
+	Favorite                    func(ui.Services, int64, string, string, string)
+	CanFavorite                 func() bool
+	SearchRuntime               func(int64) (ObjectSearchRuntime, error)
+	OpenSearchObject            func(ui.Services, int64, uint64, ObjectSearchEntry)
+	RecordActivity              contract.ActivityRecorder
+	TableProfiles               func(int64, string, string) ([]TableProfile, error)
+	OpenTableProfile            func(ui.Services, int64, string, string, string)
+	AdministrationFor           func(int64) mysqlsvc.Administration
+	LoadObjectGroups            func(int64, string) map[string]string
+	SaveObjectGroups            func(int64, string, map[string]string)
 
 	Capabilities  func(int64) contract.Capabilities
 	BatchExecutor func(context.Context, int64, uint64, []mysqlsvc.ObjectBatchItem) []mysqlsvc.ObjectBatchResult
@@ -231,6 +236,7 @@ type loadResult struct {
 }
 
 type State struct {
+	databaseCreate                          *databaseCreateOperation
 	schemaReceiptPick                       func(string) (string, error)
 	schemaReceiptWrite                      func(string, func(io.Writer) error) error
 	schemaSequence                          uint64
@@ -447,6 +453,7 @@ func (s *State) Close(d *Document) {
 	}
 }
 func (s *State) CloseAll() {
+	s.closeDatabaseCreate()
 	s.closeMaintenance()
 	s.closePortableBackup()
 	s.closeView()
@@ -496,6 +503,7 @@ func (s *State) CloseAll() {
 // Consume runs on the UI thread. Generation changes invalidate completed work
 // without leaving a document stuck loading or automatically retrying it.
 func (s *State) Consume(services ui.Services) {
+	s.consumeDatabaseCreate(services)
 	s.consumeSnapshots(services)
 	s.consumeGraphSchema(services)
 	s.consumeCollections(services)

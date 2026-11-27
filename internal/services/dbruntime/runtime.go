@@ -193,18 +193,19 @@ func (m *Manager) Close() error {
 }
 
 type session struct {
-	manager         *Manager
-	profile         connections.Profile
-	cancel          context.CancelFunc
-	mu              sync.Mutex
-	raw             contract.Session
-	id              int64
-	generation      uint64
-	kind            connections.Kind
-	closed          bool
-	snapshotStreams sync.WaitGroup
-	schemaDocuments map[string]*schemaDesignDocumentLease
-	closeDone       chan struct{}
+	manager                 *Manager
+	profile                 connections.Profile
+	cancel                  context.CancelFunc
+	mu                      sync.Mutex
+	raw                     contract.Session
+	id                      int64
+	generation              uint64
+	kind                    connections.Kind
+	closed                  bool
+	snapshotStreams         sync.WaitGroup
+	schemaDocuments         map[string]*schemaDesignDocumentLease
+	databaseCreateDocuments map[string]*databaseCreateDocumentLease
+	closeDone               chan struct{}
 }
 
 func (s *session) ProfileID() int64             { return s.id }
@@ -276,11 +277,20 @@ func (s *session) Close() error {
 			documents = append(documents, l)
 		}
 	}
+	databases := make([]*databaseCreateDocumentLease, 0, len(s.databaseCreateDocuments))
+	for _, l := range s.databaseCreateDocuments {
+		if l != nil {
+			databases = append(databases, l)
+		}
+	}
 	s.mu.Unlock()
 	if s.cancel != nil {
 		s.cancel()
 	}
 	for _, l := range documents {
+		_ = l.Close()
+	}
+	for _, l := range databases {
 		_ = l.Close()
 	}
 	err := s.raw.Close()

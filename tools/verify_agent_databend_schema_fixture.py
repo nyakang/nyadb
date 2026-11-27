@@ -12,9 +12,11 @@ import urllib.request
 
 import verify_agent_databend_managed_fixture as managed
 import verify_agent_databend_transport_fixture as transport
+import verify_agent_databend_database_create_fixture as database_create
 
 ROOT = managed.ROOT
 REQUIRED = [('./internal/services/databend', name) for name in ['TestDatabendSchemaOriginalRenameIdentityAndGuards','TestDatabendSchemaOriginalLostReplyNeverReplays','TestDatabendSchemaOriginalCancellationAndCloseWaitForSettlement', 'TestDatabendSchemaOriginalDropIdentityViewsAndRecreation', 'TestDatabendSchemaOriginalDropLostReplyAndConcurrentMove', 'TestDatabendSchemaOriginalDropCancelledVerificationAndClose', 'TestDatabendSchemaCopyStructureDataAndOriginalGuards', 'TestDatabendSchemaCopyLostReplyMultiplicityAndConcurrentIdentity', 'TestDatabendSchemaCopyCancellationAndCloseWaitForSettlement', 'TestDatabendSchemaClearOriginalCountIdentityAndGuards', 'TestDatabendSchemaClearLostReplyConcurrentIdentityAndNewRows', 'TestDatabendSchemaClearCancellationAndCloseWaitForSettlement']] + [('./internal/ui/shell', 'TestDatabendNativePublicSchemaRenamePreviewReceiptAndParkedCleanup'), ('./internal/ui/shell', 'TestDatabendNativePublicSchemaDropConfirmationReceiptAndParkedCleanup'), ('./internal/ui/shell', 'TestDatabendNativePublicSchemaCopyDataPreviewReceiptAndParkedCompletion'), ('./internal/ui/shell', 'TestDatabendNativePublicSchemaCopyStructurePreviewReceiptAndParkedCompletion'), ('./internal/ui/shell', 'TestDatabendNativePublicSchemaClearConfirmationReceiptAndParkedRefresh')]
+REQUIRED += database_create.REQUIRED
 
 
 def verify_receipt(receipt, state, verified, operation='rename', rows=0):
@@ -139,7 +141,9 @@ def verify_schema(base):
     images.update(copied.pop('image_sha256'))
     cleared = verify_clear(base)
     images.update(cleared.pop('image_sha256'))
-    return {'public': public, 'drop': drop, 'copy': copied, 'clear': cleared, 'image_sha256': images, 'original_data_preserved': True, 'unknown_not_replayed': True}
+    created = database_create.verify_database_create(base)
+    images.update(created.pop('image_sha256'))
+    return {'public': public, 'drop': drop, 'copy': copied, 'clear': cleared, 'database_create': created, 'image_sha256': images, 'original_data_preserved': True, 'unknown_not_replayed': True}
 
 
 def verify_drop(base):
@@ -388,11 +392,11 @@ def main():
             managed.verify_named_acceptance(log.read_text(), [name])
         result['evidence'] = verify_schema(base)
         result['original_processes_exited'] = transport.verify_processes(base)
-        if result['original_processes_exited'] != len(REQUIRED):
+        if result['original_processes_exited'] != len(REQUIRED) + 1:
             raise RuntimeError('Original rename fixture process count differs')
         if managed.verify_build(original, dbx, cache) != pins or managed.verify_build(reproduced, dbx, cache) != pins:
             raise RuntimeError('Original package changed during schema acceptance')
-        result.update(status='passed', public_acceptance=True, unverified=['native TLS/cloud/warehouse/tenant/routes', 'other native versions and operating systems', 'database create; structure editing; TRUNCATE UI; non-FUSE tables; copy of generated/floating/complex columns; tenant-global program identity; concurrent DDL isolation'])
+        result.update(status='passed', public_acceptance=True, unverified=['native TLS/cloud/warehouse/tenant/routes', 'other native versions and operating systems', 'other database engines/catalogs/creation options; structure editing; TRUNCATE UI; non-FUSE tables; copy of generated/floating/complex columns; tenant-global program identity; concurrent DDL isolation'])
     except BaseException as error:
         result.update(status='failed', error=str(error))
         raise

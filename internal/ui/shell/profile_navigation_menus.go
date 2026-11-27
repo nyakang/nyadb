@@ -156,8 +156,14 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 		s.duplicateProfile()
 	}
 	m.Separator()
-	if m.Item(locales.Text("新建数据库")).Disabled(!canMySQL || !connected).Chosen() {
-		s.objectWorkspace.BeginObject(services, profile.ID, mysqlsvc.ObjectIdentity{Database: "new_database", Kind: "database"}, "create")
+	if m.Item(locales.Text("新建数据库")).Disabled(!connected || !canMySQL && !s.objectWorkspace.CanCreateDatabase(profile.ID)).Chosen() {
+		if s.objectWorkspace.CanCreateDatabase(profile.ID) {
+			if s.activateObjectProfile(profile.ID) {
+				s.objectWorkspace.BeginDatabaseCreate(profile.ID)
+			}
+		} else {
+			s.objectWorkspace.BeginObject(services, profile.ID, mysqlsvc.ObjectIdentity{Database: "new_database", Kind: "database"}, "create")
+		}
 	}
 	newRequest := "新建查询"
 	if profile.Kind.IsNativeKV() {

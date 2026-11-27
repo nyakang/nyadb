@@ -330,6 +330,7 @@ func (s *State) BeginTableChange(profileID int64, database, name string, action 
 }
 
 func (s *State) Modals(c *ui.Context) {
+	s.databaseCreateModal(c)
 	s.portableBackupModal(c)
 	s.maintenanceModal(c)
 	s.viewModal(c)
@@ -562,6 +563,9 @@ func (s *State) TableError() string {
 // pending set until its executor returns so an uncertain command cannot replay.
 // Settled owned receipts survive disconnect until the user explicitly closes them.
 func (s *State) CancelTableFor(profileID int64) {
+	if x := s.databaseCreate; x != nil && x.profile == profileID && x.cancel != nil {
+		x.cancel()
+	}
 	if x := s.schemaClear; x != nil && x.target.Object.ProfileID == profileID {
 		if x.cancel != nil {
 			x.cancel()

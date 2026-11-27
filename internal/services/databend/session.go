@@ -25,18 +25,19 @@ type Provider struct {
 }
 
 type Session struct {
-	mu              sync.Mutex
-	ctx             context.Context
-	cancel          context.CancelFunc
-	closed          bool
-	dataLeases      map[*dataLease]bool
-	schemaDocuments map[string]*schemaDocument
-	profile         connections.Profile
-	process         *ManagedProcess
-	queries         *agentbridge.QueryPool
-	observe         func(string, agentbridge.Receipt)
-	once            sync.Once
-	err             error
+	mu                      sync.Mutex
+	ctx                     context.Context
+	cancel                  context.CancelFunc
+	closed                  bool
+	dataLeases              map[*dataLease]bool
+	schemaDocuments         map[string]*schemaDocument
+	databaseCreateDocuments map[string]*databaseCreateDocument
+	profile                 connections.Profile
+	process                 *ManagedProcess
+	queries                 *agentbridge.QueryPool
+	observe                 func(string, agentbridge.Receipt)
+	once                    sync.Once
+	err                     error
 }
 
 func (p Provider) Open(ctx context.Context, profile connections.Profile, secret string) (contract.Session, error) {
@@ -184,7 +185,14 @@ func (s *Session) Close() error {
 		for _, d := range s.schemaDocuments {
 			schemas = append(schemas, d)
 		}
+		var databases []*databaseCreateDocument
+		for _, d := range s.databaseCreateDocuments {
+			databases = append(databases, d)
+		}
 		s.mu.Unlock()
+		for _, d := range databases {
+			_ = d.Close()
+		}
 		for _, d := range schemas {
 			_ = d.Close()
 		}

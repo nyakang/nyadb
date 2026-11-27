@@ -476,6 +476,35 @@ func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 			}
 			return s.runtime.SchemaDesign(id)
 		},
+		DatabaseCreateProfileActive: func(id int64) bool {
+			p, ok := s.currentProfile()
+			return ok && p.ID == id
+		},
+		DatabaseCreateConnection: func(c *ui.Context, id int64) {
+			if p, ok := s.currentProfile(); ok && p.ID == id && (s.sessions.Current().ProfileID == 0 || s.sessions.Current().ProfileID == id) {
+				s.mysqlSessionToolbar(c)
+			}
+		},
+		DatabaseCreateTarget: func(id int64, name string) contract.DatabaseCreateTarget {
+			if s.runtime == nil {
+				return contract.DatabaseCreateTarget{}
+			}
+			return contract.DatabaseCreateTarget{Namespace: s.runtime.Namespace(id, name), Generation: s.runtime.Generation(id)}
+		},
+		DatabaseCreateFor: func(id int64) (contract.DatabaseCreateDocumentsProvider, error) {
+			if s.runtime == nil {
+				return nil, contract.ErrUnsupported
+			}
+			return s.runtime.DatabaseCreateDocuments(id)
+		},
+		DatabaseCreated: func(services ui.Services, event objectworkspace.DatabaseCreateEvent) {
+			if s.runtime == nil || s.runtime.Generation(event.Target.Namespace.ProfileID) != event.Target.Generation {
+				return
+			}
+			if event.Outcome.State == "committed" || event.Outcome.State == "uncertain" {
+				s.sessions.RefreshNamespaces(event.Target.Namespace.ProfileID, event.Generation, services.Invalidate)
+			}
+		},
 		SchemaDocumentsFor: func(id int64) (contract.SchemaDesignDocumentsProvider, error) {
 			if s.runtime == nil {
 				return nil, contract.ErrUnsupported

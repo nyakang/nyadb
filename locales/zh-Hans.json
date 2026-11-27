@@ -1,4 +1,13 @@
 {
+  "databaseCreateConfirm": "确认创建数据库",
+  "databaseCreateRead": "重新读取数据库",
+  "databaseCreateSQLPreview": "数据库创建 SQL 预览",
+  "databaseCreateOriginalReceipt": "原始数据库创建回执",
+  "databaseCreateScope": "创建数据库并核验完整定义。检查不锁定并发更改；原始回执丢失时禁止重放，取消不表示回滚。",
+  "databaseCreateExists": "目标数据库已存在",
+  "databaseCreateCompleted": "原始创建已完成",
+  "databaseCreateInvalidTarget": "数据库名称或原连接不可用",
+  "databaseCreateExistingWindow": "请先关闭当前数据库创建窗口",
   "databendClearScope": "使用 DELETE 删除原表全部行并保留结构，核验原表身份和空表结果。检查不锁定并发更改；未核验的原始回执禁止重放，取消不表示回滚。",
   "databendCopyScope": "在原数据库中复制普通 FUSE 表，不覆盖目标；保留默认值和非空约束，并核验完整行及重复次数。检查不锁定并发更改；未核验回执禁止重放，不自动删除目标表。",
   "databendDropScope": "删除原表及数据；引用它的视图可能失效。检查不锁定并发更改；未核验的回执禁止重放。",

@@ -34,6 +34,96 @@ type Messages struct{ locale string }
 // source language.
 func In(locale string) Messages { return Messages{locale} }
 
+// DatabaseCreateConfirm says "确认创建数据库"
+// in the language the app shows.
+func DatabaseCreateConfirm() string { return In(i18n.Locale()).DatabaseCreateConfirm() }
+
+// DatabaseCreateConfirm says "确认创建数据库"
+// in the language of msgs.
+func (msgs Messages) DatabaseCreateConfirm() string {
+	return Catalog.Format(msgs.locale, "databaseCreateConfirm", nil)
+}
+
+// DatabaseCreateRead says "重新读取数据库"
+// in the language the app shows.
+func DatabaseCreateRead() string { return In(i18n.Locale()).DatabaseCreateRead() }
+
+// DatabaseCreateRead says "重新读取数据库"
+// in the language of msgs.
+func (msgs Messages) DatabaseCreateRead() string {
+	return Catalog.Format(msgs.locale, "databaseCreateRead", nil)
+}
+
+// DatabaseCreateSQLPreview says "数据库创建 SQL 预览"
+// in the language the app shows.
+func DatabaseCreateSQLPreview() string { return In(i18n.Locale()).DatabaseCreateSQLPreview() }
+
+// DatabaseCreateSQLPreview says "数据库创建 SQL 预览"
+// in the language of msgs.
+func (msgs Messages) DatabaseCreateSQLPreview() string {
+	return Catalog.Format(msgs.locale, "databaseCreateSQLPreview", nil)
+}
+
+// DatabaseCreateOriginalReceipt says "原始数据库创建回执"
+// in the language the app shows.
+func DatabaseCreateOriginalReceipt() string { return In(i18n.Locale()).DatabaseCreateOriginalReceipt() }
+
+// DatabaseCreateOriginalReceipt says "原始数据库创建回执"
+// in the language of msgs.
+func (msgs Messages) DatabaseCreateOriginalReceipt() string {
+	return Catalog.Format(msgs.locale, "databaseCreateOriginalReceipt", nil)
+}
+
+// DatabaseCreateScope says "…"
+// in the language the app shows.
+func DatabaseCreateScope() string { return In(i18n.Locale()).DatabaseCreateScope() }
+
+// DatabaseCreateScope says "…"
+// in the language of msgs.
+func (msgs Messages) DatabaseCreateScope() string {
+	return Catalog.Format(msgs.locale, "databaseCreateScope", nil)
+}
+
+// DatabaseCreateExists says "目标数据库已存在"
+// in the language the app shows.
+func DatabaseCreateExists() string { return In(i18n.Locale()).DatabaseCreateExists() }
+
+// DatabaseCreateExists says "目标数据库已存在"
+// in the language of msgs.
+func (msgs Messages) DatabaseCreateExists() string {
+	return Catalog.Format(msgs.locale, "databaseCreateExists", nil)
+}
+
+// DatabaseCreateCompleted says "原始创建已完成"
+// in the language the app shows.
+func DatabaseCreateCompleted() string { return In(i18n.Locale()).DatabaseCreateCompleted() }
+
+// DatabaseCreateCompleted says "原始创建已完成"
+// in the language of msgs.
+func (msgs Messages) DatabaseCreateCompleted() string {
+	return Catalog.Format(msgs.locale, "databaseCreateCompleted", nil)
+}
+
+// DatabaseCreateInvalidTarget says "数据库名称或原连接不可用"
+// in the language the app shows.
+func DatabaseCreateInvalidTarget() string { return In(i18n.Locale()).DatabaseCreateInvalidTarget() }
+
+// DatabaseCreateInvalidTarget says "数据库名称或原连接不可用"
+// in the language of msgs.
+func (msgs Messages) DatabaseCreateInvalidTarget() string {
+	return Catalog.Format(msgs.locale, "databaseCreateInvalidTarget", nil)
+}
+
+// DatabaseCreateExistingWindow says "请先关闭当前数据库创建窗口"
+// in the language the app shows.
+func DatabaseCreateExistingWindow() string { return In(i18n.Locale()).DatabaseCreateExistingWindow() }
+
+// DatabaseCreateExistingWindow says "请先关闭当前数据库创建窗口"
+// in the language of msgs.
+func (msgs Messages) DatabaseCreateExistingWindow() string {
+	return Catalog.Format(msgs.locale, "databaseCreateExistingWindow", nil)
+}
+
 // DatabendClearScope says "使用 DELETE …"
 // in the language the app shows.
 func DatabendClearScope() string { return In(i18n.Locale()).DatabendClearScope() }

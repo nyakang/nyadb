@@ -1,4 +1,13 @@
 {
+  "databaseCreateConfirm": "Confirm database creation",
+  "databaseCreateRead": "Read database again",
+  "databaseCreateSQLPreview": "Database creation SQL preview",
+  "databaseCreateOriginalReceipt": "Original database creation receipt",
+  "databaseCreateScope": "Create the database and verify its complete definition. Checks do not lock concurrent changes. A lost original receipt cannot be replayed; cancellation does not mean rollback.",
+  "databaseCreateExists": "The target database already exists",
+  "databaseCreateCompleted": "Original creation completed",
+  "databaseCreateInvalidTarget": "The database name or original connection is unavailable",
+  "databaseCreateExistingWindow": "Close the current database creation window first",
   "databendClearScope": "Use DELETE to remove all rows while retaining the structure. Verify the original table identity and empty result. Checks do not lock concurrent changes. Unverified original receipts cannot be replayed; cancellation does not mean rollback.",
   "databendCopyScope": "Copy a plain FUSE table in the original database without replacing a target. Preserve defaults and nullability; verify full rows and duplicate counts. Checks do not lock concurrent changes. Unverified receipts cannot be replayed; targets are not automatically deleted.",
   "databendDropScope": "Drop the original table and data; views that reference it may become invalid. Checks do not lock concurrent changes; unverified receipts cannot be replayed.",
