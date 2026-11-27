@@ -9,9 +9,16 @@ import (
 )
 
 // DatabendTableIdentity retains the observed native table incarnation. The
-// complete declaration remains opaque: rename does not rebuild its columns.
+// complete declaration remains opaque. Ordered native column observations are
+// sealed with it for copy planning; rename never rebuilds the declaration.
 type DatabendTableIdentity struct {
 	Database, TableID string
+	Columns           []DatabendColumn
+}
+
+type DatabendColumn struct {
+	Name, Type string
+	Generated  bool
 }
 
 func databendIdentifier(s string) bool {

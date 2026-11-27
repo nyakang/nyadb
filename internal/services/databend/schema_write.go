@@ -5,6 +5,7 @@ import (
 	"crypto/hmac"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
@@ -45,16 +46,20 @@ func (s *Session) schemaNameAbsent(ctx context.Context, original *ManagedSession
 }
 
 func (d *schemaDocument) rename(ctx context.Context, request contract.SchemaRenameRequest) contract.SchemaDesignOutcome {
-	return d.writeSchema(ctx, request.Clone(), "rename")
+	return d.writeSchema(ctx, contract.SchemaCopyRequest{Original: request.Original.Clone(), Destination: request.Destination}, "rename")
 }
 
 func (d *schemaDocument) drop(ctx context.Context, original contract.SchemaDesignSnapshot) contract.SchemaDesignOutcome {
-	return d.writeSchema(ctx, contract.SchemaRenameRequest{Original: original.Clone(), Destination: original.Target.Object.Name}, "drop")
+	return d.writeSchema(ctx, contract.SchemaCopyRequest{Original: original.Clone(), Destination: original.Target.Object.Name}, "drop")
 }
 
-// Both single-statement operations retain the same original document, proof and
+func (d *schemaDocument) copy(ctx context.Context, request contract.SchemaCopyRequest) contract.SchemaDesignOutcome {
+	return d.writeSchema(ctx, request.Clone(), "copy")
+}
+
+// All single-statement operations retain the same original document, proof and
 // settlement rules. The operation selects a fixed planner, never arbitrary SQL.
-func (d *schemaDocument) writeSchema(ctx context.Context, request contract.SchemaRenameRequest, operation string) (out contract.SchemaDesignOutcome) {
+func (d *schemaDocument) writeSchema(ctx context.Context, request contract.SchemaCopyRequest, operation string) (out contract.SchemaDesignOutcome) {
 	r := request.Clone()
 	out.State = "not_executed"
 	child, done, err := d.admission(ctx, r.Original.Target)
@@ -71,6 +76,16 @@ func (d *schemaDocument) writeSchema(ctx context.Context, request contract.Schem
 	switch operation {
 	case "rename":
 		sql, err = schemaddl.PlanDatabendRename(r.Original.Schema, r.Original.Target.Object.Schema, r.Destination)
+	case "copy":
+		sql, err = schemaddl.PlanDatabendCopy(r.Original.Schema, r.Original.Target.Object.Schema, r.Destination, r.WithData, r.RebindSelfReferences, r.PreserveRowID)
+		if err == nil {
+			for _, c := range r.Original.Schema.Databend.Columns {
+				if typ, typeErr := parseDataType(c.Type); typeErr != nil || typ.kind == contract.JSON || typ.kind == contract.Floating {
+					err = fmt.Errorf("%w: copy verification for Databend column %q (%s)", contract.ErrUnsupported, c.Name, c.Type)
+					break
+				}
+			}
+		}
 	case "drop":
 		sql, err = schemaddl.PlanDatabendDrop(r.Original.Schema, r.Original.Target.Object.Schema)
 	default:
@@ -111,7 +126,7 @@ func (d *schemaDocument) writeSchema(ctx context.Context, request contract.Schem
 	}
 	destination := r.Original.Target
 	destination.Object.Name = r.Destination
-	if operation == "rename" {
+	if operation == "rename" || operation == "copy" {
 		if err = d.s.schemaNameAbsent(child, original, destination.Object); err != nil {
 			out.Error = err
 			return
@@ -159,6 +174,13 @@ func (d *schemaDocument) writeSchema(ctx context.Context, request contract.Schem
 		}
 		out.Error = errors.Join(out.Error, readErr, child.Err())
 	}
+	if out.State == "committed" && operation == "copy" {
+		actual, readErr := d.verifyCopy(child, original, r, destination)
+		out.Error = errors.Join(out.Error, readErr, child.Err())
+		if out.Error == nil {
+			out.Actual, out.Verified = &actual, true
+		}
+	}
 	if out.State == "committed" && operation == "drop" {
 		readErr := d.s.schemaNameAbsent(child, original, r.Original.Target.Object)
 		if readErr == nil {
@@ -182,13 +204,13 @@ func (d *schemaDocument) writeSchema(ctx context.Context, request contract.Schem
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.sequence++
-	out.Receipt = &contract.SchemaDesignWriteReceipt{DocumentID: d.id, Sequence: d.sequence, Operation: operation, Original: r.Original.Clone(), Destination: r.Destination, Statements: []string{sql}, NativeJSON: string(raw), State: out.State, Verified: out.Verified, Actual: out.Actual}
+	out.Receipt = &contract.SchemaDesignWriteReceipt{DocumentID: d.id, Sequence: d.sequence, Operation: operation, Original: r.Original.Clone(), Destination: r.Destination, WithData: r.WithData, RebindSelfReferences: r.RebindSelfReferences, PreserveRowID: r.PreserveRowID, Statements: []string{sql}, NativeJSON: string(raw), State: out.State, Verified: out.Verified, Actual: out.Actual}
 	retained := out.Clone()
 	d.original = &retained
 	if out.State == "uncertain" || out.State == "committed" && !out.Verified {
 		d.blocked = true
 	}
-	if out.Verified && !d.closed {
+	if out.Verified && !d.closed && operation == "rename" {
 		d.target = destination
 	}
 	return out.Clone()

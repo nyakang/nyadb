@@ -74,6 +74,25 @@ class DatabendSchemaReceiptVerifierTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 schema.verify_receipt(changed, 'committed', True, 'drop')
 
+    def test_copy_requires_like_complete_definition_and_new_incarnation(self):
+        r = self.receipt()
+        r.update(Operation='copy', WithData=True, RebindSelfReferences=False, PreserveRowID=False)
+        columns = [{'Name': 'id', 'Type': 'BIGINT UNSIGNED', 'Generated': False}]
+        r['Original']['Schema'].update(Table={'Name': 't'}, DDL='CREATE TABLE t (id BIGINT UNSIGNED NOT NULL) ENGINE=FUSE')
+        r['Original']['Schema']['Databend']['Columns'] = columns
+        r['Actual']['Schema']['Databend'].update(TableID='72', Columns=copy.deepcopy(columns))
+        r['Actual']['Schema']['DDL'] = 'CREATE TABLE renamed (id BIGINT UNSIGNED NOT NULL) ENGINE=FUSE'
+        r['Statements'] = ['CREATE TABLE "original"."renamed" LIKE "original"."t" AS SELECT "id" FROM "original"."t"']
+        schema.verify_receipt(r, 'committed', True, 'copy')
+        for mutate in [lambda v: v.update(RebindSelfReferences=True),
+                       lambda v: v['Actual']['Schema']['Databend'].update(TableID='71'),
+                       lambda v: v['Actual']['Schema'].update(DDL='CREATE TABLE renamed (id BIGINT UNSIGNED NULL) ENGINE=FUSE'),
+                       lambda v: v.update(Statements=['CREATE TABLE "original"."renamed" AS SELECT * FROM "original"."t"'])]:
+            changed = copy.deepcopy(r)
+            mutate(changed)
+            with self.assertRaises(RuntimeError):
+                schema.verify_receipt(changed, 'committed', True, 'copy')
+
 
 if __name__ == '__main__':
     unittest.main()

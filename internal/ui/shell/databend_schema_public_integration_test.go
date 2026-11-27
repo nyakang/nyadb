@@ -38,8 +38,8 @@ func TestDatabendNativePublicSchemaRenamePreviewReceiptAndParkedCleanup(t *testi
 	other := databendWorkbenchData(t, s, tt, services, p, "managed_values")
 	activeID := s.currentTab().id
 	workspace := s.objectWorkspace
-	if !workspace.CanRenameTable(p.ID, f.Database, name) || !workspace.CanDropTable(p.ID, f.Database, name) || workspace.CanClearTable(p.ID, f.Database, name) || workspace.CanCopyTable(p.ID, f.Database, name) || workspace.CanCreateTable(p.ID, f.Database) || workspace.CanChangeTable(p.ID) {
-		t.Fatal("public object capability exposure differs from implemented rename/drop")
+	if !workspace.CanRenameTable(p.ID, f.Database, name) || !workspace.CanDropTable(p.ID, f.Database, name) || workspace.CanClearTable(p.ID, f.Database, name) || !workspace.CanCopyTable(p.ID, f.Database, name) || workspace.CanCreateTable(p.ID, f.Database) || workspace.CanChangeTable(p.ID) {
+		t.Fatal("public object capability exposure differs from implemented rename/drop/copy")
 	}
 	if ops := s.runtime.SchemaDesign(p.ID); ops.Rename != nil || ops.Apply != nil || ops.Drop != nil {
 		t.Fatal("session-level schema executor exposed")

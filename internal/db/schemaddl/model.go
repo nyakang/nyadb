@@ -67,6 +67,7 @@ func (s Snapshot) Clone() Snapshot {
 	s.SQLite = s.SQLite.Clone()
 	if s.Databend != nil {
 		identity := *s.Databend
+		identity.Columns = slices.Clone(identity.Columns)
 		s.Databend = &identity
 	}
 	return s

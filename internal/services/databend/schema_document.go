@@ -122,11 +122,11 @@ func (d *schemaDocument) Operations() contract.SchemaDesignOperations {
 	if closed {
 		return contract.SchemaDesignOperations{}
 	}
-	return contract.SchemaDesignOperations{Snapshot: d.snapshot, CanRename: d.writable, Rename: d.rename, CanDrop: d.writable, Drop: d.drop}
+	return contract.SchemaDesignOperations{Snapshot: d.snapshot, CanRename: d.writable, Rename: d.rename, CanDrop: d.writable, Drop: d.drop, CanCopy: d.writable, Copy: d.copy}
 }
 func (s *Session) SchemaDesignDocumentFeatures() contract.SchemaDesignDocumentFeatures {
 	can := func(t contract.SchemaDesignTarget) bool { return s.checkSchemaTarget(t) == nil }
-	return contract.SchemaDesignDocumentFeatures{CanRename: can, CanDrop: can}
+	return contract.SchemaDesignDocumentFeatures{CanRename: can, CanDrop: can, CanCopy: can}
 }
 func (s *Session) SchemaDesign() contract.SchemaDesignOperations {
 	return contract.SchemaDesignOperations{Snapshot: func(ctx context.Context, t contract.SchemaDesignTarget) (contract.SchemaDesignSnapshot, error) {
@@ -168,6 +168,9 @@ func (s *Session) readSchemaSnapshot(ctx context.Context, original *ManagedSessi
 		return contract.SchemaDesignSnapshot{}, err
 	}
 	out := contract.SchemaDesignSnapshot{Target: t, Schema: schemaddl.Snapshot{Engine: "databend", Exists: true, DDL: m.Definition, Table: schemaddl.Table{Name: t.Object.Name}, Databend: &schemaddl.DatabendTableIdentity{Database: t.Object.Schema, TableID: m.Incarnation}}}
+	for _, c := range m.Columns {
+		out.Schema.Databend.Columns = append(out.Schema.Databend.Columns, schemaddl.DatabendColumn{Name: c.Name, Type: c.Type, Generated: c.Generated})
+	}
 	out.Schema.Revision = sealSchema(out, key)
 	if err := ctx.Err(); err != nil {
 		return contract.SchemaDesignSnapshot{}, err

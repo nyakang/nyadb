@@ -30,7 +30,7 @@ func TestDatabendNativePublicSchemaDropConfirmationReceiptAndParkedCleanup(t *te
 	other := databendWorkbenchData(t, s, tt, services, p, "managed_values")
 	activeID := s.currentTab().id
 	workspace := s.objectWorkspace
-	if !workspace.CanDropTable(p.ID, f.Database, name) || workspace.CanClearTable(p.ID, f.Database, name) || workspace.CanCopyTable(p.ID, f.Database, name) || workspace.CanCreateTable(p.ID, f.Database) {
+	if !workspace.CanDropTable(p.ID, f.Database, name) || workspace.CanClearTable(p.ID, f.Database, name) || !workspace.CanCopyTable(p.ID, f.Database, name) || workspace.CanCreateTable(p.ID, f.Database) {
 		t.Fatal("public DROP capability publication differs")
 	}
 	openPreview := func() {
