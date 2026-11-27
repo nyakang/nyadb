@@ -20,8 +20,12 @@ import (
 
 // Withhold the original request or response at one native statement boundary.
 // Independent HTTP changes happen on the test's UI thread while it is held.
-func databendWorkbenchWriteGate(t *testing.T, f databendWorkbenchFixture, table string, before bool) (*databendReadGate, string) {
+func databendWorkbenchWriteGate(t *testing.T, f databendWorkbenchFixture, table string, before bool, journals ...string) (*databendReadGate, string) {
 	t.Helper()
+	journal := "workbench-native-writes.jsonl"
+	if len(journals) != 0 {
+		journal = journals[0]
+	}
 	g := &databendReadGate{held: make(chan struct{}), release: make(chan struct{}), returned: make(chan struct{})}
 	proxy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		raw, err := io.ReadAll(req.Body)
@@ -51,7 +55,7 @@ func databendWorkbenchWriteGate(t *testing.T, f databendWorkbenchFixture, table 
 		code, headers, body := databendWorkbenchForward(t, f, req)
 		if match {
 			hash := sha256.Sum256(body)
-			databendWorkbenchJournal(t, f, "workbench-native-writes.jsonl", map[string]any{"test": t.Name(), "sql": query.SQL, "query_id": req.Header.Get("X-DATABEND-QUERY-ID"), "status": code, "native_bytes": body, "native_sha256": hex.EncodeToString(hash[:])})
+			databendWorkbenchJournal(t, f, journal, map[string]any{"test": t.Name(), "sql": query.SQL, "query_id": req.Header.Get("X-DATABEND-QUERY-ID"), "status": code, "native_bytes": body, "native_sha256": hex.EncodeToString(hash[:])})
 		}
 		if capture && !before {
 			hold()

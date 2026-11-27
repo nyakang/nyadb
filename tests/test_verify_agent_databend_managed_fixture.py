@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import copy
 from decimal import Decimal
 import importlib.util
@@ -20,6 +21,133 @@ with mock.patch.object(sys, 'path', [str(TOOLS), *sys.path]):
 
 
 class DatabendManagedDiagnosticTests(unittest.TestCase):
+    def test_client_canceled_login_cannot_hide_writes_or_unrelated_errors(self):
+        for change in ['absent', 'request', 'body', 'write', 'get', 'foreign_test', 'live_client', 'upstream_error', 'secret']:
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as directory:
+                row = {'test': FIXTURE.WORKBENCH_REQUIRED[2], 'method': 'POST', 'path': '/v1/session/login',
+                       'phase': 'request', 'client_canceled': True, 'upstream_canceled': True}
+                if change == 'body': row['phase'] = 'body'
+                elif change == 'write': row['path'] = '/v1/query'
+                elif change == 'get': row['method'] = 'GET'
+                elif change == 'foreign_test': row['test'] = 'unrelated'
+                elif change == 'live_client': row['client_canceled'] = False
+                elif change == 'upstream_error': row['upstream_canceled'] = False
+                elif change == 'secret': row['password'] = 'must-not-log'
+                root = Path(directory)
+                if change != 'absent':
+                    (root / 'workbench-canceled-logins.jsonl').write_text(json.dumps(row) + '\n')
+                if change in ['absent', 'request', 'body']:
+                    self.assertEqual(FIXTURE.verify_workbench_canceled_logins(root), 0 if change == 'absent' else 1)
+                else:
+                    with self.assertRaises(RuntimeError):
+                        FIXTURE.verify_workbench_canceled_logins(root)
+
+    def test_killed_owner_cannot_fabricate_acknowledgement_or_hide_other_failures(self):
+        original = {'test': FIXTURE.WORKBENCH_REQUIRED[10] + '/process_exit',
+                    'method': 'workbench-data-write', 'native_bytes': None,
+                    'native_sha256': hashlib.sha256(b'').hexdigest(),
+                    'receipt': {'Dispatched': True, 'ExecutorAcknowledged': False,
+                                'CancellationRequested': True, 'ProcessExitConfirmed': True,
+                                'Result': None, 'RemoteError': None}}
+        for change in ['none', 'not_canceled', 'invalid_cancel', 'other_test', 'other_method', 'acknowledged', 'live', 'unsent',
+                       'result', 'error', 'bytes', 'hash']:
+            with self.subTest(change=change):
+                r = copy.deepcopy(original)
+                if change == 'not_canceled': r['receipt']['CancellationRequested'] = False
+                elif change == 'invalid_cancel': r['receipt']['CancellationRequested'] = None
+                elif change == 'other_test': r['test'] = FIXTURE.WORKBENCH_REQUIRED[0]
+                elif change == 'other_method': r['method'] = 'workbench-data-cursor'
+                elif change == 'acknowledged': r['receipt']['ExecutorAcknowledged'] = True
+                elif change == 'live': r['receipt']['ProcessExitConfirmed'] = False
+                elif change == 'unsent': r['receipt']['Dispatched'] = False
+                elif change == 'result': r['receipt']['Result'] = {'rows': [[1]]}
+                elif change == 'error': r['receipt']['RemoteError'] = {'Code': -1}
+                elif change == 'bytes': r['native_bytes'] = base64.b64encode(b'{}').decode()
+                elif change == 'hash': r['native_sha256'] = '0' * 64
+                if change in ['none', 'not_canceled']:
+                    FIXTURE.verify_managed_receipt(r)
+                else:
+                    with self.assertRaises((RuntimeError, TypeError)):
+                        FIXTURE.verify_managed_receipt(r)
+
+    def test_lost_write_requires_original_exit_identity_and_immutable_evidence(self):
+        for change in ['none', 'replayed', 'ack_from_http', 'copied_bytes', 'wrong_pid', 'missing_process',
+                       'wrong_executable', 'generation', 'changed_preview', 'unsent_bytes', 'lost_draft',
+                       'replayed_sql', 'readback', 'changed_wire', 'wrong_hash', 'missing_case']:
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as directory:
+                root, database = Path(directory), 'native_database'
+                rows, wires, records, processes, independent = [], [], [], [], {}
+                for index, mode in enumerate(['runtime_disconnect', 'process_exit']):
+                    name = FIXTURE.WORKBENCH_REQUIRED[10] + '/' + mode
+                    table = 'workbench_lost_' + mode + '55'
+                    obj = {'ProfileID': 7, 'Catalog': '', 'Schema': database, 'Kind': 'table', 'Name': table}
+                    preview = {'Object': obj, 'Metadata': 'a' * 64, 'Incarnation': '11',
+                               'Statements': [{'SQL': 'UPDATE ' + table + ' SET txt=1'}, {'SQL': 'unsent'}]}
+                    executor = self.receipt(name, 'workbench-data-write', {'rows': [[1]], 'columns': ['number of rows updated']})
+                    executor['receipt']['CancellationRequested'] = True
+                    copied = {'Receipt': executor['receipt'], 'Original': json.loads(base64.b64decode(executor['native_bytes']))}
+                    if mode == 'process_exit':
+                        executor.update(native_bytes=None, native_sha256=hashlib.sha256(b'').hexdigest())
+                        executor['receipt'].update(Result=None, ExecutorAcknowledged=False, ProcessExitConfirmed=True)
+                        copied['Original'] = None
+                        for method, exited in [('workbench-metadata-query', False), ('workbench-data-close', True)]:
+                            extra = copy.deepcopy(executor)
+                            extra['method'] = method
+                            extra['receipt'].update(Dispatched=False, CancellationRequested=False, ProcessExitConfirmed=exited)
+                            records.append(extra)
+                        processes = [{'pid': pid, 'start_ticks': '1',
+                                      'executable': str(root / name / 'store/package/jre/bin/java')}
+                                     for pid in [2147483001, 2147483002]]
+                    records.append(executor)
+                    statements = [{'EditIndex': i, 'Kind': 'update', 'Destination': obj,
+                                   'State': 'not_sent' if i else 'unknown' if index else 'acknowledged',
+                                   'AffectedRows': 0 if i or index else 1,
+                                   'NativeJSON': '' if i else json.dumps(copied)} for i in range(2)]
+                    wanted = [['1', 'changed'], ['2', 'second']]
+                    row = {'test': name, 'mode': mode, 'object': obj, 'preview': preview,
+                           'receipt': {'Request': copy.deepcopy(preview), 'Receipt': {'Object': obj, 'Statements': statements}},
+                           'writes': 1, 'rows': wanted, 'recovered_rows': wanted,
+                           'original_generation': 1, 'replacement_generation': 2,
+                           'original_pid': 2147483001 if index else 0, 'recovery_replayed': False,
+                           'public_provider_registered': False,
+                           **{k: True for k in ['draft_retained', 'cache_preserved', 'receipt_unchanged',
+                                               'sql_text_retained', 'explicit_close_required']}}
+                    rows.append(row)
+                    sql = 'SELECT id,txt FROM "' + database + '".' + table + ' ORDER BY id'
+                    independent[(name, sql)] = wanted * 2
+                    query = str(index + 1) * 32
+                    raw = json.dumps({'id': query, 'error': None}).encode()
+                    wires.append({'test': name, 'sql': preview['Statements'][0]['SQL'], 'status': 200,
+                                  'query_id': query, 'native_bytes': base64.b64encode(raw).decode(),
+                                  'native_sha256': hashlib.sha256(raw).hexdigest()})
+                lost = rows[1]
+                if change == 'replayed': records.append(copy.deepcopy(records[-1]))
+                elif change == 'ack_from_http': lost['receipt']['Receipt']['Statements'][0]['State'] = 'acknowledged'
+                elif change == 'copied_bytes':
+                    copied = json.loads(lost['receipt']['Receipt']['Statements'][0]['NativeJSON'])
+                    copied['Original'] = {'result': {'rows': [[1]]}}
+                    lost['receipt']['Receipt']['Statements'][0]['NativeJSON'] = json.dumps(copied)
+                elif change == 'wrong_pid': lost['original_pid'] += 1
+                elif change == 'missing_process': processes.pop()
+                elif change == 'wrong_executable': processes[0]['executable'] = '/foreign/jre/bin/java'
+                elif change == 'generation': lost['replacement_generation'] = 1
+                elif change == 'changed_preview': lost['receipt']['Request']['Incarnation'] = '12'
+                elif change == 'unsent_bytes': lost['receipt']['Receipt']['Statements'][1]['NativeJSON'] = '{}'
+                elif change == 'lost_draft': lost['draft_retained'] = False
+                elif change == 'replayed_sql': lost['recovery_replayed'] = True
+                elif change == 'readback': independent[(name, sql)] = [['999', 'replayed']]
+                elif change == 'changed_wire': wires[1]['sql'] = 'different SQL'
+                elif change == 'wrong_hash': wires[1]['native_sha256'] = '0' * 64
+                elif change == 'missing_case': rows.pop()
+                for filename, values in [('workbench-lost-write-lifecycle.jsonl', rows),
+                                         ('workbench-lost-native-writes.jsonl', wires), ('processes.jsonl', processes)]:
+                    (root / filename).write_text(''.join(json.dumps(r) + '\n' for r in values))
+                if change == 'none':
+                    FIXTURE.verify_workbench_lost_writes(root, database, records, independent)
+                else:
+                    with self.assertRaises(RuntimeError):
+                        FIXTURE.verify_workbench_lost_writes(root, database, records, independent)
+
     def test_independent_write_cannot_replace_unknown_receipt(self):
         name, database = FIXTURE.WORKBENCH_REQUIRED[2], 'native_database'
         original = {'ProfileID': 7, 'Catalog': '', 'Schema': database, 'Kind': 'table', 'Name': 'workbench_unknown52'}

@@ -3,12 +3,80 @@ package shell
 import (
 	"context"
 	"errors"
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/contract"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
+
+func TestLostSessionWriteSettlesOnlyWhenOriginalDataTabReturns(t *testing.T) {
+	s := New()
+	t.Cleanup(s.CloseMySQLSessions)
+	doc := fixtureDataTab(t, s, editableHostPage())
+	tt := ui.NewTester(s.View, 1000, 650)
+	stageHostDraft(t, tt, "retained draft")
+	page := doc.data.Page()
+	entered, release, returned := make(chan struct{}), make(chan struct{}), make(chan struct{})
+	var releaseOnce sync.Once
+	unblock := func() { releaseOnce.Do(func() { close(release) }) }
+	t.Cleanup(unblock)
+	var writes atomic.Int32
+	s.dataWorkspace.Saver = func(context.Context, int64, string, string, []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataEditResult, error) {
+		writes.Add(1)
+		close(entered)
+		<-release
+		defer close(returned)
+		return &contract.DataEditResult{NativeJSON: `{"original":"lost-session"}`, CommitUncertain: true}, contract.ErrDataCommitUncertain
+	}
+	s.dataWorkspace.Save(ui.Services{}, doc.data)
+	select {
+	case <-entered:
+	case <-time.After(5 * time.Second):
+		t.Fatal("original write did not start")
+	}
+	s.openQuery()
+	query := s.currentTab()
+	s.sessions.Disconnect(doc.data.ProfileID())
+	if s.sessions.Current().ProfileID != 0 || !doc.data.Busy() || !doc.data.HasDraft() || s.tabIndex(doc.id) < 0 {
+		t.Fatal("session loss discarded pending document")
+	}
+	unblock()
+	<-returned
+	for range 3 {
+		tt.Frame()
+	}
+	if !doc.data.Busy() || s.currentTab() != query {
+		t.Fatal("parked completion changed inactive data or active tab")
+	}
+	s.selectTab(doc.id)
+	deadline := time.Now().Add(5 * time.Second)
+	for doc.data.Busy() && time.Now().Before(deadline) {
+		tt.Frame()
+		time.Sleep(time.Millisecond)
+	}
+	if doc.data.Busy() || !doc.data.HasDraft() || doc.data.Page() != page || s.dataWorkspace.CanSave(doc.data) {
+		t.Fatal("active lost-session write did not retain original evidence", tt.Texts())
+	}
+	if err := tt.Click("原生事务回执"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.Click("复制完整回执"); err != nil {
+		t.Fatal(err)
+	}
+	if tt.Clipboard() != `{"original":"lost-session"}` {
+		t.Fatal("lost session changed original receipt", tt.Clipboard())
+	}
+	s.dataWorkspace.Save(ui.Services{}, doc.data)
+	s.dataWorkspace.Load(ui.Services{}, doc.data, true)
+	tt.Frame()
+	if writes.Load() != 1 || doc.data.Page() != page || !s.dataWorkspace.GuardLeave(doc.data, nil) {
+		t.Fatal("lost session allowed replay or discarded evidence")
+	}
+}
 
 func TestMySQLDataDisconnectAndWorkbenchCloseWaitForDraftDecision(t *testing.T) {
 	for _, action := range []string{"disconnect", "workbench"} {

@@ -48,7 +48,31 @@ WORKBENCH_REQUIRED = [
     'TestDatabendWorkbenchOriginalSameStatementZeroGuard',
     'TestDatabendWorkbenchOriginalRecreatedTableRejectsOldConfirmation',
     'TestDatabendWorkbenchOriginalWriteCancellationAndDisconnectGuard',
+    'TestDatabendWorkbenchOriginalLostSessionRetainsWriteEvidenceAndNeverReplays',
 ]
+
+
+def verify_managed_receipt(record):
+    """Only the explicitly killed original owner may lack an acknowledgement."""
+    killed = WORKBENCH_REQUIRED[10] + '/process_exit'
+    receipt = record['receipt']
+    if record['test'] != killed or receipt.get('ExecutorAcknowledged') is True:
+        transport.verify_receipt(record)
+        return
+    method = record['method']
+    expected = {
+        # UI disconnect may cancel before or after the killed owner settles.
+        # Neither ordering is an executor acknowledgement.
+        'workbench-data-write': (True, receipt.get('CancellationRequested'), True),
+        'workbench-metadata-query': (False, False, False),
+        'workbench-data-close': (False, False, True),
+    }
+    flags = tuple(receipt.get(k) for k in ['Dispatched', 'CancellationRequested', 'ProcessExitConfirmed'])
+    if (method not in expected or flags != expected[method] or type(receipt.get('CancellationRequested')) is not bool or
+            receipt.get('ExecutorAcknowledged') is not False or
+            receipt.get('Result') is not None or receipt.get('RemoteError') is not None or
+            record.get('native_bytes') is not None or record.get('native_sha256') != transport.sha(b'')):
+        raise RuntimeError('Killed original process has fabricated acknowledgement or unscoped missing receipt')
 
 
 def verify_workbench_statement(executor, statement):
@@ -56,6 +80,76 @@ def verify_workbench_statement(executor, statement):
     original = json.loads(base64.b64decode(executor['native_bytes'], validate=True), parse_float=Decimal)
     if native.get('Receipt') != executor['receipt'] or native.get('Original') != original:
         raise RuntimeError('UI receipt changed or omitted its complete original executor response')
+
+
+def verify_workbench_lost_writes(directory, database, records, independent):
+    def journal(name):
+        return [json.loads(line, parse_float=Decimal) for line in (directory / name).read_text().splitlines()]
+    rows = journal('workbench-lost-write-lifecycle.jsonl')
+    native = journal('workbench-lost-native-writes.jsonl')
+    processes = journal('processes.jsonl')
+    expected = {WORKBENCH_REQUIRED[10] + '/' + mode: mode for mode in ['runtime_disconnect', 'process_exit']}
+    if len(rows) != 2 or len(native) != 2 or {r['test'] for r in rows} != set(expected):
+        raise RuntimeError('Original unexpected session loss matrix missing or duplicated')
+    for row in rows:
+        mode = expected[row['test']]
+        table = 'workbench_lost_' + mode + '55'
+        preview, receipt, obj = row['preview'], row['receipt']['Receipt'], row['object']
+        wanted = [['1', 'changed'], ['2', 'second']]
+        sql = 'SELECT id,txt FROM "' + database + '".' + table + ' ORDER BY id'
+        if (row['mode'] != mode or obj['Schema'] != database or obj['Name'] != table or obj['Kind'] != 'table' or
+                obj['ProfileID'] <= 0 or obj.get('Catalog', '') != '' or preview['Object'] != obj or receipt['Object'] != obj or
+                row['receipt']['Request'] != preview or not re.fullmatch('[0-9a-f]{64}', preview['Metadata']) or
+                not re.fullmatch('[1-9][0-9]*', preview['Incarnation']) or
+                row['writes'] != 1 or row['rows'] != wanted or row['recovered_rows'] != wanted or
+                independent.get((row['test'], sql)) != wanted * 2 or
+                not 0 < row['original_generation'] < row['replacement_generation'] or
+                row.get('recovery_replayed') is not False or row.get('public_provider_registered') is not False or
+                any(row.get(k) is not True for k in ['draft_retained', 'cache_preserved', 'receipt_unchanged',
+                                                    'sql_text_retained', 'explicit_close_required'])):
+            raise RuntimeError('Lost session erased original evidence, replayed SQL or changed its destination')
+        owned = [r for r in records if r['test'] == row['test']]
+        executed = [r for r in owned if r['method'] == 'workbench-data-write']
+        http = [r for r in native if r['test'] == row['test']]
+        if len(executed) != 1 or len(http) != 1 or len(preview['Statements']) != 2 or len(receipt['Statements']) != 2:
+            raise RuntimeError('Lost original write was replayed or its unsent suffix omitted')
+        for r in owned:
+            verify_managed_receipt(r)
+        for i, statement in enumerate(receipt['Statements']):
+            state = 'not_sent' if i else 'unknown' if mode == 'process_exit' else 'acknowledged'
+            if (statement['EditIndex'] != i or statement['Kind'] != 'update' or statement['Destination'] != obj or
+                    statement['State'] != state or statement['AffectedRows'] != (1 if state == 'acknowledged' else 0)):
+                raise RuntimeError('Lost write receipt substituted acknowledgement, exit or unsent state')
+            if i and statement.get('NativeJSON'):
+                raise RuntimeError('Unsent lost-session suffix has fabricated native bytes')
+        first, original = receipt['Statements'][0], executed[0]['receipt']
+        if mode == 'runtime_disconnect':
+            verify_workbench_statement(executed[0], first)
+            if (row['original_pid'] != 0 or not original['CancellationRequested'] or original['ProcessExitConfirmed'] or
+                    original['Result'].get('rows') != [[1]] or original['Result'].get('columns') != ['number of rows updated']):
+                raise RuntimeError('Runtime disconnect lost original write acknowledgement')
+        else:
+            copied = json.loads(first['NativeJSON'], parse_float=Decimal)
+            missing = [r['method'] for r in owned if not r['receipt']['ExecutorAcknowledged']]
+            if (copied != {'Receipt': original, 'Original': None} or
+                    sorted(missing) != sorted(['workbench-data-write', 'workbench-metadata-query', 'workbench-data-close'])):
+                raise RuntimeError('Process exit fabricated original bytes or concealed other missing acknowledgements')
+            prefix = str(directory / row['test'] / 'store') + '/'
+            captured = [p for p in processes if p['executable'].startswith(prefix)]
+            if (len(captured) != 2 or captured[0]['pid'] != row['original_pid'] or
+                    captured[1]['pid'] == row['original_pid'] or any(not p['start_ticks'].isdigit() or
+                    not p['executable'].endswith('/jre/bin/java') for p in captured)):
+                raise RuntimeError('Lost executor lacks its original process and independent recovery identities')
+            transport.verify_processes(directory)
+        wire = http[0]
+        raw = base64.b64decode(wire['native_bytes'], validate=True)
+        value = json.loads(raw)
+        if (transport.sha(raw) != wire['native_sha256'] or wire['status'] != 200 or value.get('error') is not None or
+                wire['sql'] != preview['Statements'][0]['SQL'] or not re.fullmatch('[0-9a-f]{32}', wire['query_id']) or
+                value.get('id') != wire['query_id']):
+            raise RuntimeError('Lost executor lacks independent original server response')
+    return {'cases': len(rows), 'native_writes': len(native), 'process_exit_is_acknowledgement': False,
+            'sql_replayed': False, 'original_evidence_retained': True}
 
 
 def verify_workbench_read_lifecycle(directory, database, records):
@@ -241,14 +335,27 @@ def verify_workbench_independent_write(directory, database, records, independent
     return row
 
 
+def verify_workbench_canceled_logins(directory):
+    canceled_file = directory / 'workbench-canceled-logins.jsonl'
+    canceled_logins = [json.loads(line) for line in canceled_file.read_text().splitlines()] if canceled_file.exists() else []
+    for row in canceled_logins:
+        if (set(row) != {'test', 'method', 'path', 'phase', 'client_canceled', 'upstream_canceled'} or
+                not any(row['test'] == n or row['test'].startswith(n + '/') for n in WORKBENCH_REQUIRED) or
+                row['method'] != 'POST' or row['path'] != '/v1/session/login' or row['phase'] not in ['request', 'body'] or
+                row['client_canceled'] is not True or row['upstream_canceled'] is not True):
+            raise RuntimeError('Proxy concealed an unscoped failure as a canceled login')
+    return len(canceled_logins)
+
+
 def verify_workbench_receipts(directory, database):
     from PIL import Image
+    canceled_logins = verify_workbench_canceled_logins(directory)
     records = [json.loads(line, parse_float=Decimal) for line in
                (directory / 'original-receipts.jsonl').read_text().splitlines()]
     records = [r for r in records if any(r['test'] == n or r['test'].startswith(n + '/')
                                        for n in WORKBENCH_REQUIRED)]
     for record in records:
-        transport.verify_receipt(record)
+        verify_managed_receipt(record)
     for name in WORKBENCH_REQUIRED:
         methods = {r['method'] for r in records if r['test'] == name or r['test'].startswith(name + '/')}
         required = {'workbench-handshake', 'workbench-metadata-open', 'workbench-metadata-query', 'workbench-data-cursor'}
@@ -318,6 +425,7 @@ def verify_workbench_receipts(directory, database):
     disconnect_sql = 'SELECT id FROM "' + database + '".workbench_disconnect53 ORDER BY id'
     if independent.get((WORKBENCH_REQUIRED[6], disconnect_sql)) != [['1']]:
         raise RuntimeError('Disconnect recovery lacks independent native proof that SQL was not replayed')
+    lost_writes = verify_workbench_lost_writes(directory, database, records, independent)
     write_faults = verify_workbench_write_faults(directory, database, records, independent)
     independent_write = verify_workbench_independent_write(directory, database, records, independent, lifecycle)
     fields = [json.loads(line) for line in (directory / 'workbench-fields.jsonl').read_text().splitlines()]
@@ -345,6 +453,8 @@ def verify_workbench_receipts(directory, database):
         phases[WORKBENCH_REQUIRED[8] + '/' + mode] = ['recreated-table']
     for mode in ['cancel', 'disconnect']:
         phases[WORKBENCH_REQUIRED[9] + '/' + mode] = ['write-acknowledged']
+    for mode in ['runtime_disconnect', 'process_exit']:
+        phases[WORKBENCH_REQUIRED[10] + '/' + mode] = ['lost-write', 'lost-recovered']
     for scope in ['page', 'count', 'field']:
         phases[WORKBENCH_REQUIRED[4] + '/' + scope] = ['read-recovered']
     read_lifecycle = verify_workbench_read_lifecycle(directory, database, records)
@@ -359,10 +469,10 @@ def verify_workbench_receipts(directory, database):
                         if rendered.size != (width, height) or not rendered.getbbox():
                             raise RuntimeError('Original localized workbench capture is empty or has wrong dimensions')
                     captures.append({'path': str(path.relative_to(directory)), 'sha256': transport.sha(path.read_bytes())})
-    return {'required_diagnostics': WORKBENCH_REQUIRED, 'original_receipts': len(records),
+    return {'required_diagnostics': WORKBENCH_REQUIRED, 'original_receipts': len(records), 'canceled_logins': canceled_logins,
             'independent_http_receipts': len(http_records), 'captures': captures,
             'read_lifecycle': read_lifecycle,
-            'write_faults': write_faults, 'independent_write': independent_write,
+            'write_faults': write_faults, 'independent_write': independent_write, 'lost_writes': lost_writes,
             'public_provider_registered': False}
 
 
@@ -474,7 +584,7 @@ def verify_receipts(directory):
     records = [json.loads(line, parse_float=Decimal) for line in
                (directory / 'original-receipts.jsonl').read_text().splitlines()]
     for record in records:
-        transport.verify_receipt(record)
+        verify_managed_receipt(record)
     for name in REQUIRED:
         methods = {r['method'] for r in records if r['test'] == name}
         expected = {'managed-handshake', 'managed-open-initialize', 'managed-query'}
@@ -510,7 +620,7 @@ def verify_provider_receipts(directory, database):
     records = [json.loads(line, parse_float=Decimal) for line in
                (directory / 'original-receipts.jsonl').read_text().splitlines()]
     for record in records:
-        transport.verify_receipt(record)
+        verify_managed_receipt(record)
     groups = {name: [r for r in records if r['test'] == name] for name in PROVIDER_REQUIRED}
     for name, group in groups.items():
         methods = {r['method'] for r in group}
@@ -584,7 +694,7 @@ def verify_data_receipts(directory):
     records = [json.loads(line, parse_float=Decimal) for line in
                (directory / 'original-receipts.jsonl').read_text().splitlines()]
     for record in records:
-        transport.verify_receipt(record)
+        verify_managed_receipt(record)
     for name in DATA_REQUIRED:
         methods = {r['method'] for r in records if r['test'] == name}
         if {'provider-handshake', 'provider-data-open', 'provider-data-close',
@@ -633,7 +743,7 @@ def verify_runtime_receipts(directory):
                (directory / 'original-receipts.jsonl').read_text().splitlines()]
     records = [r for r in records if r['test'] in RUNTIME_REQUIRED]
     for record in records:
-        transport.verify_receipt(record)
+        verify_managed_receipt(record)
     methods = {r['method'] for r in records}
     if {'runtime-handshake', 'runtime-metadata-open', 'runtime-metadata-query',
             'runtime-query-open', 'runtime-query-executor'} - methods:
@@ -815,7 +925,7 @@ def main():
         if args.workbench:
             result['private_workbench'] = verify_workbench_receipts(base, database)
         result['original_processes_exited'] = transport.verify_processes(base)
-        if result['original_processes_exited'] != (38 if args.workbench else 19 if args.data else 15 if args.provider else 5):
+        if result['original_processes_exited'] != (42 if args.workbench else 19 if args.data else 15 if args.provider else 5):
             raise RuntimeError('Original independent process lifecycle coverage differs')
         if verify_build(original, dbx, cache) != pins or verify_build(reproduced, dbx, cache) != pins:
             raise RuntimeError('Original managed artifacts/sources changed during product verification')

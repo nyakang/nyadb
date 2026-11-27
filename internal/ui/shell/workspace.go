@@ -221,10 +221,19 @@ func (s *State) dataWorkspaceDependencies() dataworkspace.Dependencies {
 		},
 		Session: func() dataworkspace.Session {
 			w := s.sessions.Current()
+			// A lost session clears the browser identity, but its guarded data
+			// tab still owns pending results. Let only that active profile
+			// consume them as disconnected, without publishing a new session.
+			if w.ProfileID == 0 && s.currentTab().data != nil {
+				return dataworkspace.Session{ProfileID: s.currentTab().data.ProfileID()}
+			}
 			return dataworkspace.Session{ProfileID: w.ProfileID, Generation: w.Generation, Connected: w.Status == "已连接"}
 		},
 		SessionFor: func(id int64) dataworkspace.Session {
 			w := s.sessions.Workspace(id)
+			if w == nil {
+				return dataworkspace.Session{ProfileID: id}
+			}
 			return dataworkspace.Session{ProfileID: id, Generation: w.Generation, Connected: w.Status == "已连接"}
 		},
 		RuntimeFor: func(id int64) dataworkspace.Runtime { return s.runtime.Data(id) },

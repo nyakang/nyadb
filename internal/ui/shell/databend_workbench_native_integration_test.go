@@ -494,15 +494,29 @@ func databendWorkbenchForward(t *testing.T, f databendWorkbenchFixture, req *htt
 	upstream.Header = req.Header.Clone()
 	reply, err := (&http.Client{Timeout: 60 * time.Second}).Do(upstream)
 	if err != nil {
-		t.Error("original HTTP forwarding failed", err)
+		if !databendWorkbenchCanceledLogin(t, f, req, err, "request") {
+			t.Error("original HTTP forwarding failed", err)
+		}
 		return 502, nil, nil
 	}
 	defer reply.Body.Close()
 	body, err := io.ReadAll(reply.Body)
 	if err != nil {
-		t.Error(err)
+		if !databendWorkbenchCanceledLogin(t, f, req, err, "body") {
+			t.Error(err)
+		}
 	}
 	return reply.StatusCode, reply.Header.Clone(), body
+}
+
+func databendWorkbenchCanceledLogin(t *testing.T, f databendWorkbenchFixture, req *http.Request, err error, phase string) bool {
+	if req.Method != http.MethodPost || req.URL.Path != "/v1/session/login" || req.Context().Err() != context.Canceled || !errors.Is(err, context.Canceled) {
+		return false
+	}
+	// Closing a physical session can cancel its pending JDBC login. Retain
+	// this transport observation without pretending it is an executor reply.
+	databendWorkbenchJournal(t, f, "workbench-canceled-logins.jsonl", map[string]any{"test": t.Name(), "method": req.Method, "path": req.URL.Path, "phase": phase, "client_canceled": true, "upstream_canceled": true})
+	return true
 }
 
 func TestDatabendWorkbenchOriginalUnknownReceiptGuardAndExplicitSQLRecovery(t *testing.T) {
