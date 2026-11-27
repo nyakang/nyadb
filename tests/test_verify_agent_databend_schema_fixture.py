@@ -93,6 +93,24 @@ class DatabendSchemaReceiptVerifierTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 schema.verify_receipt(changed, 'committed', True, 'copy')
 
+    def test_clear_retains_original_delete_count_and_complete_table(self):
+        r = self.receipt()
+        r.update(Operation='clear', Destination='t', ResetIdentity=False, Rows=2, Statements=['DELETE FROM "original"."t"'])
+        r['Original']['Schema'].update(Table={'Name': 't'}, Exists=True, DDL='CREATE TABLE t (id BIGINT UNSIGNED NULL) ENGINE=FUSE')
+        r['Actual'] = copy.deepcopy(r['Original'])
+        n = json.loads(r['NativeJSON'])
+        n['Receipt']['Result'].update(columns=['number of rows deleted'], column_types=['uint64'], rows=[[2]])
+        n['Original']['result'] = copy.deepcopy(n['Receipt']['Result'])
+        r['NativeJSON'] = json.dumps(n)
+        schema.verify_receipt(r, 'committed', True, 'clear', 2)
+        for mutate in [lambda v: v.update(Rows=0), lambda v: v.update(ResetIdentity=True),
+                       lambda v: v['Actual']['Schema'].update(DDL='later replacement'),
+                       lambda v: v.update(Statements=['TRUNCATE TABLE "original"."t"'])]:
+            changed = copy.deepcopy(r)
+            mutate(changed)
+            with self.assertRaises(RuntimeError):
+                schema.verify_receipt(changed, 'committed', True, 'clear', 2)
+
 
 if __name__ == '__main__':
     unittest.main()

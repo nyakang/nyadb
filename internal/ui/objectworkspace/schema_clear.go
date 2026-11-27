@@ -124,6 +124,10 @@ func (s *State) schemaClearRequest(x *schemaClearOperation) (contract.SchemaClea
 		return contract.SchemaClearRequest{}, contract.ErrUnsupported
 	}
 	r := contract.SchemaClearRequest{Original: x.original.Clone(), ResetIdentity: x.resetIdentity}
+	if r.Original.Schema.Engine == "databend" {
+		_, err := schemaddl.PlanDatabendClear(r.Original.Schema, r.Original.Target.Object.Schema, r.ResetIdentity)
+		return r, err
+	}
 	if r.ResetIdentity && (r.Original.Schema.Engine != "sqlite" || !schemaddl.SQLiteAutoIncrement(r.Original.Schema.Table)) {
 		return r, contract.ErrUnsupported
 	}
@@ -270,7 +274,7 @@ func (s *State) consumeSchemaClear(services ui.Services) {
 			}
 		} else if reply.err != nil {
 			x.err = reply.err.Error()
-		} else if reply.snapshot.Target != x.target || !reply.snapshot.Schema.Exists || (reply.snapshot.Schema.Engine != "sqlite" && reply.snapshot.Schema.Engine != "postgresql" && reply.snapshot.Schema.Engine != "opengauss") || reply.snapshot.Schema.Engine == "opengauss" && reply.snapshot.Schema.OpenGauss == nil || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.Table.Name != x.target.Object.Name {
+		} else if reply.snapshot.Target != x.target || !reply.snapshot.Schema.Exists || (reply.snapshot.Schema.Engine != "sqlite" && reply.snapshot.Schema.Engine != "postgresql" && reply.snapshot.Schema.Engine != "opengauss" && reply.snapshot.Schema.Engine != "databend") || reply.snapshot.Schema.Engine == "opengauss" && reply.snapshot.Schema.OpenGauss == nil || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.Table.Name != x.target.Object.Name {
 			x.err = errors.New("original table snapshot is incomplete or unavailable").Error()
 		} else {
 			snapshot := reply.snapshot.Clone()
@@ -288,15 +292,26 @@ func (s *State) schemaClearModal(c *ui.Context) {
 	if x == nil || !x.open || x.guarding {
 		return
 	}
+	databend := x.original != nil && x.original.Schema.Engine == "databend" || x.original == nil && s.deps.Engine != nil && s.deps.Engine(x.target.Object.ProfileID) == "databend"
+	gap := float32(10)
+	if databend {
+		gap = 8
+	}
 	theme.Modal(c, &x.open, func() {
-		ui.Column(c).Width(800).MaxWidthPercent(92).Height(620).MaxHeightPercent(90).Gap(10).Children(func() {
+		ui.Column(c).Width(800).MaxWidthPercent(92).Height(620).MaxHeightPercent(90).Gap(gap).Children(func() {
 			ui.Text(c, locales.Text("清空表")).Bold()
 			ui.Text(c, fmt.Sprintf("#%d · %s / %s · %s", x.target.Object.ProfileID, x.target.Object.Catalog, x.target.Object.Schema, x.target.Object.Name)).SingleLine().Tooltip(x.target.Object.Name)
-			ui.Text(c, locales.Text("事务清空所有行；保留表结构、索引和触发器。"))
-			ui.Text(c, locales.Text("删除触发器和外键级联会执行，可能修改同库其他表；任一步失败则回滚。"))
+			if databend {
+				ui.Text(c, locales.Text("使用 DELETE 删除原表全部行并保留结构，核验原表身份和空表结果。检查不锁定并发更改；未核验的原始回执禁止重放，取消不表示回滚。"))
+			} else {
+				ui.Text(c, locales.Text("事务清空所有行；保留表结构、索引和触发器。"))
+				ui.Text(c, locales.Text("删除触发器和外键级联会执行，可能修改同库其他表；任一步失败则回滚。"))
+			}
 			resetAvailable := x.original != nil && x.original.Schema.Engine == "sqlite" && schemaddl.SQLiteAutoIncrement(x.original.Schema.Table)
-			ui.Checkbox(c, &x.resetIdentity, locales.Text("重置自增值")).Disabled(x.busy || x.completed || !resetAvailable)
-			ui.Text(c, locales.Text("不勾选时不主动重置自增值；原触发器的自增行为仍会执行。"))
+			if !databend {
+				ui.Checkbox(c, &x.resetIdentity, locales.Text("重置自增值")).Disabled(x.busy || x.completed || !resetAvailable)
+				ui.Text(c, locales.Text("不勾选时不主动重置自增值；原触发器的自增行为仍会执行。"))
+			}
 			if x.err != "" {
 				ui.Text(c, x.err).SingleLine().Tooltip(x.err).TextColor(theme.Colors(c).Error)
 			}
@@ -322,8 +337,10 @@ func (s *State) schemaClearModal(c *ui.Context) {
 			if !s.schemaModalReceiptToggle(c, x.owner) {
 				ui.TextArea(c, &raw).Label(locales.Text("清空 SQL 预览")).ReadOnly(true).Grow(1).MinHeight(40)
 			}
-			ui.Text(c, locales.Text("请输入原表名称以确认此操作："))
-			ui.TextInput(c, &x.confirmation).Label(locales.Text("确认原表名称")).Disabled(x.busy || x.original == nil)
+			if !x.completed {
+				ui.Text(c, locales.Text("请输入原表名称以确认此操作："))
+				ui.TextInput(c, &x.confirmation).Label(locales.Text("确认原表名称")).Disabled(x.busy || x.original == nil)
+			}
 			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Children(func() {
 				if ui.Button(c, locales.Text("取消")).Disabled(x.cancelRequested).Clicked() {
 					if x.busy && x.applying {

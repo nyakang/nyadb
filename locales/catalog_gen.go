@@ -34,6 +34,16 @@ type Messages struct{ locale string }
 // source language.
 func In(locale string) Messages { return Messages{locale} }
 
+// DatabendClearScope says "使用 DELETE …"
+// in the language the app shows.
+func DatabendClearScope() string { return In(i18n.Locale()).DatabendClearScope() }
+
+// DatabendClearScope says "使用 DELETE …"
+// in the language of msgs.
+func (msgs Messages) DatabendClearScope() string {
+	return Catalog.Format(msgs.locale, "databendClearScope", nil)
+}
+
 // DatabendCopyScope says "在原数据库中复制普通 FUSE …"
 // in the language the app shows.
 func DatabendCopyScope() string { return In(i18n.Locale()).DatabendCopyScope() }

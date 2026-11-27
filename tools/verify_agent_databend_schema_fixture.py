@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify Databend original table rename/drop/copy, failure receipts and public workbench on an owned native server."""
+"""Verify Databend original table rename/drop/copy/clear, failure receipts and public workbench on an owned native server."""
 import argparse
 import base64
 import json
@@ -14,13 +14,13 @@ import verify_agent_databend_managed_fixture as managed
 import verify_agent_databend_transport_fixture as transport
 
 ROOT = managed.ROOT
-REQUIRED = [('./internal/services/databend', name) for name in ['TestDatabendSchemaOriginalRenameIdentityAndGuards','TestDatabendSchemaOriginalLostReplyNeverReplays','TestDatabendSchemaOriginalCancellationAndCloseWaitForSettlement', 'TestDatabendSchemaOriginalDropIdentityViewsAndRecreation', 'TestDatabendSchemaOriginalDropLostReplyAndConcurrentMove', 'TestDatabendSchemaOriginalDropCancelledVerificationAndClose', 'TestDatabendSchemaCopyStructureDataAndOriginalGuards', 'TestDatabendSchemaCopyLostReplyMultiplicityAndConcurrentIdentity', 'TestDatabendSchemaCopyCancellationAndCloseWaitForSettlement']] + [('./internal/ui/shell', 'TestDatabendNativePublicSchemaRenamePreviewReceiptAndParkedCleanup'), ('./internal/ui/shell', 'TestDatabendNativePublicSchemaDropConfirmationReceiptAndParkedCleanup'), ('./internal/ui/shell', 'TestDatabendNativePublicSchemaCopyDataPreviewReceiptAndParkedCompletion'), ('./internal/ui/shell', 'TestDatabendNativePublicSchemaCopyStructurePreviewReceiptAndParkedCompletion')]
+REQUIRED = [('./internal/services/databend', name) for name in ['TestDatabendSchemaOriginalRenameIdentityAndGuards','TestDatabendSchemaOriginalLostReplyNeverReplays','TestDatabendSchemaOriginalCancellationAndCloseWaitForSettlement', 'TestDatabendSchemaOriginalDropIdentityViewsAndRecreation', 'TestDatabendSchemaOriginalDropLostReplyAndConcurrentMove', 'TestDatabendSchemaOriginalDropCancelledVerificationAndClose', 'TestDatabendSchemaCopyStructureDataAndOriginalGuards', 'TestDatabendSchemaCopyLostReplyMultiplicityAndConcurrentIdentity', 'TestDatabendSchemaCopyCancellationAndCloseWaitForSettlement', 'TestDatabendSchemaClearOriginalCountIdentityAndGuards', 'TestDatabendSchemaClearLostReplyConcurrentIdentityAndNewRows', 'TestDatabendSchemaClearCancellationAndCloseWaitForSettlement']] + [('./internal/ui/shell', 'TestDatabendNativePublicSchemaRenamePreviewReceiptAndParkedCleanup'), ('./internal/ui/shell', 'TestDatabendNativePublicSchemaDropConfirmationReceiptAndParkedCleanup'), ('./internal/ui/shell', 'TestDatabendNativePublicSchemaCopyDataPreviewReceiptAndParkedCompletion'), ('./internal/ui/shell', 'TestDatabendNativePublicSchemaCopyStructurePreviewReceiptAndParkedCompletion'), ('./internal/ui/shell', 'TestDatabendNativePublicSchemaClearConfirmationReceiptAndParkedRefresh')]
 
 
-def verify_receipt(receipt, state, verified, operation='rename'):
+def verify_receipt(receipt, state, verified, operation='rename', rows=0):
     if (receipt.get('State') != state or receipt.get('Verified') is not verified or
             receipt.get('Operation') != operation or receipt.get('Sequence') != 1 or
-            not receipt.get('DocumentID') or receipt.get('Rows') != 0):
+            not receipt.get('DocumentID') or receipt.get('Rows') != rows):
         raise RuntimeError('Original rename outcome differs')
     original = receipt['Original']
     target = original['Target']
@@ -33,6 +33,10 @@ def verify_receipt(receipt, state, verified, operation='rename'):
         sql = 'DROP TABLE ' + quote(target['Object']['Schema']) + '.' + quote(target['Object']['Name'])
         if destination != target['Object']['Name']:
             raise RuntimeError('Original DROP destination differs')
+    if operation == 'clear':
+        sql = 'DELETE FROM ' + quote(target['Object']['Schema']) + '.' + quote(target['Object']['Name'])
+        if destination != target['Object']['Name'] or receipt.get('ResetIdentity') is not False:
+            raise RuntimeError('Original clear reset/destination semantics differ')
     if operation == 'copy':
         columns = identity.get('Columns')
         if (not columns or any(c.get('Generated') is not False for c in columns) or
@@ -54,8 +58,9 @@ def verify_receipt(receipt, state, verified, operation='rename'):
         raise RuntimeError('Original executor acknowledgement unavailable')
     if state == 'committed':
         result = transport_receipt.get('Result')
+        expected_columns, expected_types, expected_rows = (['number of rows deleted'], ['uint64'], [[rows]]) if operation == 'clear' else ([], [], [[]])
         if (transport_receipt.get('RemoteError') is not None or response.get('result') != result or
-                result.get('columns') != [] or result.get('column_types') != [] or result.get('rows') != [[]] or
+                result.get('columns') != expected_columns or result.get('column_types') != expected_types or result.get('rows') != expected_rows or
                 result.get('affected_rows') != 0 or result.get('truncated') is not False):
             raise RuntimeError('Native DDL acknowledgement was replaced')
     else:
@@ -71,6 +76,8 @@ def verify_receipt(receipt, state, verified, operation='rename'):
                 (operation != 'copy' and actual['Schema']['Databend'] != identity) or actual['Schema']['Exists'] is not (operation != 'drop') or
                 (operation == 'drop' and actual['Schema']['DDL'] != '')):
             raise RuntimeError('Verified destination lost original native incarnation')
+        if operation == 'clear' and actual != original:
+            raise RuntimeError('Clear lost the complete original table identity/definition')
         if operation == 'copy':
             actual_identity = actual['Schema']['Databend']
             def body(schema):
@@ -130,7 +137,9 @@ def verify_schema(base):
     images.update(drop.pop('image_sha256'))
     copied = verify_copy(base)
     images.update(copied.pop('image_sha256'))
-    return {'public': public, 'drop': drop, 'copy': copied, 'image_sha256': images, 'original_data_preserved': True, 'unknown_not_replayed': True}
+    cleared = verify_clear(base)
+    images.update(cleared.pop('image_sha256'))
+    return {'public': public, 'drop': drop, 'copy': copied, 'clear': cleared, 'image_sha256': images, 'original_data_preserved': True, 'unknown_not_replayed': True}
 
 
 def verify_drop(base):
@@ -225,6 +234,53 @@ def verify_copy(base):
     return {'public': public, 'image_sha256': images, 'duplicate_counts_verified': True, 'unknown_not_replayed': True}
 
 
+def verify_clear(base):
+    def read(name):
+        return json.loads((base / name).read_text())
+    good = read('schema-clear.json')
+    verify_receipt(good['original']['Receipt'], 'committed', True, 'clear', 2)
+    verify_receipt(good['empty']['Receipt'], 'committed', True, 'clear', 0)
+    if (good['before'] != [['9007199254740993', 'fe00', 'retained'], ['18446744073709551615', '00ff80', 'retained']] or
+            good['remaining'] != [['0']] or good['dependent_remaining'] != [['0']] or
+            good['restored'] != [['18446744073709551615', '00ff80', 'retained']] or
+            any(good.get(k) is not True for k in ['sibling_rejected', 'reset_rejected', 'stale_rejected', 'altered_rejected'])):
+        raise RuntimeError('Original clear data/count/structure guards differ')
+    for name in ['clear_lost60', 'clear_moved60', 'clear_appended60']:
+        value = read('schema-' + name + '.json')
+        lost = name == 'clear_lost60'
+        verify_receipt(value['original']['Receipt'], 'uncertain' if lost else 'committed', False, 'clear', 0 if lost else 2)
+        if (value['independent_remaining'] != (None if name == 'clear_moved60' else [['7']]) or
+                value['saved_original'] != ([['1'], ['2']] if name == 'clear_moved60' else None) or
+                value.get('dispatches') != 1 or any(value.get(k) is not True for k in ['read_did_not_settle', 'replay_rejected', 'later_rows_preserved'])):
+            raise RuntimeError('Lost/concurrent clear acquired later rows or wrong original identity')
+    for name, closing in [('clear_cancel60', False), ('clear_close60', True)]:
+        value = read('schema-' + name + '.json')
+        verify_receipt(value['original']['Receipt'], 'committed', False, 'clear', 2)
+        if value.get('settlement_waited') is not True or value.get('close') is not closing:
+            raise RuntimeError('Original clear cancellation/close settlement missing')
+    public = [json.loads(line) for line in (base / 'public-clear.jsonl').read_text().splitlines()]
+    if len(public) != 1:
+        raise RuntimeError('Public clear acceptance missing or duplicated')
+    value = public[0]
+    verify_receipt(value['receipt'], 'committed', True, 'clear', 1)
+    if (value.get('processes') != 1 or value['before'] != [['18446744073709551615', '00ff80']] or
+            any(value.get(k) is not True for k in ['public_provider_registered', 'wrong_confirmation_rejected', 'preview_cancelled', 'parked_retained',
+                                                  'source_tabs_preserved', 'source_grid_refreshed', 'unrelated_tab_preserved'])):
+        raise RuntimeError('Public clear original scope or grid refresh differs')
+    from PIL import Image
+    images = {}
+    for language in ['zh-Hans', 'en']:
+        for width, height in [(1280, 800), (720, 520)]:
+            for phase in ['clear-preview', 'clear-receipt', 'clear-complete']:
+                path = base / 'workbench' / value['test'] / language / f'{phase}-{width}x{height}.png'
+                with Image.open(path) as img:
+                    if img.size != (width, height):
+                        raise RuntimeError('Public clear capture size differs')
+                    img.verify()
+                images[str(path.relative_to(base))] = transport.sha(path.read_bytes())
+    return {'public': value, 'image_sha256': images, 'original_delete_count_retained': True, 'unknown_not_replayed': True}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--build', type=Path, required=True)
@@ -243,7 +299,7 @@ def main():
     base = ROOT / 'build/databend' / ('schema-' + nonce)
     base.mkdir(parents=True, mode=0o700)
     print('Evidence: ' + str(base), flush=True)
-    result = {'scope': 'native_databend_table_rename_drop_copy_and_public_workbench', 'status': 'running', 'pins': pins, 'image': transport.IMAGE, 'race': args.race}
+    result = {'scope': 'native_databend_table_rename_drop_copy_clear_and_public_workbench', 'status': 'running', 'pins': pins, 'image': transport.IMAGE, 'race': args.race}
     secret, username = secrets.token_hex(24), 'nyadb_managed'
     credential, envfile = base / 'private-password', base / 'private-container-env'
     for path, value in [(credential, secret), (envfile, 'QUERY_DEFAULT_USER=' + username + '\nQUERY_DEFAULT_PASSWORD=' + secret + '\n')]:
@@ -336,7 +392,7 @@ def main():
             raise RuntimeError('Original rename fixture process count differs')
         if managed.verify_build(original, dbx, cache) != pins or managed.verify_build(reproduced, dbx, cache) != pins:
             raise RuntimeError('Original package changed during schema acceptance')
-        result.update(status='passed', public_acceptance=True, unverified=['native TLS/cloud/warehouse/tenant/routes', 'other native versions and operating systems', 'database create; structure editing; clear UI; non-FUSE tables; copy of generated/floating/complex columns; tenant-global program identity; concurrent DDL isolation'])
+        result.update(status='passed', public_acceptance=True, unverified=['native TLS/cloud/warehouse/tenant/routes', 'other native versions and operating systems', 'database create; structure editing; TRUNCATE UI; non-FUSE tables; copy of generated/floating/complex columns; tenant-global program identity; concurrent DDL isolation'])
     except BaseException as error:
         result.update(status='failed', error=str(error))
         raise

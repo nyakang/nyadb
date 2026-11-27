@@ -86,6 +86,8 @@ func (d *schemaDocument) writeSchema(ctx context.Context, request contract.Schem
 				}
 			}
 		}
+	case "clear":
+		sql, err = schemaddl.PlanDatabendClear(r.Original.Schema, r.Original.Target.Object.Schema, false)
 	case "drop":
 		sql, err = schemaddl.PlanDatabendDrop(r.Original.Schema, r.Original.Target.Object.Schema)
 	default:
@@ -149,12 +151,21 @@ func (d *schemaDocument) writeSchema(ctx context.Context, request contract.Schem
 		return
 	}
 	out.State = "uncertain"
-	if acknowledgedDDL(receipt) {
+	var decodeErr error
+	if operation == "clear" {
+		var mutation MutationReceipt
+		mutation, decodeErr = DecodeMutationReceipt("delete", receipt)
+		if mutation.State == contract.DataWriteAcknowledged {
+			out.State, out.Rows = "committed", mutation.AffectedRows
+		} else if mutation.State == contract.DataWriteFailed {
+			out.State = "not_executed"
+		}
+	} else if acknowledgedDDL(receipt) {
 		out.State = "committed"
 	} else if receipt.ExecutorAcknowledged && receipt.RemoteError != nil && receipt.RemoteError.OperationOutcome == "not_started" {
 		out.State = "not_executed"
 	}
-	out.Error = callErr
+	out.Error = errors.Join(callErr, decodeErr)
 	if out.State == "committed" && operation == "rename" {
 		actual, readErr := d.s.readSchemaSnapshot(child, original, destination, d.key[:])
 		if readErr == nil {
@@ -173,6 +184,13 @@ func (d *schemaDocument) writeSchema(ctx context.Context, request contract.Schem
 			}
 		}
 		out.Error = errors.Join(out.Error, readErr, child.Err())
+	}
+	if out.State == "committed" && operation == "clear" {
+		actual, readErr := d.verifyClear(child, original, r.Original)
+		out.Error = errors.Join(out.Error, readErr, child.Err())
+		if out.Error == nil {
+			out.Actual, out.Verified = &actual, true
+		}
 	}
 	if out.State == "committed" && operation == "copy" {
 		actual, readErr := d.verifyCopy(child, original, r, destination)
@@ -204,7 +222,7 @@ func (d *schemaDocument) writeSchema(ctx context.Context, request contract.Schem
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.sequence++
-	out.Receipt = &contract.SchemaDesignWriteReceipt{DocumentID: d.id, Sequence: d.sequence, Operation: operation, Original: r.Original.Clone(), Destination: r.Destination, WithData: r.WithData, RebindSelfReferences: r.RebindSelfReferences, PreserveRowID: r.PreserveRowID, Statements: []string{sql}, NativeJSON: string(raw), State: out.State, Verified: out.Verified, Actual: out.Actual}
+	out.Receipt = &contract.SchemaDesignWriteReceipt{DocumentID: d.id, Sequence: d.sequence, Operation: operation, Original: r.Original.Clone(), Destination: r.Destination, WithData: r.WithData, RebindSelfReferences: r.RebindSelfReferences, PreserveRowID: r.PreserveRowID, Statements: []string{sql}, NativeJSON: string(raw), State: out.State, Verified: out.Verified, Rows: out.Rows, Actual: out.Actual}
 	retained := out.Clone()
 	d.original = &retained
 	if out.State == "uncertain" || out.State == "committed" && !out.Verified {
