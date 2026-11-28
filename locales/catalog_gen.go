@@ -46133,3 +46133,23 @@ func ManticoreRTTruncateTableScope() string { return In(i18n.Locale()).Manticore
 func (msgs Messages) ManticoreRTTruncateTableScope() string {
 	return Catalog.Format(msgs.locale, "manticoreRTTruncateTableScope", nil)
 }
+
+// ManticoreRTCreateHint says "创建指定名称的 RT 表；表名和字段名使用小写，id 固定为原生 bigint…"
+// in the language the app shows.
+func ManticoreRTCreateHint() string { return In(i18n.Locale()).ManticoreRTCreateHint() }
+
+// ManticoreRTCreateHint says "创建指定名称的 RT 表；表名和字段名使用小写，id 固定为原生 bigint…"
+// in the language of msgs.
+func (msgs Messages) ManticoreRTCreateHint() string {
+	return Catalog.Format(msgs.locale, "manticoreRTCreateHint", nil)
+}
+
+// ManticoreRTCreateScope says "创建原目标名称的 RT 表，id 固定为原生 bigint…"
+// in the language the app shows.
+func ManticoreRTCreateScope() string { return In(i18n.Locale()).ManticoreRTCreateScope() }
+
+// ManticoreRTCreateScope says "创建原目标名称的 RT 表，id 固定为原生 bigint…"
+// in the language of msgs.
+func (msgs Messages) ManticoreRTCreateScope() string {
+	return Catalog.Format(msgs.locale, "manticoreRTCreateScope", nil)
+}

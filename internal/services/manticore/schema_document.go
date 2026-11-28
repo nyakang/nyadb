@@ -150,6 +150,21 @@ func (s *Session) schemaSnapshot(ctx context.Context, t contract.SchemaDesignTar
 	if e := s.checkSchemaTarget(t); e != nil {
 		return result, e
 	}
+	// Only a complete native table list establishes absence. SHOW CREATE
+	// errors vary between versions and must never authorize a new table.
+	if err := s.schemaNameAbsent(ctx, t); err == nil {
+		result = contract.SchemaDesignSnapshot{Target: t, Schema: schemaddl.Snapshot{Engine: "manticoresearch", Table: schemaddl.Table{Name: t.Object.Name}}}
+		result.Schema.Revision = sealSchema(result, key)
+		if err = ctx.Err(); err != nil {
+			return contract.SchemaDesignSnapshot{}, err
+		}
+		if err = s.checkSchemaTarget(t); err != nil {
+			return contract.SchemaDesignSnapshot{}, err
+		}
+		return result, nil
+	} else if !errors.Is(err, schemaddl.ErrConflict) {
+		return result, err
+	}
 	object := t.Object
 	object.Kind = "TABLE"
 	metadata, e := s.tableMetadata(ctx, object, false)
@@ -223,7 +238,7 @@ func (d *schemaDocument) plan(r contract.SchemaDesignRequest) (schemaddl.Plan, e
 		return schemaddl.Plan{}, err
 	}
 	p, err := schemaddl.PlanManticoreRT(r.Original.Schema, r.Desired, r.AllowColumnDrop)
-	if err == nil {
+	if err == nil && r.Original.Schema.Exists {
 		p.ScopeHint = "每次只执行一条原生 RT 字段增删，不能通过回滚撤销。提交前检查原始定义，不提供并发结构锁；检查后的更改仍可能影响结果。成功回执之后会再次核对实际结构。未知或未核验回执保留草稿并禁止重放。"
 	}
 	return p, err

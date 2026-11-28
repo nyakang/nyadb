@@ -130,7 +130,7 @@ func ParseManticoreRT(raw, name string) (Table, error) {
 		return result, ErrUnsupported
 	}
 	ts, err := manticoreTokens(raw)
-	if err != nil || len(ts) < 8 || !ts[0].word("CREATE") || !ts[1].word("TABLE") || !identifierToken(ts[2]) || ts[2].text != name || ts[3].text != "(" {
+	if err != nil || len(ts) < 7 || !ts[0].word("CREATE") || !ts[1].word("TABLE") || !identifierToken(ts[2]) || ts[2].text != name || ts[3].text != "(" {
 		return result, ErrUnsupported
 	}
 	result.Name = name
@@ -186,6 +186,9 @@ func ParseManticoreRT(raw, name string) (Table, error) {
 // PlanManticoreRT accepts exactly one ADD or DROP against an existing RT table.
 // Original session/document proof and preflight remain adapter responsibilities.
 func PlanManticoreRT(original Snapshot, desired Table, allowDrop bool) (Plan, error) {
+	if !original.Exists {
+		return PlanManticoreRTCreate(original, desired)
+	}
 	var plan Plan
 	if original.Engine != "manticoresearch" || !original.Exists || original.Postgres != nil || original.OpenGauss != nil || original.SQLite != nil || original.Databend != nil {
 		return plan, ErrUnsupported

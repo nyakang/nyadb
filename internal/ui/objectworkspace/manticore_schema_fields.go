@@ -11,10 +11,14 @@ import (
 )
 
 // Native RT declarations use the same owned schema document and receipts.
-// Only the verified field types and single ADD/DROP operation are offered.
+// New tables and existing single ADD/DROP changes share native field types.
 func (s *State) manticoreSchemaFields(c *ui.Context, d *Document, locked bool) {
 	x := d.schemaDesign
-	ui.Text(c, locales.Text("每次添加或删除一个 RT 字段；原有字段名称、类型和表选项保持不变。"))
+	if x.original.Schema.Exists {
+		ui.Text(c, locales.Text("每次添加或删除一个 RT 字段；原有字段名称、类型和表选项保持不变。"))
+	} else {
+		ui.Text(c, locales.Text("创建指定名称的 RT 表；表名和字段名使用小写，id 固定为原生 bigint。添加所需字段后预览完整建表 SQL。"))
+	}
 	ui.Row(c).Gap(8).Children(func() {
 		if ui.Button(c, locales.Text("字段")).Clicked() {
 			x.page = 0
@@ -36,7 +40,7 @@ func (s *State) manticoreSchemaFields(c *ui.Context, d *Document, locked bool) {
 		return
 	}
 	x.page = 0
-	if ui.Button(c, locales.Text("添加字段")).Disabled(locked || x.dirty()).Clicked() {
+	if ui.Button(c, locales.Text("添加字段")).Disabled(locked || x.original.Schema.Exists && x.dirty()).Clicked() {
 		x.nextID++
 		x.draft.Clauses = append(x.draft.Clauses, schemaddl.Clause{ID: fmt.Sprintf("new:%d", x.nextID), Kind: "column", SQL: "integer"})
 	}

@@ -58,7 +58,8 @@ func (s *Session) schemaNameAbsent(ctx context.Context, target contract.SchemaDe
 	if err := s.checkSchemaTarget(target); err != nil {
 		return err
 	}
-	return s.withConnection(ctx, func(child context.Context, c driver.Conn) error {
+	found := false
+	err := s.withConnection(ctx, func(child context.Context, c driver.Conn) error {
 		set, err := read(child, c, "SHOW TABLES", 0, nil, nil)
 		if err != nil {
 			return err
@@ -69,11 +70,21 @@ func (s *Session) schemaNameAbsent(ctx context.Context, target contract.SchemaDe
 		}
 		for _, object := range objects {
 			if strings.EqualFold(object.Name, target.Object.Name) {
-				return schemaddl.ErrConflict
+				found = true
+				break
 			}
 		}
 		return child.Err()
 	})
+	if err != nil {
+		return err
+	}
+	// This is a local observation, not a driver error to sanitize. Callers
+	// distinguish occupied names from failed or incomplete native enumeration.
+	if found {
+		return schemaddl.ErrConflict
+	}
+	return nil
 }
 func (s *Session) schemaTableEmpty(ctx context.Context, target contract.SchemaDesignTarget) error {
 	if err := s.checkSchemaTarget(target); err != nil {

@@ -339,6 +339,8 @@ func (s *State) consumeSchemaDesign(services ui.Services) {
 					} else {
 						x.draft.Postgres = &schemaddl.PostgreSQLTableProperties{Kind: "r", Persistence: "p"}
 					}
+				} else if reply.snapshot.Schema.Engine == "manticoresearch" {
+					x.draft = schemaddl.Table{Name: d.table, Clauses: []schemaddl.Clause{{ID: "native:id", Kind: "column", Name: "id", SQL: "bigint"}}}
 				} else if reply.snapshot.Schema.Engine == "sqlite" {
 					x.draft, _ = schemaddl.ParseSQLite("CREATE TABLE " + schemaddl.Quote(d.table) + " (id INTEGER PRIMARY KEY)")
 				} else {
