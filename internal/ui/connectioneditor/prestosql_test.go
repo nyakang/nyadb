@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -167,14 +168,16 @@ func TestPrestoSQLFileCallbacksAreRevokedAndTLSCredentialsRequireEncryption(t *t
 	}
 	s.connectionDraft.TLSMode = "verify-full"
 	version := s.EngineFileVersion()
+	dir := t.TempDir()
+	trustStorePath := filepath.Join(dir, "original.p12")
 	s.BeginURIFromEditor()
-	s.SelectEngineFile(PrestoSQLTrustStoreFile, -1, version, "/tmp/late")
+	s.SelectEngineFile(PrestoSQLTrustStoreFile, -1, version, filepath.Join(dir, "late.p12"))
 	if s.connectionDraft.PrestoSQLOptions.TrustStorePath != "" {
 		t.Fatal("late file selection modified parked form")
 	}
 	s.ReturnFromURI()
-	s.SelectEngineFile(PrestoSQLTrustStoreFile, -1, s.EngineFileVersion(), "/tmp/original")
-	if s.connectionDraft.PrestoSQLOptions.TrustStorePath != "/tmp/original" {
+	s.SelectEngineFile(PrestoSQLTrustStoreFile, -1, s.EngineFileVersion(), trustStorePath)
+	if s.connectionDraft.PrestoSQLOptions.TrustStorePath != trustStorePath {
 		t.Fatal("current file selection ignored")
 	}
 	if _, err := s.draftProfile(); err != nil {

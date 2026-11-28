@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -26,7 +28,7 @@ func TestPrestoSQLPublicProfilePinTLSAndForeignSettings(t *testing.T) {
 	p.PrestoSQLOptions.DriverSHA256 = strings.Repeat("a", 64)
 	p.Username, p.Database, p.PrestoSQLOptions.DefaultSchema = " user ", " catalog ", " schema "
 	p.TLSMode = "verify-ca"
-	p.PrestoSQLOptions.TrustStorePath = t.TempDir() + "/trust.p12"
+	p.PrestoSQLOptions.TrustStorePath = filepath.Join(t.TempDir(), "trust.p12")
 	p.PrestoSQLOptions.TrustStoreType = "PKCS12"
 	normalized, err := connections.NormalizeProfile(p)
 	if err != nil || normalized.Username != p.Username || normalized.Database != p.Database {
@@ -102,13 +104,17 @@ func TestPrestoSQLCredentialsExplicitCodecRejectsMalformedAndRedacts(t *testing.
 }
 
 func TestPrestoSQLURIPreservesOriginalJDBCSemanticsAndProductContext(t *testing.T) {
-	jdbc := "jdbc:presto://localhost:8443/memory/default?user=reader&password=original+pass&SSL=true&SSLVerification=CA&SSLTrustStorePath=/tmp/store.p12&SSLTrustStorePassword=trust+pass&accessToken=original+token&extraCredentials=name:value&source=client+name"
+	trustStorePath := filepath.Join(t.TempDir(), "original trust+store.p12")
+	jdbc := "jdbc:presto://localhost:8443/memory/default?user=reader&password=original+pass&SSL=true&SSLVerification=CA&SSLTrustStorePath=" + url.PathEscape(trustStorePath) + "&SSLTrustStorePassword=trust+pass&accessToken=original+token&extraCredentials=name:value&source=client+name"
 	if _, err := connections.ParseURI(jdbc); err == nil {
 		t.Fatal("ambiguous PrestoDB scheme selected PrestoSQL")
 	}
 	parsed, err := connections.ParsePrestoSQLURI(" " + jdbc + " ")
 	if err != nil {
 		t.Fatal(err)
+	}
+	if parsed.Profile.PrestoSQLOptions.TrustStorePath != trustStorePath {
+		t.Fatal("original trust store path changed")
 	}
 	if parsed.Profile.Kind != connections.PrestoSQL || parsed.Profile.TLSMode != "verify-ca" || parsed.Profile.PrestoSQLOptions.DefaultSchema != "default" || parsed.Password != "original+pass" || parsed.PrestoSQLCredentials.TrustStorePassword != "trust+pass" || parsed.PrestoSQLCredentials.AccessToken != "original+token" || parsed.Profile.PrestoSQLOptions.JDBCParameters != "source=client%2Bname" {
 		t.Fatal("original JDBC parsing changed")

@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/nyakang/nyadb/locales"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/locales"
 )
 
 func databendEditorDriver(t *testing.T) connections.ManagedDriver {
@@ -195,14 +196,16 @@ func TestDatabendEditorPackageCompletionAndTrustFilesKeepOriginalForm(t *testing
 	}
 	s.setDatabendTLS("verify-full")
 	version := s.EngineFileVersion()
-	s.SelectEngineFile(DatabendCertificateFile, -1, version, "/owned/client.crt")
-	s.SelectEngineFile(DatabendKeyFile, -1, version, "/owned/client.key")
-	if s.connectionDraft.DatabendOptions.ClientCertFile != "/owned/client.crt" || s.connectionDraft.DatabendOptions.ClientKeyFile != "/owned/client.key" {
+	dir := t.TempDir()
+	certFile, keyFile := filepath.Join(dir, "client.crt"), filepath.Join(dir, "client.key")
+	s.SelectEngineFile(DatabendCertificateFile, -1, version, certFile)
+	s.SelectEngineFile(DatabendKeyFile, -1, version, keyFile)
+	if s.connectionDraft.DatabendOptions.ClientCertFile != certFile || s.connectionDraft.DatabendOptions.ClientKeyFile != keyFile {
 		t.Fatal("mTLS files incorrectly required digest credentials")
 	}
 	s.setDatabendTLS("disable")
-	s.SelectEngineFile(DatabendCertificateFile, -1, version, "/late/client.crt")
-	if s.connectionDraft.DatabendOptions.ClientCertFile != "/owned/client.crt" {
+	s.SelectEngineFile(DatabendCertificateFile, -1, version, filepath.Join(dir, "late-client.crt"))
+	if s.connectionDraft.DatabendOptions.ClientCertFile != certFile {
 		t.Fatal("stale trust picker altered changed TLS draft")
 	}
 }
@@ -235,15 +238,17 @@ func TestDatabendEditorURIAndTLSKeepOriginalRawDraftAndPin(t *testing.T) {
 	}
 	s.setDatabendTLS("verify-full")
 	version := s.EngineFileVersion()
-	s.SelectEngineFile(DatabendCAFile, -1, version, "/owned/ca.pem")
+	dir := t.TempDir()
+	caFile := filepath.Join(dir, "ca.pem")
+	s.SelectEngineFile(DatabendCAFile, -1, version, caFile)
 	s.setDatabendTLS("disable")
-	s.SelectEngineFile(DatabendCAFile, -1, version, "/late/ca.pem")
+	s.SelectEngineFile(DatabendCAFile, -1, version, filepath.Join(dir, "late-ca.pem"))
 	p, err := s.draftProfile()
-	if err != nil || p.DatabendOptions.CAFile != "" || s.connectionDraft.DatabendOptions.CAFile != "/owned/ca.pem" {
+	if err != nil || p.DatabendOptions.CAFile != "" || s.connectionDraft.DatabendOptions.CAFile != caFile {
 		t.Fatal("disabled TLS lost raw trust draft or saved ineffective trust", err)
 	}
 	s.setDatabendTLS("verify-full")
-	if p, err := s.draftProfile(); err != nil || p.DatabendOptions.CAFile != "/owned/ca.pem" {
+	if p, err := s.draftProfile(); err != nil || p.DatabendOptions.CAFile != caFile {
 		t.Fatal("restored TLS lost original trust", err)
 	}
 }
