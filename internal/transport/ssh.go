@@ -21,43 +21,6 @@ func newSSHDial(a connections.MySQLSSH, o Options, onLost func()) (func(context.
 	if a.Host == "" || a.Username == "" {
 		return nil, nil, errors.New("SSH host and username required")
 	}
-	var auth []ssh.AuthMethod
-	if a.UsesPrivateKey() {
-		f, err := os.Open(a.PrivateKey)
-		if err != nil {
-			return nil, nil, fmt.Errorf("open SSH private key: %w", err)
-		}
-		info, err := f.Stat()
-		if err != nil || info.Size() > 1<<20 {
-			_ = f.Close()
-			return nil, nil, errors.New("SSH private key exceeds 1 MiB")
-		}
-		b := make([]byte, info.Size())
-		_, err = io.ReadFull(f, b)
-		_ = f.Close()
-		if err != nil {
-			return nil, nil, err
-		}
-		var signer ssh.Signer
-		if o.Secrets.SSHPassphrase != "" {
-			signer, err = ssh.ParsePrivateKeyWithPassphrase(b, []byte(o.Secrets.SSHPassphrase))
-		} else {
-			signer, err = ssh.ParsePrivateKey(b)
-		}
-		clear(b)
-		if err != nil {
-			return nil, nil, errors.New("unable to decrypt or parse SSH private key")
-		}
-		auth = append(auth, ssh.PublicKeys(signer))
-	}
-	// Combined authentication prefers the key. The SSH client tries password
-	// only when the server still offers it, including partial key authentication.
-	if a.UsesPassword() {
-		if o.Secrets.SSHPassword == "" {
-			return nil, nil, errors.New("SSH password required")
-		}
-		auth = append(auth, ssh.Password(o.Secrets.SSHPassword))
-	}
 	endpoint := net.JoinHostPort(a.Host, fmt.Sprint(a.Port))
 	var mu sync.Mutex
 	var client *ssh.Client
@@ -85,7 +48,8 @@ func newSSHDial(a connections.MySQLSSH, o Options, onLost func()) (func(context.
 				return nil, err
 			}
 			stop := context.AfterFunc(ctx, func() { _ = raw.Close() })
-			cfg := &ssh.ClientConfig{User: a.Username, Auth: auth, HostKeyCallback: func(_ string, _ net.Addr, key ssh.PublicKey) error {
+			auth, beforeAuth := sshAuthentication(a, o.Secrets)
+			cfg := &ssh.ClientConfig{User: a.Username, Auth: auth, AuthCallback: beforeAuth, HostKeyCallback: func(_ string, _ net.Addr, key ssh.PublicKey) error {
 				identity := HostIdentity{Host: endpoint, Fingerprint: ssh.FingerprintSHA256(key)}
 				if o.Hosts == nil {
 					return ErrHostUnconfirmed
@@ -158,4 +122,73 @@ func newSSHDial(a connections.MySQLSSH, o Options, onLost func()) (func(context.
 
 	}
 	return dial, finish, nil
+}
+
+// loadSSHPrivateKey is called after the original verified server rejects none.
+func loadSSHPrivateKey(path, passphrase string) (ssh.Signer, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("open SSH private key: %w", err)
+	}
+	info, err := f.Stat()
+	if err != nil || info.Size() > 1<<20 {
+		_ = f.Close()
+		return nil, errors.New("SSH private key exceeds 1 MiB")
+	}
+	b := make([]byte, info.Size())
+	_, err = io.ReadFull(f, b)
+	_ = f.Close()
+	if err != nil {
+		return nil, err
+	}
+	var signer ssh.Signer
+	if passphrase != "" {
+		signer, err = ssh.ParsePrivateKeyWithPassphrase(b, []byte(passphrase))
+	} else {
+		signer, err = ssh.ParsePrivateKey(b)
+	}
+	clear(b)
+	if err != nil {
+		return nil, errors.New("unable to decrypt or parse SSH private key")
+	}
+	return signer, nil
+}
+
+// sshAuthentication owns one original handshake. The callback runs only after
+// host verification and a rejected standard none probe.
+func sshAuthentication(a connections.SSHOptions, secrets Secrets) ([]ssh.AuthMethod, ssh.ClientAuthCallback) {
+	var auth []ssh.AuthMethod
+	var signer ssh.Signer
+	if a.UsesPrivateKey() {
+		auth = append(auth, ssh.PublicKeysCallback(func() ([]ssh.Signer, error) {
+			if signer == nil {
+				return nil, nil
+			}
+			return []ssh.Signer{signer}, nil
+		}))
+	}
+	if a.UsesPassword() {
+		auth = append(auth, ssh.PasswordCallback(func() (string, error) {
+			if secrets.SSHPassword == "" {
+				return "", errors.New("SSH password required")
+			}
+			return secrets.SSHPassword, nil
+		}))
+	}
+	prepared := false
+	before := func(*ssh.ClientAuthContext) (ssh.AuthMethod, error) {
+		if prepared {
+			return nil, nil
+		}
+		prepared = true
+		if a.UsesPrivateKey() && (a.PrivateKey != "" || a.AuthMethod == connections.MySQLSSHPublicKey) {
+			var err error
+			signer, err = loadSSHPrivateKey(a.PrivateKey, secrets.SSHPassphrase)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return nil, nil
+	}
+	return auth, before
 }

@@ -276,7 +276,10 @@ func (g *packetGate) forward(front net.Conn) {
 	defer g.wg.Done()
 	defer front.Close()
 	defer func() { g.mu.Lock(); delete(g.conns, front); g.mu.Unlock() }()
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	// Injected SSH handshakes now decrypt their key after the none probe.
+	// Default OpenSSH key derivation exceeds 3 seconds under the race detector;
+	// allow that original authentication to complete before gating DB packets.
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	back, e := g.dial(ctx, "tcp", g.target)
 	cancel()
 	if e != nil {

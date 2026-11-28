@@ -29,6 +29,7 @@ func TestSSHCombinedAuthenticationUsesKeyBeforeOfferedPassword(t *testing.T) {
 		fail bool
 	}{
 		{"key-first", []string{"key"}, false},
+		{"key-first-without-password", []string{"key"}, false},
 		{"rejected-key-fallback", []string{"key", "password"}, false},
 		{"key-only", []string{"key"}, false},
 		{"password-only", []string{"password"}, false},
@@ -83,6 +84,9 @@ func TestSSHCombinedAuthenticationUsesKeyBeforeOfferedPassword(t *testing.T) {
 			secret := "password-secret"
 			if tc.name == "key-first" || tc.name == "key-only" {
 				secret = "not-needed-password"
+			}
+			if tc.name == "key-first-without-password" {
+				secret = ""
 			}
 			d, err := transport.NewWithConfig(opts, transport.Options{Secrets: transport.Secrets{SSHPassword: secret}, Hosts: &credentials.MemoryHostStore{}, ConfirmHost: func(_ context.Context, h transport.HostIdentity) (bool, error) {
 				return h.Fingerprint == ssh.FingerprintSHA256(hostKey.PublicKey()), nil

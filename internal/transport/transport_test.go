@@ -494,7 +494,12 @@ func TestSSHEncryptedPrivateKeyCombinationAndReadTimeout(t *testing.T) {
 		t.Fatalf("timed out channel replay permitted: %v", e)
 	}
 	opts.Secrets.SSHPassphrase = "incorrect"
-	if _, e = transport.New(s, opts); e == nil {
+	invalid, e := transport.New(s, opts)
+	if e != nil {
+		t.Fatal("credentials loaded before original handshake", e)
+	}
+	defer invalid.Close()
+	if _, e = invalid.DialContext(ctx, "tcp", echo(t)); e == nil {
 		t.Fatal("invalid key passphrase accepted")
 	}
 }
