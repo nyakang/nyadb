@@ -4531,5 +4531,9 @@
   "manticoreRTDropTableScope": "删除原 RT 表及全部数据，不能回滚。提交前检查原始定义，不锁定并发更改；同名同定义的重建无法区分。成功回执后核验表已不存在；未知或未核验回执禁止重放。",
   "manticoreRTTruncateTableScope": "使用原生 TRUNCATE 清空 RT 表并保留结构，不能回滚。原始回执行数保留为服务器返回值，不表示删除记录数。检查不锁定并发更改；成功回执后核验结构和空表，未知或未核验回执禁止重放。",
   "manticoreRTCreateHint": "创建指定名称的 RT 表；表名和字段名使用小写，id 固定为原生 bigint。添加所需字段后预览完整建表 SQL。",
-  "manticoreRTCreateScope": "创建原目标名称的 RT 表，id 固定为原生 bigint。提交前从完整表列表检查名称未占用，不锁定并发创建。不能回滚；成功回执后核验完整结构，未知或未核验回执禁止重放。"
+  "manticoreRTCreateScope": "创建原目标名称的 RT 表，id 固定为原生 bigint。提交前从完整表列表检查名称未占用，不锁定并发创建。不能回滚；成功回执后核验完整结构，未知或未核验回执禁止重放。",
+  "sshAgentMethod": "SSH Agent",
+  "sshAgentSocket": "Agent 套接字：",
+  "sshAgentFingerprint": "密钥指纹：",
+  "sshAgentHint": "套接字留空时使用 SSH_AUTH_SOCK；指纹留空时依次尝试 Agent 中的密钥。当前支持 Unix 套接字。"
 }

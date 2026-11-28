@@ -4531,5 +4531,9 @@
   "manticoreRTDropTableScope": "Drop the original RT table and all its data. This cannot be rolled back. The original definition is checked without locking concurrent changes; recreation with the same name and definition cannot be distinguished. After acknowledgement, verify that the table is absent. Unknown or unverified receipts prohibit replay.",
   "manticoreRTTruncateTableScope": "Use native TRUNCATE to empty the RT table and retain its structure. This cannot be rolled back. Keep the server's original acknowledgement count; it does not report deleted records. Checks do not lock concurrent changes. After acknowledgement, verify the structure and empty table; unknown or unverified receipts prohibit replay.",
   "manticoreRTCreateHint": "Create an RT table with the selected name. Use lowercase table and field names; id is fixed as native bigint. Add the required fields, then preview the complete CREATE statement.",
-  "manticoreRTCreateScope": "Create the RT table at the original target name with native bigint id. Before dispatch, check the complete table list for an available name, without locking concurrent creation. This cannot be rolled back. Verify the complete structure after acknowledgement; unknown or unverified receipts prohibit replay."
+  "manticoreRTCreateScope": "Create the RT table at the original target name with native bigint id. Before dispatch, check the complete table list for an available name, without locking concurrent creation. This cannot be rolled back. Verify the complete structure after acknowledgement; unknown or unverified receipts prohibit replay.",
+  "sshAgentMethod": "SSH Agent",
+  "sshAgentSocket": "Agent socket:",
+  "sshAgentFingerprint": "Key fingerprint:",
+  "sshAgentHint": "Leave the socket empty to use SSH_AUTH_SOCK. Leave the fingerprint empty to try agent keys in order. Unix sockets are currently supported."
 }

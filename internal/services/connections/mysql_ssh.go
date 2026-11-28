@@ -9,12 +9,14 @@ import (
 // MySQLSSH stores non-secret SSH tunnel metadata only. Authentication
 // passwords, passphrases, and private key contents are never serialized.
 type SSHOptions struct {
-	Enabled    bool   `json:"enabled,omitempty"`
-	Host       string `json:"host,omitempty"`
-	Port       int    `json:"port"`
-	Username   string `json:"username,omitempty"`
-	AuthMethod string `json:"authMethod"`
-	PrivateKey string `json:"privateKey,omitempty"`
+	Enabled          bool   `json:"enabled,omitempty"`
+	Host             string `json:"host,omitempty"`
+	Port             int    `json:"port"`
+	Username         string `json:"username,omitempty"`
+	AuthMethod       string `json:"authMethod"`
+	PrivateKey       string `json:"privateKey,omitempty"`
+	AgentSocket      string `json:"agentSocket,omitempty"`
+	AgentFingerprint string `json:"agentFingerprint,omitempty"`
 }
 
 // MySQLSSH preserves the stored MySQL configuration and source compatibility.
@@ -25,10 +27,11 @@ const (
 	MySQLSSHPublicKey      = "公钥"
 	MySQLSSHPasswordAndKey = "密码和公钥"
 	MySQLSSHNone           = "无"
+	MySQLSSHAgent          = "SSH Agent"
 )
 
 var MySQLSSHAuthMethods = []string{
-	MySQLSSHPassword, MySQLSSHPublicKey, MySQLSSHPasswordAndKey, MySQLSSHNone,
+	MySQLSSHPassword, MySQLSSHPublicKey, MySQLSSHPasswordAndKey, MySQLSSHNone, MySQLSSHAgent,
 }
 
 func DefaultMySQLSSH() MySQLSSH {
@@ -52,7 +55,7 @@ func normalizeMySQLSSH(cfg MySQLSSH) (MySQLSSH, error) {
 	if !validMethod {
 		return cfg, fmt.Errorf("%w: unsupported MySQL SSH authentication method", ErrInvalid)
 	}
-	for _, part := range []string{cfg.Host, cfg.Username, cfg.PrivateKey} {
+	for _, part := range []string{cfg.Host, cfg.Username, cfg.PrivateKey, cfg.AgentSocket, cfg.AgentFingerprint} {
 		if strings.ContainsRune(part, 0) ||
 			strings.ContainsAny(part, "\r\n") ||
 			utf8.RuneCountInString(part) > 4096 {

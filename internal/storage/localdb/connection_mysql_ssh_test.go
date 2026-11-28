@@ -106,3 +106,35 @@ func TestSSHNoneProfileRoundTripPreservesExplicitMethod(t *testing.T) {
 		t.Fatal("switching back lost explicit credential method", updated, err)
 	}
 }
+
+func TestSSHAgentProfileRoundTripAndDuplicateKeepOriginalIdentity(t *testing.T) {
+	store, _, _ := openStore(t)
+	p, err := connections.Defaults(connections.MySQL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p.Name = "agent profile"
+	p.MySQLAdvanced.SSH = connections.SSHOptions{Enabled: true, Host: "ssh.example.test", Port: 22, Username: "fixture", AuthMethod: connections.MySQLSSHAgent, AgentSocket: "/owned/agent.sock", AgentFingerprint: "SHA256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", PrivateKey: "/inactive/key"}
+	saved, err := store.Create(context.Background(), p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual, err := store.Get(context.Background(), saved.ID)
+	if err != nil || actual.MySQLAdvanced.SSH != p.MySQLAdvanced.SSH {
+		t.Fatal("original agent identity changed", actual, err)
+	}
+	copied, err := connections.NewService(store).Duplicate(context.Background(), saved.ID, "agent copy")
+	if err != nil || copied.MySQLAdvanced.SSH != p.MySQLAdvanced.SSH {
+		t.Fatal("agent copy changed identity", copied, err)
+	}
+	actual.MySQLAdvanced.SSH.AuthMethod = connections.MySQLSSHNone
+	updated, err := store.Update(context.Background(), actual)
+	if err != nil {
+		t.Fatal(err)
+	}
+	updated.MySQLAdvanced.SSH.AuthMethod = connections.MySQLSSHAgent
+	updated, err = store.Update(context.Background(), updated)
+	if err != nil || updated.MySQLAdvanced.SSH != p.MySQLAdvanced.SSH {
+		t.Fatal("method switch discarded agent identity", updated, err)
+	}
+}

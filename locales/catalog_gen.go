@@ -46153,3 +46153,43 @@ func ManticoreRTCreateScope() string { return In(i18n.Locale()).ManticoreRTCreat
 func (msgs Messages) ManticoreRTCreateScope() string {
 	return Catalog.Format(msgs.locale, "manticoreRTCreateScope", nil)
 }
+
+// SshAgentMethod says "SSH Agent"
+// in the language the app shows.
+func SshAgentMethod() string { return In(i18n.Locale()).SshAgentMethod() }
+
+// SshAgentMethod says "SSH Agent"
+// in the language of msgs.
+func (msgs Messages) SshAgentMethod() string {
+	return Catalog.Format(msgs.locale, "sshAgentMethod", nil)
+}
+
+// SshAgentSocket says "Agent 套接字："
+// in the language the app shows.
+func SshAgentSocket() string { return In(i18n.Locale()).SshAgentSocket() }
+
+// SshAgentSocket says "Agent 套接字："
+// in the language of msgs.
+func (msgs Messages) SshAgentSocket() string {
+	return Catalog.Format(msgs.locale, "sshAgentSocket", nil)
+}
+
+// SshAgentFingerprint says "密钥指纹："
+// in the language the app shows.
+func SshAgentFingerprint() string { return In(i18n.Locale()).SshAgentFingerprint() }
+
+// SshAgentFingerprint says "密钥指纹："
+// in the language of msgs.
+func (msgs Messages) SshAgentFingerprint() string {
+	return Catalog.Format(msgs.locale, "sshAgentFingerprint", nil)
+}
+
+// SshAgentHint says "套接字留空时使用 SSH_AUTH_SOCK；指纹留空时依次尝试 Agent 中的密钥。当前支持 Unix 套接字。"
+// in the language the app shows.
+func SshAgentHint() string { return In(i18n.Locale()).SshAgentHint() }
+
+// SshAgentHint says "套接字留空时使用 SSH_AUTH_SOCK；指纹留空时依次尝试 Agent 中的密钥。当前支持 Unix 套接字。"
+// in the language of msgs.
+func (msgs Messages) SshAgentHint() string {
+	return Catalog.Format(msgs.locale, "sshAgentHint", nil)
+}

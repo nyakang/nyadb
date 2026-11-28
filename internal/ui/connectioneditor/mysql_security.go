@@ -224,6 +224,12 @@ func (s *State) connectionMySQLSSH(c *ui.Context, width float32) {
 				s.formTextInput(c, &s.mysqlSSHPassphrase, "SSH 私钥口令", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, !active, true)
 			})
 		}
+		if ssh.AuthMethod == connections.MySQLSSHAgent {
+			s.mysqlSSHInputRow(c, locales.Text("Agent 套接字："), &ssh.AgentSocket, labelWidth, fieldWidth, active)
+			s.mysqlSSHInputRow(c, locales.Text("密钥指纹："), &ssh.AgentFingerprint, labelWidth, fieldWidth, active)
+			ui.Text(c, locales.Text("套接字留空时使用 SSH_AUTH_SOCK；指纹留空时依次尝试 Agent 中的密钥。当前支持 Unix 套接字。")).
+				Width(formWidth).TextColor(palette.Muted).FontSize(theme.Font(c, 11)).Padding(4, 0)
+		}
 		connectionFormRow(c).Children(func() {
 			ui.Box(c).Width(labelWidth)
 			connectionFormCheckbox(c, &s.mysqlSaveTunnelSecrets, "在系统密钥库保存隧道凭据", s.tunnelSecrets == nil || !active)

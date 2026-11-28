@@ -477,7 +477,8 @@ func TestSSHEncryptedPrivateKeyCombinationAndReadTimeout(t *testing.T) {
 		t.Fatal(e)
 	}
 	defer d.Close()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// Key decryption uses bcrypt; race instrumentation can exceed five seconds.
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	c, e := d.DialContext(ctx, "tcp", echo(t))
 	if e != nil {
@@ -499,8 +500,10 @@ func TestSSHEncryptedPrivateKeyCombinationAndReadTimeout(t *testing.T) {
 		t.Fatal("credentials loaded before original handshake", e)
 	}
 	defer invalid.Close()
-	if _, e = invalid.DialContext(ctx, "tcp", echo(t)); e == nil {
-		t.Fatal("invalid key passphrase accepted")
+	invalidCtx, invalidCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer invalidCancel()
+	if _, e = invalid.DialContext(invalidCtx, "tcp", echo(t)); e == nil || !strings.Contains(e.Error(), "unable to decrypt or parse SSH private key") {
+		t.Fatal("invalid key passphrase did not reach key rejection", e)
 	}
 }
 

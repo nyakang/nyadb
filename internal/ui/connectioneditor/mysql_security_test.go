@@ -298,3 +298,36 @@ func TestSSHNoneHidesCredentialFieldsAndRejectsLateKeyPicker(t *testing.T) {
 		t.Fatal("none retained inactive secrets after close")
 	}
 }
+
+func TestSSHAgentShowsOnlyOriginalAgentFieldsAndPreservesInactiveDraft(t *testing.T) {
+	s, _ := mysqlSSHTester(t)
+	cfg := &s.connectionDraft.MySQLAdvanced.SSH
+	cfg.Enabled = true
+	cfg.AuthMethod = connections.MySQLSSHAgent
+	cfg.AgentSocket = "/original/agent.sock"
+	cfg.AgentFingerprint = "SHA256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+	cfg.PrivateKey = "/inactive/key"
+	s.mysqlSSHPassword, s.mysqlSSHPassphrase = "inactive-password", "inactive-passphrase"
+	tt := ui.NewTester(s.ConnectionWindowView, 900, 700)
+	if !tt.HasText("Agent 套接字：") || !tt.HasText("密钥指纹：") || tt.HasText("密码：") || tt.HasText("Private Key:") || tt.HasText("Passphrase:") {
+		t.Fatal("agent fields do not match method")
+	}
+	version := s.MySQLSSHSessionVersion()
+	s.SelectMySQLSSHPrivateKey(version, "/late/key")
+	if cfg.PrivateKey != "/inactive/key" {
+		t.Fatal("late key picker modified agent draft")
+	}
+	p, err := s.draftProfile()
+	if err != nil || p.MySQLAdvanced.SSH != *cfg {
+		t.Fatal("agent draft identity changed", err)
+	}
+	cfg.AuthMethod = connections.MySQLSSHPasswordAndKey
+	tt.Frame()
+	if !tt.HasText("密码：") || tt.HasText("Agent 套接字：") || s.mysqlSSHPassword != "inactive-password" || s.mysqlSSHPassphrase != "inactive-passphrase" {
+		t.Fatal("method switch lost original inactive draft")
+	}
+	s.ConnectionWindowClosed()
+	if s.mysqlSSHPassword != "" || s.mysqlSSHPassphrase != "" {
+		t.Fatal("agent close retained inactive secrets")
+	}
+}

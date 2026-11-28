@@ -21,6 +21,9 @@ func newSSHDial(a connections.MySQLSSH, o Options, onLost func()) (func(context.
 	if a.Host == "" || a.Username == "" {
 		return nil, nil, errors.New("SSH host and username required")
 	}
+	if a.AuthMethod == connections.MySQLSSHAgent {
+		a.AgentSocket = captureSSHAgentSocket(a.AgentSocket)
+	}
 	endpoint := net.JoinHostPort(a.Host, fmt.Sprint(a.Port))
 	var mu sync.Mutex
 	var client *ssh.Client
@@ -48,7 +51,7 @@ func newSSHDial(a connections.MySQLSSH, o Options, onLost func()) (func(context.
 				return nil, err
 			}
 			stop := context.AfterFunc(ctx, func() { _ = raw.Close() })
-			auth, beforeAuth := sshAuthentication(a, o.Secrets)
+			auth, beforeAuth, releaseAuth := sshAuthentication(ctx, a, o.Secrets)
 			cfg := &ssh.ClientConfig{User: a.Username, Auth: auth, AuthCallback: beforeAuth, HostKeyCallback: func(_ string, _ net.Addr, key ssh.PublicKey) error {
 				identity := HostIdentity{Host: endpoint, Fingerprint: ssh.FingerprintSHA256(key)}
 				if o.Hosts == nil {
@@ -77,6 +80,7 @@ func newSSHDial(a connections.MySQLSSH, o Options, onLost func()) (func(context.
 				return o.Hosts.Remember(endpoint, identity.Fingerprint)
 			}}
 			c, ch, r, err := ssh.NewClientConn(raw, endpoint, cfg)
+			releaseAuth()
 			stop()
 			if err != nil {
 				_ = raw.Close()
@@ -156,9 +160,15 @@ func loadSSHPrivateKey(path, passphrase string) (ssh.Signer, error) {
 
 // sshAuthentication owns one original handshake. The callback runs only after
 // host verification and a rejected standard none probe.
-func sshAuthentication(a connections.SSHOptions, secrets Secrets) ([]ssh.AuthMethod, ssh.ClientAuthCallback) {
+func sshAuthentication(ctx context.Context, a connections.SSHOptions, secrets Secrets) ([]ssh.AuthMethod, ssh.ClientAuthCallback, func()) {
+	release := func() {}
+	var agentSigners []ssh.Signer
+
 	var auth []ssh.AuthMethod
 	var signer ssh.Signer
+	if a.AuthMethod == connections.MySQLSSHAgent {
+		auth = append(auth, ssh.PublicKeysCallback(func() ([]ssh.Signer, error) { return agentSigners, nil }))
+	}
 	if a.UsesPrivateKey() {
 		auth = append(auth, ssh.PublicKeysCallback(func() ([]ssh.Signer, error) {
 			if signer == nil {
@@ -181,6 +191,13 @@ func sshAuthentication(a connections.SSHOptions, secrets Secrets) ([]ssh.AuthMet
 			return nil, nil
 		}
 		prepared = true
+		if a.AuthMethod == connections.MySQLSSHAgent {
+			var err error
+			agentSigners, release, err = originalSSHAgentSigners(ctx, a.AgentSocket, a.AgentFingerprint)
+			if err != nil {
+				return nil, err
+			}
+		}
 		if a.UsesPrivateKey() && (a.PrivateKey != "" || a.AuthMethod == connections.MySQLSSHPublicKey) {
 			var err error
 			signer, err = loadSSHPrivateKey(a.PrivateKey, secrets.SSHPassphrase)
@@ -190,5 +207,5 @@ func sshAuthentication(a connections.SSHOptions, secrets Secrets) ([]ssh.AuthMet
 		}
 		return nil, nil
 	}
-	return auth, before
+	return auth, before, func() { release() }
 }
