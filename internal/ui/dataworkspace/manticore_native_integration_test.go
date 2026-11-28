@@ -105,7 +105,7 @@ func TestManticoreNativeSharedGridPermissionsPagingParkingAndRecovery(t *testing
 	if d.err != "" || d.page == nil || len(d.page.Rows) != 2 || !d.page.HasMore || d.page.Rows[0][1].Text != "猫 原始行" || !d.page.Rows[1][1].Truncated {
 		t.Fatal("native shared page", d.err)
 	}
-	if !d.editable() || !d.capabilities.EditableTables || d.boundRuntime.Chunk != nil {
+	if !d.editable() || !d.capabilities.EditableTables || d.boundRuntime.Chunk == nil {
 		t.Fatal("unaccepted tools enabled")
 	}
 	if !slices.Equal(s.filterColumns(d, d.page.Columns), []string{"id", "qty", "tag"}) {

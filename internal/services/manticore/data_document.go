@@ -50,7 +50,7 @@ func (s *Session) DataDocumentCapabilities() contract.Capabilities {
 }
 func (d *dataLease) Runtime() contract.DataRuntime {
 	return contract.DataRuntime{Capabilities: d.session.DataDocumentCapabilities(), PageFailureRequiresReopen: true,
-		Loader: d.load, AdvancedLoader: d.page, Count: d.count, TableMetadata: d.metadata, TableInfo: d.info,
+		Loader: d.load, AdvancedLoader: d.page, Count: d.count, TableMetadata: d.metadata, TableInfo: d.info, Chunk: d.chunk,
 		Exporter: d.export, JSONL: d.jsonl, ExportFormats: []string{"TXT", "CSV", "TSV", "JSON", "XML", "HTML"},
 		RowReader: d.row, PreviewEdits: d.previewEdits, SubmitEdits: d.submitEdits,
 		EditKinds: []string{"insert", "update", "delete"}, PreviewEditKinds: []string{"insert", "update", "delete"},
@@ -59,6 +59,8 @@ func (d *dataLease) Runtime() contract.DataRuntime {
 		MutationPresentation: &contract.DataMutationPresentation{Title: "确认 Manticore 数据写入", Hint: "各语句独立执行，不提供批次事务或整行并发隔离。提交前检查原始行；标量属性参与条件，全文、JSON 和集合仅作提交前检查。省略字段使用原生默认值；未知或不完整回执保留草稿并禁止重放。", PreviewLabel: "Manticore 原生写入完整预览", HistoryLabel: "已确认的 Manticore 数据写入", CreateLabel: "新增记录", UpdateLabel: "更新记录", DeleteLabel: "删除记录"},
 		ReceiptPresentation:  &contract.NativeWriteReceiptPresentation{ExportFilename: "manticore-write-receipt.json"},
 		FilterModes:          []string{"equal", "not_equal", "less", "greater"},
+		FieldReadScopeHint:   "查看片段会读取完整字段并检查是否发生变化；每次显示最多 1024 字符/字节。",
+		NativeFieldMetadata:  true,
 		ReadScopeHint:        "Manticore 分页和导出读取当前可见数据；跨次读取不提供一致快照。全文字段不支持普通属性筛选。",
 	}
 }

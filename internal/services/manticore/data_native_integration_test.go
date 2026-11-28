@@ -55,7 +55,7 @@ func TestNativeDataPagesTypedValuesFiltersCompleteExportAndOriginalScope(t *test
 	}
 	d, r := nativeData(t, s, table)
 	object := s.Namespace("Manticore").Object("TABLE", table)
-	if r.Chunk != nil || r.Saver != nil || !r.Capabilities.EditableTables || r.Capabilities.Transactions || r.PreviewEdits == nil || r.SubmitEdits == nil || !r.Capabilities.Count || !r.Capabilities.Export {
+	if r.Chunk == nil || r.Saver != nil || !r.Capabilities.EditableTables || r.Capabilities.Transactions || r.PreviewEdits == nil || r.SubmitEdits == nil || !r.Capabilities.Count || !r.Capabilities.Export {
 		t.Fatal("unverified capability published")
 	}
 	first, e := r.AdvancedLoader(context.Background(), 69, "Manticore", table, contract.DataOptions{Object: object, Limit: 3})
