@@ -212,14 +212,6 @@ func TestTunnelCancellationHandshakeAcknowledges(t *testing.T) {
 }
 func sshServer(t *testing.T, requireBoth ...bool) (string, ssh.Signer) {
 	t.Helper()
-	_, priv, e := ed25519.GenerateKey(rand.Reader)
-	if e != nil {
-		t.Fatal(e)
-	}
-	signer, e := ssh.NewSignerFromKey(priv)
-	if e != nil {
-		t.Fatal(e)
-	}
 	cfg := &ssh.ServerConfig{PasswordCallback: func(m ssh.ConnMetadata, p []byte) (*ssh.Permissions, error) {
 		if m.User() == "fixture" && string(p) == "ssh-secret" {
 			return nil, nil
@@ -235,6 +227,18 @@ func sshServer(t *testing.T, requireBoth ...bool) (string, ssh.Signer) {
 			}
 			return nil, &ssh.PartialSuccessError{Next: ssh.ServerAuthCallbacks{PublicKeyCallback: public}}
 		}
+	}
+	return sshServerConfig(t, cfg)
+}
+func sshServerConfig(t *testing.T, cfg *ssh.ServerConfig) (string, ssh.Signer) {
+	t.Helper()
+	_, priv, e := ed25519.GenerateKey(rand.Reader)
+	if e != nil {
+		t.Fatal(e)
+	}
+	signer, e := ssh.NewSignerFromKey(priv)
+	if e != nil {
+		t.Fatal(e)
 	}
 	cfg.AddHostKey(signer)
 	l, e := net.Listen("tcp", "127.0.0.1:0")

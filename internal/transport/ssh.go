@@ -22,12 +22,6 @@ func newSSHDial(a connections.MySQLSSH, o Options, onLost func()) (func(context.
 		return nil, nil, errors.New("SSH host and username required")
 	}
 	var auth []ssh.AuthMethod
-	if a.AuthMethod != connections.MySQLSSHPublicKey {
-		if o.Secrets.SSHPassword == "" {
-			return nil, nil, errors.New("SSH password required")
-		}
-		auth = append(auth, ssh.Password(o.Secrets.SSHPassword))
-	}
 	if a.AuthMethod != connections.MySQLSSHPassword {
 		f, err := os.Open(a.PrivateKey)
 		if err != nil {
@@ -55,6 +49,14 @@ func newSSHDial(a connections.MySQLSSH, o Options, onLost func()) (func(context.
 			return nil, nil, errors.New("unable to decrypt or parse SSH private key")
 		}
 		auth = append(auth, ssh.PublicKeys(signer))
+	}
+	// Combined authentication prefers the key. The SSH client tries password
+	// only when the server still offers it, including partial key authentication.
+	if a.AuthMethod != connections.MySQLSSHPublicKey {
+		if o.Secrets.SSHPassword == "" {
+			return nil, nil, errors.New("SSH password required")
+		}
+		auth = append(auth, ssh.Password(o.Secrets.SSHPassword))
 	}
 	endpoint := net.JoinHostPort(a.Host, fmt.Sprint(a.Port))
 	var mu sync.Mutex
