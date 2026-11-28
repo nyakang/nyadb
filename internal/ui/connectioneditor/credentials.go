@@ -40,6 +40,14 @@ func (s *State) loadSavedConnectionPasswords() {
 			return err
 		}
 		snap.secret = password
+		if s.connectionDraft.Kind == connections.PrestoSQL {
+			c, e := connections.DecodePrestoSQLCredentials(password)
+			if e != nil {
+				return invalidPrestoCredentialError()
+			}
+			snap.secret = c.Password
+			snap.prestosqlSecrets = [4]string{c.TrustStorePassword, c.KeyStorePassword, c.AccessToken, c.ExtraCredentials}
+		}
 		snap.savePassword = found
 		snap.hadSavedPassword = found
 		return nil
@@ -116,6 +124,16 @@ func (s *State) persistConnectionPasswords(saved, previous connections.Profile) 
 		return nil
 	}
 
+	if saved.Kind == connections.PrestoSQL {
+		for i := range snapshots {
+			encoded, e := connections.EncodePrestoSQLCredentials(prestoSnapshotCredentials(snapshots[i]))
+			if e != nil {
+				return invalidPrestoCredentialError()
+			}
+			snapshots[i].secret = encoded
+		}
+		primary = snapshots[0]
+	}
 	type change struct {
 		name, password string
 		set            bool

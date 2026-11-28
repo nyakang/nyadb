@@ -55,6 +55,9 @@ const (
 	DatabendCAFile
 	DatabendCertificateFile
 	DatabendKeyFile
+	PrestoSQLDriverPackageFile
+	PrestoSQLTrustStoreFile
+	PrestoSQLKeyStoreFile
 )
 
 func (s *State) SetEngineFilePicker(pick func(EngineFile, int, uint64)) { s.engineFilePicker = pick }
@@ -63,6 +66,25 @@ func (s *State) EngineFileVersion() uint64 { return s.engineFileVersion }
 
 func (s *State) SelectEngineFile(kind EngineFile, row int, version uint64, path string) {
 	if !s.active || version != s.engineFileVersion || path == "" {
+		return
+	}
+	if kind >= PrestoSQLDriverPackageFile && kind <= PrestoSQLKeyStoreFile {
+		if s.connectionDraft.Kind != connections.PrestoSQL {
+			return
+		}
+		if kind == PrestoSQLDriverPackageFile {
+			s.ImportDriverPackage(path)
+			return
+		}
+		if s.connectionDraft.TLSMode == "disable" {
+			return
+		}
+		s.cancelMySQLConnectionTest()
+		if kind == PrestoSQLTrustStoreFile {
+			s.connectionDraft.PrestoSQLOptions.TrustStorePath = path
+		} else {
+			s.connectionDraft.PrestoSQLOptions.KeyStorePath = path
+		}
 		return
 	}
 	if kind >= DatabendDriverPackageFile && kind <= DatabendKeyFile {
@@ -379,6 +401,9 @@ func (s *State) initEngineOptionsInputs() {
 }
 
 func (s *State) advanceEngineOptions(p *connections.Profile) error {
+	if p.Kind == connections.PrestoSQL {
+		return s.advancePrestoSQLOptions(p)
+	}
 	if p.Kind == connections.Databend {
 		return s.advanceDatabendOptions(p)
 	}
@@ -533,6 +558,8 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 	formWidth := connectionScaledFormWidth(c, width)
 	labelWidth, fieldWidth := connectionFormLabelWidth, formWidth-connectionFormLabelWidth
 	switch s.connectionDraft.Kind {
+	case connections.PrestoSQL:
+		return s.prestoSQLOptions(c, width, tab)
 	case connections.Databend:
 		return s.databendOptions(c, width, tab)
 	case connections.ZooKeeper:

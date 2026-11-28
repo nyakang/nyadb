@@ -41,6 +41,11 @@ type Dependencies struct {
 // State is owned by the UI thread. Background tests return immutable results;
 // native picker completions are guarded by the editing session's version.
 type State struct {
+	prestosqlNumbers                                               [4]string
+	prestosqlSecrets                                               [4]string
+	prestosqlDriverChoice, prestosqlTLSChoice                      string
+	prestosqlRemoveOpen                                            bool
+	prestosqlRemoveOriginal                                        *connections.ManagedDriver
 	databendNumbers                                                [7]string
 	databendAuthChoice, databendTLSChoice, databendDriverChoice    string
 	zookeeperNumbers                                               [4]string
@@ -207,13 +212,16 @@ func (s *State) OpenProfile(profile connections.Profile) {
 	if profile.Kind.IsMySQLFamily() {
 		s.loadSavedConnectionPasswords()
 		s.loadTunnelSecrets()
-	} else if profile.Kind == connections.Databend || profile.Kind == connections.TDengine || profile.Kind == connections.QuestDB || profile.Kind == connections.RQLite || profile.Kind == connections.H2 || profile.Kind.IsPostgreSQLFamily() || profile.Kind == connections.ZooKeeper || profile.Kind == connections.Consul || profile.Kind == connections.Etcd || profile.Kind == connections.Neo4j || profile.Kind == connections.Qdrant || profile.Kind == connections.Meilisearch || profile.Kind == connections.CouchDB || profile.Kind == connections.Cassandra || profile.Kind == connections.Solr || profile.Kind == connections.Elasticsearch || profile.Kind == connections.Easysearch || profile.Kind == connections.ClickHouse || profile.Kind == connections.Doris || profile.Kind == connections.SelectDB || profile.Kind == connections.StarRocks || profile.Kind == connections.Trino || profile.Kind == connections.SQLServer || profile.Kind == connections.Oracle || profile.Kind == connections.Dameng || profile.Kind == connections.MongoDB || profile.Kind == connections.Redis {
+	} else if profile.Kind == connections.PrestoSQL || profile.Kind == connections.Databend || profile.Kind == connections.TDengine || profile.Kind == connections.QuestDB || profile.Kind == connections.RQLite || profile.Kind == connections.H2 || profile.Kind.IsPostgreSQLFamily() || profile.Kind == connections.ZooKeeper || profile.Kind == connections.Consul || profile.Kind == connections.Etcd || profile.Kind == connections.Neo4j || profile.Kind == connections.Qdrant || profile.Kind == connections.Meilisearch || profile.Kind == connections.CouchDB || profile.Kind == connections.Cassandra || profile.Kind == connections.Solr || profile.Kind == connections.Elasticsearch || profile.Kind == connections.Easysearch || profile.Kind == connections.ClickHouse || profile.Kind == connections.Doris || profile.Kind == connections.SelectDB || profile.Kind == connections.StarRocks || profile.Kind == connections.Trino || profile.Kind == connections.SQLServer || profile.Kind == connections.Oracle || profile.Kind == connections.Dameng || profile.Kind == connections.MongoDB || profile.Kind == connections.Redis {
 		s.loadSavedConnectionPasswords()
 	}
 	s.RefreshDriverPackages()
 }
 
 func (s *State) initializeInputs() {
+	if s.connectionDraft.Kind == connections.PrestoSQL {
+		s.initializePrestoSQLInputs()
+	}
 	if s.connectionDraft.Kind == connections.Trino {
 		s.initializeTrinoInputs()
 	}
@@ -310,6 +318,9 @@ func (s *State) Close() {
 	s.resetConnectionConfigurations()
 	s.active = false
 	s.connectionSecret = ""
+	s.prestosqlSecrets = [4]string{}
+	s.prestosqlRemoveOpen = false
+	s.prestosqlRemoveOriginal = nil
 	s.redisSentinelPassword = ""
 	s.redisSaveSentinelPassword = false
 	s.redisHadSentinelPassword = false
@@ -332,6 +343,9 @@ func (s *State) Cancel() {
 }
 
 func (s *State) Back() {
+	if s.connectionDraft.Kind == connections.PrestoSQL {
+		s.resetConnectionConfigurations()
+	}
 	s.cancelDriverWork()
 	s.driverWork.packages = nil
 	s.engineFileVersion++
@@ -339,6 +353,9 @@ func (s *State) Back() {
 	s.active = false
 	s.connectionEditorTab = 0
 	s.connectionSecret = ""
+	s.prestosqlSecrets = [4]string{}
+	s.prestosqlRemoveOpen = false
+	s.prestosqlRemoveOriginal = nil
 	s.connectionSavePassword = false
 	s.redisSentinelPassword = ""
 	s.redisSaveSentinelPassword = false

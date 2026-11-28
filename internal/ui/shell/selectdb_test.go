@@ -20,6 +20,11 @@ func TestSelectDBChooserOpensIndependentNativeEditor(t *testing.T) {
 			s.SetConnectionWindowHost(func() {}, func() {})
 			s.openConnectionDialog()
 			tt := ui.NewTester(s.ConnectionWindowView, 900, 700)
+			if err := tt.Click(locales.Text("搜索连接类型")); err != nil {
+				t.Fatal(err)
+			}
+			tt.Type("SelectDB")
+			tt.Frame()
 			if err := tt.Click(locales.Text("选择 ") + "SelectDB"); err != nil {
 				t.Fatal(err)
 			}

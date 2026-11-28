@@ -1,5 +1,9 @@
 package connections
 
+import "errors"
+
+var ErrManagedDriverInUse = errors.New("managed driver package is still in use")
+
 // ManagedDriver is a non-secret installed package snapshot for a connection
 // form. Selection pins its version/digest and original directory; it never
 // chooses a latest version or launches an executable.

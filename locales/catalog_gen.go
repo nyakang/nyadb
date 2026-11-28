@@ -45111,3 +45111,483 @@ func PrestosqlDataReadScope() string { return In(i18n.Locale()).PrestosqlDataRea
 func (msgs Messages) PrestosqlDataReadScope() string {
 	return Catalog.Format(msgs.locale, "prestosqlDataReadScope", nil)
 }
+
+// PrestoPublic1 says "PrestoSQL JDBC 参数"
+// in the language the app shows.
+func PrestoPublic1() string { return In(i18n.Locale()).PrestoPublic1() }
+
+// PrestoPublic1 says "PrestoSQL JDBC 参数"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic1() string {
+	return Catalog.Format(msgs.locale, "prestoPublic1", nil)
+}
+
+// PrestoPublic2 says "PrestoSQL SQL 会话上限"
+// in the language the app shows.
+func PrestoPublic2() string { return In(i18n.Locale()).PrestoPublic2() }
+
+// PrestoPublic2 says "PrestoSQL SQL 会话上限"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic2() string {
+	return Catalog.Format(msgs.locale, "prestoPublic2", nil)
+}
+
+// PrestoPublic3 says "PrestoSQL TLS 模式"
+// in the language the app shows.
+func PrestoPublic3() string { return In(i18n.Locale()).PrestoPublic3() }
+
+// PrestoPublic3 says "PrestoSQL TLS 模式"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic3() string {
+	return Catalog.Format(msgs.locale, "prestoPublic3", nil)
+}
+
+// PrestoPublic4 says "PrestoSQL 会话信任库密码"
+// in the language the app shows.
+func PrestoPublic4() string { return In(i18n.Locale()).PrestoPublic4() }
+
+// PrestoPublic4 says "PrestoSQL 会话信任库密码"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic4() string {
+	return Catalog.Format(msgs.locale, "prestoPublic4", nil)
+}
+
+// PrestoPublic5 says "PrestoSQL 会话密码"
+// in the language the app shows.
+func PrestoPublic5() string { return In(i18n.Locale()).PrestoPublic5() }
+
+// PrestoPublic5 says "PrestoSQL 会话密码"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic5() string {
+	return Catalog.Format(msgs.locale, "prestoPublic5", nil)
+}
+
+// PrestoPublic6 says "PrestoSQL 会话密钥库密码"
+// in the language the app shows.
+func PrestoPublic6() string { return In(i18n.Locale()).PrestoPublic6() }
+
+// PrestoPublic6 says "PrestoSQL 会话密钥库密码"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic6() string {
+	return Catalog.Format(msgs.locale, "prestoPublic6", nil)
+}
+
+// PrestoPublic7 says "PrestoSQL 会话访问令牌"
+// in the language the app shows.
+func PrestoPublic7() string { return In(i18n.Locale()).PrestoPublic7() }
+
+// PrestoPublic7 says "PrestoSQL 会话访问令牌"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic7() string {
+	return Catalog.Format(msgs.locale, "prestoPublic7", nil)
+}
+
+// PrestoPublic8 says "PrestoSQL 会话附加凭据"
+// in the language the app shows.
+func PrestoPublic8() string { return In(i18n.Locale()).PrestoPublic8() }
+
+// PrestoPublic8 says "PrestoSQL 会话附加凭据"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic8() string {
+	return Catalog.Format(msgs.locale, "prestoPublic8", nil)
+}
+
+// PrestoPublic9 says "PrestoSQL 使用密码或访问令牌时必须启用 HTTPS"
+// in the language the app shows.
+func PrestoPublic9() string { return In(i18n.Locale()).PrestoPublic9() }
+
+// PrestoPublic9 says "PrestoSQL 使用密码或访问令牌时必须启用 HTTPS"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic9() string {
+	return Catalog.Format(msgs.locale, "prestoPublic9", nil)
+}
+
+// PrestoPublic10 says "PrestoSQL 信任库"
+// in the language the app shows.
+func PrestoPublic10() string { return In(i18n.Locale()).PrestoPublic10() }
+
+// PrestoPublic10 says "PrestoSQL 信任库"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic10() string {
+	return Catalog.Format(msgs.locale, "prestoPublic10", nil)
+}
+
+// PrestoPublic11 says "PrestoSQL 信任库密码"
+// in the language the app shows.
+func PrestoPublic11() string { return In(i18n.Locale()).PrestoPublic11() }
+
+// PrestoPublic11 says "PrestoSQL 信任库密码"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic11() string {
+	return Catalog.Format(msgs.locale, "prestoPublic11", nil)
+}
+
+// PrestoPublic12 says "PrestoSQL 客户端密钥库"
+// in the language the app shows.
+func PrestoPublic12() string { return In(i18n.Locale()).PrestoPublic12() }
+
+// PrestoPublic12 says "PrestoSQL 客户端密钥库"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic12() string {
+	return Catalog.Format(msgs.locale, "prestoPublic12", nil)
+}
+
+// PrestoPublic13 says "PrestoSQL 密钥库密码"
+// in the language the app shows.
+func PrestoPublic13() string { return In(i18n.Locale()).PrestoPublic13() }
+
+// PrestoPublic13 says "PrestoSQL 密钥库密码"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic13() string {
+	return Catalog.Format(msgs.locale, "prestoPublic13", nil)
+}
+
+// PrestoPublic14 says "PrestoSQL 查询超时（秒）"
+// in the language the app shows.
+func PrestoPublic14() string { return In(i18n.Locale()).PrestoPublic14() }
+
+// PrestoPublic14 says "PrestoSQL 查询超时（秒）"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic14() string {
+	return Catalog.Format(msgs.locale, "prestoPublic14", nil)
+}
+
+// PrestoPublic15 says "PrestoSQL 访问令牌"
+// in the language the app shows.
+func PrestoPublic15() string { return In(i18n.Locale()).PrestoPublic15() }
+
+// PrestoPublic15 says "PrestoSQL 访问令牌"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic15() string {
+	return Catalog.Format(msgs.locale, "prestoPublic15", nil)
+}
+
+// PrestoPublic16 says "PrestoSQL 连接等待（毫秒）"
+// in the language the app shows.
+func PrestoPublic16() string { return In(i18n.Locale()).PrestoPublic16() }
+
+// PrestoPublic16 says "PrestoSQL 连接等待（毫秒）"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic16() string {
+	return Catalog.Format(msgs.locale, "prestoPublic16", nil)
+}
+
+// PrestoPublic17 says "PrestoSQL 连接超时（秒）"
+// in the language the app shows.
+func PrestoPublic17() string { return In(i18n.Locale()).PrestoPublic17() }
+
+// PrestoPublic17 says "PrestoSQL 连接超时（秒）"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic17() string {
+	return Catalog.Format(msgs.locale, "prestoPublic17", nil)
+}
+
+// PrestoPublic18 says "PrestoSQL 附加凭据"
+// in the language the app shows.
+func PrestoPublic18() string { return In(i18n.Locale()).PrestoPublic18() }
+
+// PrestoPublic18 says "PrestoSQL 附加凭据"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic18() string {
+	return Catalog.Format(msgs.locale, "prestoPublic18", nil)
+}
+
+// PrestoPublic19 says "PrestoSQL 驱动包"
+// in the language the app shows.
+func PrestoPublic19() string { return In(i18n.Locale()).PrestoPublic19() }
+
+// PrestoPublic19 says "PrestoSQL 驱动包"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic19() string {
+	return Catalog.Format(msgs.locale, "prestoPublic19", nil)
+}
+
+// PrestoPublic20 says "PrestoSQL 默认 Catalog"
+// in the language the app shows.
+func PrestoPublic20() string { return In(i18n.Locale()).PrestoPublic20() }
+
+// PrestoPublic20 says "PrestoSQL 默认 Catalog"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic20() string {
+	return Catalog.Format(msgs.locale, "prestoPublic20", nil)
+}
+
+// PrestoPublic21 says "PrestoSQL 默认 Schema"
+// in the language the app shows.
+func PrestoPublic21() string { return In(i18n.Locale()).PrestoPublic21() }
+
+// PrestoPublic21 says "PrestoSQL 默认 Schema"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic21() string {
+	return Catalog.Format(msgs.locale, "prestoPublic21", nil)
+}
+
+// PrestoPublic22 says "JDBC 参数仅保存非凭据选项；密码、令牌和附加凭据使用独立输入框。"
+// in the language the app shows.
+func PrestoPublic22() string { return In(i18n.Locale()).PrestoPublic22() }
+
+// PrestoPublic22 says "JDBC 参数仅保存非凭据选项；密码、令牌和附加凭据使用独立输入框。"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic22() string {
+	return Catalog.Format(msgs.locale, "prestoPublic22", nil)
+}
+
+// PrestoPublic23 says "JDBC 参数："
+// in the language the app shows.
+func PrestoPublic23() string { return In(i18n.Locale()).PrestoPublic23() }
+
+// PrestoPublic23 says "JDBC 参数："
+// in the language of msgs.
+func (msgs Messages) PrestoPublic23() string {
+	return Catalog.Format(msgs.locale, "prestoPublic23", nil)
+}
+
+// PrestoPublic24 says "仅验证证书链"
+// in the language the app shows.
+func PrestoPublic24() string { return In(i18n.Locale()).PrestoPublic24() }
+
+// PrestoPublic24 says "仅验证证书链"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic24() string {
+	return Catalog.Format(msgs.locale, "prestoPublic24", nil)
+}
+
+// PrestoPublic25 says "加密但不验证证书"
+// in the language the app shows.
+func PrestoPublic25() string { return In(i18n.Locale()).PrestoPublic25() }
+
+// PrestoPublic25 says "加密但不验证证书"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic25() string {
+	return Catalog.Format(msgs.locale, "prestoPublic25", nil)
+}
+
+// PrestoPublic26 says "信任库"
+// in the language the app shows.
+func PrestoPublic26() string { return In(i18n.Locale()).PrestoPublic26() }
+
+// PrestoPublic26 says "信任库"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic26() string {
+	return Catalog.Format(msgs.locale, "prestoPublic26", nil)
+}
+
+// PrestoPublic27 says "信任库密码："
+// in the language the app shows.
+func PrestoPublic27() string { return In(i18n.Locale()).PrestoPublic27() }
+
+// PrestoPublic27 says "信任库密码："
+// in the language of msgs.
+func (msgs Messages) PrestoPublic27() string {
+	return Catalog.Format(msgs.locale, "prestoPublic27", nil)
+}
+
+// PrestoPublic28 says "信任库类型："
+// in the language the app shows.
+func PrestoPublic28() string { return In(i18n.Locale()).PrestoPublic28() }
+
+// PrestoPublic28 says "信任库类型："
+// in the language of msgs.
+func (msgs Messages) PrestoPublic28() string {
+	return Catalog.Format(msgs.locale, "prestoPublic28", nil)
+}
+
+// PrestoPublic29 says "客户端密钥库"
+// in the language the app shows.
+func PrestoPublic29() string { return In(i18n.Locale()).PrestoPublic29() }
+
+// PrestoPublic29 says "客户端密钥库"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic29() string {
+	return Catalog.Format(msgs.locale, "prestoPublic29", nil)
+}
+
+// PrestoPublic30 says "密钥库密码："
+// in the language the app shows.
+func PrestoPublic30() string { return In(i18n.Locale()).PrestoPublic30() }
+
+// PrestoPublic30 says "密钥库密码："
+// in the language of msgs.
+func (msgs Messages) PrestoPublic30() string {
+	return Catalog.Format(msgs.locale, "prestoPublic30", nil)
+}
+
+// PrestoPublic31 says "密钥库类型："
+// in the language the app shows.
+func PrestoPublic31() string { return In(i18n.Locale()).PrestoPublic31() }
+
+// PrestoPublic31 says "密钥库类型："
+// in the language of msgs.
+func (msgs Messages) PrestoPublic31() string {
+	return Catalog.Format(msgs.locale, "prestoPublic31", nil)
+}
+
+// PrestoPublic32 says "导入 PrestoSQL 驱动包"
+// in the language the app shows.
+func PrestoPublic32() string { return In(i18n.Locale()).PrestoPublic32() }
+
+// PrestoPublic32 says "导入 PrestoSQL 驱动包"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic32() string {
+	return Catalog.Format(msgs.locale, "prestoPublic32", nil)
+}
+
+// PrestoPublic33 says "无法移除驱动包，请刷新列表后重试。"
+// in the language the app shows.
+func PrestoPublic33() string { return In(i18n.Locale()).PrestoPublic33() }
+
+// PrestoPublic33 says "无法移除驱动包，请刷新列表后重试。"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic33() string {
+	return Catalog.Format(msgs.locale, "prestoPublic33", nil)
+}
+
+// PrestoPublic34 says "无法读取已保存的 PrestoSQL 凭据"
+// in the language the app shows.
+func PrestoPublic34() string { return In(i18n.Locale()).PrestoPublic34() }
+
+// PrestoPublic34 says "无法读取已保存的 PrestoSQL 凭据"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic34() string {
+	return Catalog.Format(msgs.locale, "prestoPublic34", nil)
+}
+
+// PrestoPublic35 says "…"
+// in the language the app shows.
+func PrestoPublic35() string { return In(i18n.Locale()).PrestoPublic35() }
+
+// PrestoPublic35 says "…"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic35() string {
+	return Catalog.Format(msgs.locale, "prestoPublic35", nil)
+}
+
+// PrestoPublic36 says "确认移除驱动包"
+// in the language the app shows.
+func PrestoPublic36() string { return In(i18n.Locale()).PrestoPublic36() }
+
+// PrestoPublic36 says "确认移除驱动包"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic36() string {
+	return Catalog.Format(msgs.locale, "prestoPublic36", nil)
+}
+
+// PrestoPublic37 says "移除 PrestoSQL 驱动包？"
+// in the language the app shows.
+func PrestoPublic37() string { return In(i18n.Locale()).PrestoPublic37() }
+
+// PrestoPublic37 says "移除 PrestoSQL 驱动包？"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic37() string {
+	return Catalog.Format(msgs.locale, "prestoPublic37", nil)
+}
+
+// PrestoPublic38 says "移除驱动包"
+// in the language the app shows.
+func PrestoPublic38() string { return In(i18n.Locale()).PrestoPublic38() }
+
+// PrestoPublic38 says "移除驱动包"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic38() string {
+	return Catalog.Format(msgs.locale, "prestoPublic38", nil)
+}
+
+// PrestoPublic39 says "请检查 PrestoSQL 凭据"
+// in the language the app shows.
+func PrestoPublic39() string { return In(i18n.Locale()).PrestoPublic39() }
+
+// PrestoPublic39 says "请检查 PrestoSQL 凭据"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic39() string {
+	return Catalog.Format(msgs.locale, "prestoPublic39", nil)
+}
+
+// PrestoPublic40 says "请检查 PrestoSQL 服务器、Catalog、Schema 和 TLS 设置"
+// in the language the app shows.
+func PrestoPublic40() string { return In(i18n.Locale()).PrestoPublic40() }
+
+// PrestoPublic40 says "请检查 PrestoSQL 服务器、Catalog、Schema 和 TLS 设置"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic40() string {
+	return Catalog.Format(msgs.locale, "prestoPublic40", nil)
+}
+
+// PrestoPublic41 says "请检查 PrestoSQL 超时和会话上限"
+// in the language the app shows.
+func PrestoPublic41() string { return In(i18n.Locale()).PrestoPublic41() }
+
+// PrestoPublic41 says "请检查 PrestoSQL 超时和会话上限"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic41() string {
+	return Catalog.Format(msgs.locale, "prestoPublic41", nil)
+}
+
+// PrestoPublic42 says "请选择或导入已安装的 PrestoSQL 驱动包"
+// in the language the app shows.
+func PrestoPublic42() string { return In(i18n.Locale()).PrestoPublic42() }
+
+// PrestoPublic42 says "请选择或导入已安装的 PrestoSQL 驱动包"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic42() string {
+	return Catalog.Format(msgs.locale, "prestoPublic42", nil)
+}
+
+// PrestoPublic43 says "选择 PrestoSQL 信任库"
+// in the language the app shows.
+func PrestoPublic43() string { return In(i18n.Locale()).PrestoPublic43() }
+
+// PrestoPublic43 says "选择 PrestoSQL 信任库"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic43() string {
+	return Catalog.Format(msgs.locale, "prestoPublic43", nil)
+}
+
+// PrestoPublic44 says "选择 PrestoSQL 客户端密钥库"
+// in the language the app shows.
+func PrestoPublic44() string { return In(i18n.Locale()).PrestoPublic44() }
+
+// PrestoPublic44 says "选择 PrestoSQL 客户端密钥库"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic44() string {
+	return Catalog.Format(msgs.locale, "prestoPublic44", nil)
+}
+
+// PrestoPublic45 says "附加凭据："
+// in the language the app shows.
+func PrestoPublic45() string { return In(i18n.Locale()).PrestoPublic45() }
+
+// PrestoPublic45 says "附加凭据："
+// in the language of msgs.
+func (msgs Messages) PrestoPublic45() string {
+	return Catalog.Format(msgs.locale, "prestoPublic45", nil)
+}
+
+// PrestoPublic46 says "驱动包不包含 PrestoSQL 驱动。"
+// in the language the app shows.
+func PrestoPublic46() string { return In(i18n.Locale()).PrestoPublic46() }
+
+// PrestoPublic46 says "驱动包不包含 PrestoSQL 驱动。"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic46() string {
+	return Catalog.Format(msgs.locale, "prestoPublic46", nil)
+}
+
+// PrestoPublic47 says "驱动包仍在使用，请先关闭相关连接。"
+// in the language the app shows.
+func PrestoPublic47() string { return In(i18n.Locale()).PrestoPublic47() }
+
+// PrestoPublic47 says "驱动包仍在使用，请先关闭相关连接。"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic47() string {
+	return Catalog.Format(msgs.locale, "prestoPublic47", nil)
+}
+
+// PrestoPublic48 says "驱动包已移除。"
+// in the language the app shows.
+func PrestoPublic48() string { return In(i18n.Locale()).PrestoPublic48() }
+
+// PrestoPublic48 says "驱动包已移除。"
+// in the language of msgs.
+func (msgs Messages) PrestoPublic48() string {
+	return Catalog.Format(msgs.locale, "prestoPublic48", nil)
+}

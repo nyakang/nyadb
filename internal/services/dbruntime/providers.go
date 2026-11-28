@@ -22,6 +22,7 @@ import (
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/services/neo4j"
 	oraclesvc "github.com/nyakang/nyadb/internal/services/oracle"
+	"github.com/nyakang/nyadb/internal/services/prestosql"
 	"github.com/nyakang/nyadb/internal/services/qdrant"
 	"github.com/nyakang/nyadb/internal/services/questdb"
 	redissvc "github.com/nyakang/nyadb/internal/services/redis"
@@ -36,6 +37,7 @@ import (
 )
 
 func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
+	m.Register(connections.PrestoSQL, prestosql.Provider{})
 	m.Register(connections.Databend, databend.Provider{})
 	m.Register(connections.ZooKeeper, ProviderFunc(zookeeper.OpenSession))
 	m.Register(connections.TDengine, ProviderFunc(tdengine.OpenSession))

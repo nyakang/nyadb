@@ -81,3 +81,53 @@ func TestSQLiteHandshakeCapturesImmutableAttachments(t *testing.T) {
 	}
 	s.Consume()
 }
+
+func TestPrestoSQLHandshakeCapturesCompleteVaultOrDraftAndRedactsComponents(t *testing.T) {
+	for _, draft := range []bool{false, true} {
+		want := connections.PrestoSQLCredentials{Password: "original-password", TrustStorePassword: "original-trust", KeyStorePassword: "original-key", AccessToken: "original-token", ExtraCredentials: "original:extra"}
+		encoded, _ := connections.EncodePrestoSQLCredentials(want)
+		s := New(Dependencies{ReadSecret: func(int64, string) (string, bool, error) { return encoded, true, nil }})
+		defer s.Close()
+		done := make(chan struct{}, 1)
+		captured := make(chan connections.PrestoSQLCredentials, 1)
+		s.SetEngineRuntime(EngineRuntime{Connect: func(context.Context, connections.Profile, string) error { return nil }, Session: func(int64) (contract.Session, error) { return nil, contract.ErrUnsupported }, Open: func(ctx context.Context, p connections.Profile, secret string) (contract.Session, error) {
+			c, err := connections.DecodePrestoSQLCredentials(secret)
+			if err != nil {
+				t.Error("worker received invalid credential envelope")
+			}
+			captured <- c
+			return nil, errors.New(c.Password + " " + c.TrustStorePassword + " " + c.KeyStorePassword + " " + c.AccessToken + " " + c.ExtraCredentials)
+		}})
+		p, _ := connections.Defaults(connections.PrestoSQL)
+		p.ID = 67
+		p.Name = "original"
+		p.Database = "memory"
+		s.Activate(p.ID)
+		if draft {
+			want.Password = "draft-password"
+			s.Current().PrestoSQLCredentials = want
+		}
+		s.Connect(p, func() { done <- struct{}{} })
+		if s.Current().PrestoSQLCredentials != (connections.PrestoSQLCredentials{}) {
+			t.Fatal("dispatch retained credential drafts")
+		}
+		s.Current().PrestoSQLCredentials.Password = "later"
+		awaitJob(t, done)
+		s.Consume()
+		if got := <-captured; got != want {
+			t.Fatal("worker observed later credentials")
+		}
+		for _, secret := range []string{want.Password, want.TrustStorePassword, want.KeyStorePassword, want.AccessToken, want.ExtraCredentials} {
+			if strings.Contains(s.Current().Error, secret) {
+				t.Fatal("error exposed credential component")
+			}
+		}
+		if s.Current().Catalog != "memory" {
+			t.Fatal("catalog identity lost")
+		}
+		s.Disconnect(p.ID)
+		if s.Current().PrestoSQLCredentials != (connections.PrestoSQLCredentials{}) {
+			t.Fatal("disconnect retained drafts")
+		}
+	}
+}

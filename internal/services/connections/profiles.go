@@ -11,6 +11,7 @@ type Kind string
 
 const (
 	// Databend uses an explicitly pinned managed JDBC package.
+	PrestoSQL     Kind = "prestosql"
 	Databend      Kind = "databend"
 	ZooKeeper     Kind = "zookeeper"
 	TDengine      Kind = "tdengine"
@@ -107,6 +108,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	PrestoSQLOptions     PrestoSQLOptions
 	DatabendOptions      DatabendOptions
 	ZooKeeperOptions     ZooKeeperOptions
 	TDengineOptions      TDengineOptions

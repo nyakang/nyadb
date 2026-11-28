@@ -17,6 +17,7 @@ import (
 // SQLite writes occur when changing the selected configuration or closing the
 // editor. Unsaved partial numbers survive selection changes.
 type connectionEditorSnapshot struct {
+	prestosqlSecrets         [4]string
 	initialSQL, initialSaved string
 	initialLoadFailed        bool
 
@@ -35,7 +36,8 @@ type connectionEditorSnapshot struct {
 
 func (s *State) currentConnectionSnapshot() connectionEditorSnapshot {
 	return connectionEditorSnapshot{
-		initialSQL: s.mysqlInitialQuery, initialSaved: s.initialSQLSavedText, initialLoadFailed: s.initialSQLLoadFailed,
+		prestosqlSecrets: s.prestosqlSecrets,
+		initialSQL:       s.mysqlInitialQuery, initialSaved: s.initialSQLSavedText, initialLoadFailed: s.initialSQLLoadFailed,
 		profile: s.connectionDraft, port: s.connectionPort,
 		secret: s.connectionSecret, savePassword: s.connectionSavePassword,
 		hadSavedPassword: s.currentCredentialWasSaved(),
@@ -131,6 +133,7 @@ func (s *State) restoreConnectionConfiguration(snap connectionEditorSnapshot) {
 	s.mysqlCompatibilityVisible = false
 	s.mysqlHTTPSubtab = 0
 	s.connectionSecret = snap.secret
+	s.prestosqlSecrets = snap.prestosqlSecrets
 	s.connectionSavePassword = snap.savePassword
 	s.clearMySQLSSLPassphrase()
 	s.clearMySQLSSHSecrets()

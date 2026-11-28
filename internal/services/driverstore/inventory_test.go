@@ -84,3 +84,39 @@ func TestDriverImportListPinsOriginalPackageAndRejectsForeignReplacement(t *test
 		t.Fatal("canceled inventory completed", err)
 	}
 }
+
+func TestDriverPinnedRemovalRejectsChangedDigestAndLeasedOriginal(t *testing.T) {
+	s := newStore(t)
+	m, files := packageFixture([]byte("original executable"))
+	raw := zipFixture(t, m, files, nil)
+	if _, err := s.Install(context.Background(), bytes.NewReader(raw), digestBytes(raw)); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.RemovePinned(context.Background(), m.Key, m.Version, digestBytes([]byte("foreign"))); !errors.Is(err, ErrPackage) {
+		t.Fatal("foreign removal accepted", err)
+	}
+	lease, err := s.Acquire(context.Background(), m.Key, m.Version, digestBytes(raw))
+	if err != nil {
+		t.Fatal("mismatch damaged installed package", err)
+	}
+	if err := s.RemovePinned(context.Background(), m.Key, m.Version, digestBytes(raw)); !errors.Is(err, ErrBusy) {
+		t.Fatal("leased package removed", err)
+	}
+	if _, err := lease.LaunchSpec("fixture-v1"); err != nil {
+		t.Fatal("removal damaged original lease", err)
+	}
+	if err := lease.Close(); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if err := s.RemovePinned(ctx, m.Key, m.Version, digestBytes(raw)); !errors.Is(err, context.Canceled) {
+		t.Fatal("canceled removal completed", err)
+	}
+	if err := s.RemovePinned(context.Background(), m.Key, m.Version, digestBytes(raw)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Acquire(context.Background(), m.Key, m.Version, digestBytes(raw)); !errors.Is(err, ErrMissing) {
+		t.Fatal("removed package still executable", err)
+	}
+}

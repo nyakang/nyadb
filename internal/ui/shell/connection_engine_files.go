@@ -5,6 +5,9 @@ import "github.com/nyakang/nyadb/internal/ui/connectioneditor"
 type EngineFile = connectioneditor.EngineFile
 
 const (
+	PrestoSQLDriverPackageFile = connectioneditor.PrestoSQLDriverPackageFile
+	PrestoSQLTrustStoreFile    = connectioneditor.PrestoSQLTrustStoreFile
+	PrestoSQLKeyStoreFile      = connectioneditor.PrestoSQLKeyStoreFile
 	DatabendDriverPackageFile  = connectioneditor.DatabendDriverPackageFile
 	DatabendCAFile             = connectioneditor.DatabendCAFile
 	DatabendCertificateFile    = connectioneditor.DatabendCertificateFile

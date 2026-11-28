@@ -61,6 +61,14 @@ func (s *State) connectEngine(p connections.Profile, invalidate func()) {
 	w := s.current
 	password := w.Password
 	sentinelPassword := w.SentinelPassword
+	if p.Kind == connections.PrestoSQL && w.PrestoSQLCredentials != (connections.PrestoSQLCredentials{}) {
+		var err error
+		password, err = connections.EncodePrestoSQLCredentials(w.PrestoSQLCredentials)
+		if err != nil {
+			w.Error = locales.Text("请检查 PrestoSQL 凭据")
+			return
+		}
+	}
 	var vaultErr error
 	if password == "" && s.deps.ReadSecret != nil {
 		var exists bool
@@ -73,6 +81,15 @@ func (s *State) connectEngine(p connections.Profile, invalidate func()) {
 		var e error
 		sentinelPassword, _, e = s.deps.ReadSecret(p.ID, connections.RedisSentinelCredential)
 		vaultErr = errors.Join(vaultErr, e)
+	}
+	var prestoSecrets connections.PrestoSQLCredentials
+	if p.Kind == connections.PrestoSQL {
+		var err error
+		prestoSecrets, err = connections.DecodePrestoSQLCredentials(password)
+		if err != nil {
+			w.Error = locales.Text("无法读取已保存的 PrestoSQL 凭据")
+			return
+		}
 	}
 	if w.ProfileID == p.ID {
 		s.Disconnect(p.ID)
@@ -93,7 +110,7 @@ func (s *State) connectEngine(p connections.Profile, invalidate func()) {
 		w.Catalog = p.DorisOptions.Catalog
 	} else if p.Kind == connections.SelectDB {
 		w.Catalog = p.SelectDBOptions.Catalog
-	} else if p.Kind == connections.Trino {
+	} else if p.Kind == connections.Trino || p.Kind == connections.PrestoSQL {
 		w.Catalog = p.Database
 	} else if p.Kind == connections.StarRocks {
 		w.Catalog = p.StarRocksOptions.Catalog
@@ -102,6 +119,7 @@ func (s *State) connectEngine(p connections.Profile, invalidate func()) {
 	}
 	w.Password = ""
 	w.SentinelPassword = ""
+	w.PrestoSQLCredentials = connections.PrestoSQLCredentials{}
 	w.Databases = nil
 	w.Namespaces = nil
 	s.ResetBrowser()
@@ -145,6 +163,11 @@ func (s *State) connectEngine(p connections.Profile, invalidate func()) {
 			message := strings.ReplaceAll(err.Error(), "[hidden]", "[已隐藏]")
 			if sentinelPassword != "" {
 				message = strings.ReplaceAll(message, sentinelPassword, "[已隐藏]")
+			}
+			for _, secret := range []string{prestoSecrets.Password, prestoSecrets.TrustStorePassword, prestoSecrets.KeyStorePassword, prestoSecrets.AccessToken, prestoSecrets.ExtraCredentials} {
+				if secret != "" {
+					message = strings.ReplaceAll(message, secret, "[已隐藏]")
+				}
 			}
 			if password != "" {
 				message = strings.ReplaceAll(message, password, "[已隐藏]")
@@ -269,6 +292,9 @@ func (s *State) engineLabel(w *Workspace) string {
 	}
 	if w.Kind == connections.ClickHouse {
 		return "ClickHouse"
+	}
+	if w.Kind == connections.PrestoSQL {
+		return "PrestoSQL"
 	}
 	if w.Kind == connections.Trino {
 		return "Trino"

@@ -2,6 +2,7 @@ package connectioneditor
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/egoist/mygo/ui"
 
@@ -41,10 +42,18 @@ func (s *State) ReturnFromURI() {
 }
 func (s *State) URIActive() bool { return s.uriOpen }
 
+func (s *State) parseURI(raw string) (connections.URIImport, error) {
+	raw = strings.TrimSpace(raw)
+	if s.uriReturn && s.connectionDraft.Kind == connections.PrestoSQL && strings.HasPrefix(strings.ToLower(raw), "jdbc:presto:") {
+		return connections.ParsePrestoSQLURI(raw)
+	}
+	return connections.ParseURI(raw)
+}
+
 // ImportURI prepares a fresh editor only after the entire URI validates. A
 // malformed URI leaves the current masked input available for correction.
 func (s *State) ImportURI(raw string) error {
-	parsed, err := connections.ParseURI(raw)
+	parsed, err := s.parseURI(raw)
 	if err != nil {
 		return err
 	}
@@ -67,6 +76,11 @@ func (s *State) ImportURI(raw string) error {
 			s.connectionDraft.TrinoOptions.DriverVersion = original.TrinoOptions.DriverVersion
 			s.connectionDraft.TrinoOptions.DriverSHA256 = original.TrinoOptions.DriverSHA256
 			s.connectionDraft.TrinoOptions.DriverDirectory = original.TrinoOptions.DriverDirectory
+		}
+		if original.Kind == connections.PrestoSQL && parsed.Profile.Kind == connections.PrestoSQL {
+			s.connectionDraft.PrestoSQLOptions.DriverVersion = original.PrestoSQLOptions.DriverVersion
+			s.connectionDraft.PrestoSQLOptions.DriverSHA256 = original.PrestoSQLOptions.DriverSHA256
+			s.connectionDraft.PrestoSQLOptions.DriverDirectory = original.PrestoSQLOptions.DriverDirectory
 		}
 		if original.Kind == connections.Databend && parsed.Profile.Kind == connections.Databend {
 			s.connectionDraft.DatabendOptions.DriverVersion = original.DatabendOptions.DriverVersion
@@ -94,6 +108,9 @@ func (s *State) ImportURI(raw string) error {
 	s.connectionDraft.GroupName = group
 	s.initializeInputs()
 	s.connectionSecret = parsed.Password
+	if parsed.Profile.Kind == connections.PrestoSQL {
+		s.restorePrestoCredentials(parsed.PrestoSQLCredentials)
+	}
 	s.connectionSavePassword = false
 	s.connectionEditorTab = 0
 	s.connectionNameFocusPending = true
@@ -132,7 +149,7 @@ func (s *State) URIView(c *ui.Context, width, height float32, imported func()) {
 				}
 			}
 			if ui.PrimaryButton(c, locales.Text("导入到连接表单")).Disabled(s.uriText == "").Clicked() {
-				if _, err := connections.ParseURI(s.uriText); err != nil {
+				if _, err := s.parseURI(s.uriText); err != nil {
 					s.uriError = locales.Text("连接 URI 无效，请检查格式、主机、端口和数据库。")
 					if errors.Is(err, connections.ErrURIOptions) {
 						s.uriError = locales.Text("URI 含有当前引擎不支持的选项，请在连接表单中配置。")

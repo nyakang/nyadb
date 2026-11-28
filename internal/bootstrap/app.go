@@ -318,6 +318,10 @@ func Run() error {
 				title = locales.Text("导入 Databend 驱动包")
 				filters = []mygo.FileFilter{{Name: "NyaDB driver packages", Extensions: []string{"zip"}}}
 			}
+			if kind == shell.PrestoSQLDriverPackageFile {
+				title = locales.Text("导入 PrestoSQL 驱动包")
+				filters = []mygo.FileFilter{{Name: "NyaDB driver packages", Extensions: []string{"zip"}}}
+			}
 			if kind == shell.TrinoDriverPackageFile {
 				title = locales.Text("导入 Trino 驱动包")
 				filters = []mygo.FileFilter{{Name: "NyaDB driver packages", Extensions: []string{"zip"}}}
@@ -337,6 +341,10 @@ func Run() error {
 				title = locales.Text("选择 H2 TLS CA 证书")
 			}
 			switch kind {
+			case shell.PrestoSQLTrustStoreFile:
+				title = locales.Text("选择 PrestoSQL 信任库")
+			case shell.PrestoSQLKeyStoreFile:
+				title = locales.Text("选择 PrestoSQL 客户端密钥库")
 			case shell.DatabendCAFile:
 				title = locales.Text("选择 Databend CA 证书")
 			case shell.DatabendCertificateFile:

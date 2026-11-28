@@ -11,8 +11,8 @@ import (
 	"unicode/utf8"
 )
 
-// PrestoSQLManagedConfig is an unpublished adapter configuration. Public
-// profiles/URI forms and driver selection are a separate integration boundary.
+// PrestoSQLManagedConfig is the immutable adapter configuration derived from
+// a public profile and its explicitly selected managed driver package.
 // JDBCParameters contains only the original driver's non-secret properties.
 type PrestoSQLManagedConfig struct {
 	Endpoint, Username, Catalog, Schema         string

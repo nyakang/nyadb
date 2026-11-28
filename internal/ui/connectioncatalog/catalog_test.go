@@ -61,11 +61,11 @@ func TestRecentConnectionsDeduplicateAndKeepFiveNewest(t *testing.T) {
 
 func TestConnectionCatalogFiltering(t *testing.T) {
 	s := New()
-	if n := len(s.catalogItems("全部")); n != 44 {
-		t.Fatalf("catalog should offer 44 local choices including Databend, got %d", n)
+	if n := len(s.catalogItems("全部")); n != 45 {
+		t.Fatalf("catalog should offer 45 local choices including PrestoSQL, got %d", n)
 	}
 	s.search = "sql"
-	if items := s.catalogItems("全部"); len(items) != 6 {
+	if items := s.catalogItems("全部"); len(items) != 7 {
 		t.Fatalf("search should include the SQL product names, got %+v", items)
 	}
 	s.search = ""
@@ -123,7 +123,7 @@ func TestExpandedCatalogMirrorsObservedGroups(t *testing.T) {
 	if len(databaseCatalog) < 60 {
 		t.Fatalf("expected expanded connection browser with at least 60 choices, got %d", len(databaseCatalog))
 	}
-	if len(catalogVendors) < 12 || len(catalogEngines) != 44 {
+	if len(catalogVendors) < 12 || len(catalogEngines) != 45 {
 		t.Fatalf("missing engine/vendor filters: %d/%d", len(catalogEngines), len(catalogVendors))
 	}
 	seen := map[string]bool{}

@@ -52,6 +52,7 @@ var databaseCatalog = []catalogEntry{
 	{"Azure SQL", "SQL Server", "Microsoft", "云数据库", "table", "#378de0", ""},
 	{"ClickHouse", "ClickHouse", "", "全部", "database", "#e7b632", connections.ClickHouse},
 	{"Databend", "Databend", "", "全部", "database", "#1687ec", connections.Databend},
+	{"PrestoSQL", "PrestoSQL", "", "全部", "database", "#dd5a9b", connections.PrestoSQL},
 	{"Trino", "Trino", "", "全部", "database", "#dd5a9b", connections.Trino},
 	{"StarRocks", "StarRocks", "", "全部", "database", "#e65f25", connections.StarRocks},
 	{"Apache Doris", "Apache Doris", "", "全部", "database", "#259aca", connections.Doris},
@@ -72,7 +73,7 @@ var databaseCatalog = []catalogEntry{
 	{"QuestDB", "QuestDB", "", "全部", "database", "#e43957", connections.QuestDB},
 }
 
-var catalogEngines = []string{"MySQL", "PostgreSQL", "Apache Cloudberry", "OpenTenBase", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "Apache Doris", "SelectDB", "StarRocks", "Trino", "Databend", "MariaDB", "TiDB", "TDSQL", "PolarDB", "GreatSQL", "Dolt", "OceanBase", "CockroachDB", "openGauss", "GaussDB", "KingbaseES", "达梦", "MongoDB", "Redis", "Elasticsearch", "Easysearch", "Apache Solr", "Apache Cassandra", "Apache CouchDB", "Meilisearch", "Qdrant", "Neo4j", "etcd", "Consul", "ZooKeeper", "Snowflake", "H2", "RQLite", "QuestDB", "TDengine"}
+var catalogEngines = []string{"MySQL", "PostgreSQL", "Apache Cloudberry", "OpenTenBase", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "Apache Doris", "SelectDB", "StarRocks", "PrestoSQL", "Trino", "Databend", "MariaDB", "TiDB", "TDSQL", "PolarDB", "GreatSQL", "Dolt", "OceanBase", "CockroachDB", "openGauss", "GaussDB", "KingbaseES", "达梦", "MongoDB", "Redis", "Elasticsearch", "Easysearch", "Apache Solr", "Apache Cassandra", "Apache CouchDB", "Meilisearch", "Qdrant", "Neo4j", "etcd", "Consul", "ZooKeeper", "Snowflake", "H2", "RQLite", "QuestDB", "TDengine"}
 var catalogVendors = catalogTreeVendorOrder
 
 func catalogMatch(e catalogEntry, query string, engines, vendors map[string]bool) bool {

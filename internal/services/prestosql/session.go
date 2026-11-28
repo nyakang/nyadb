@@ -89,7 +89,7 @@ func (p Provider) role(role string) Provider {
 func (s *Session) ProfileID() int64   { return s.profileID }
 func (s *Session) Generation() uint64 { return 1 }
 func (s *Session) Capabilities() contract.Capabilities {
-	return contract.Capabilities{Query: true, Metadata: true, Schemas: true}
+	return contract.Capabilities{Query: true, Metadata: true, Schemas: true, EditableTables: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
 }
 func (s *Session) Alive() bool {
 	s.mu.Lock()

@@ -9,6 +9,9 @@ import (
 // NormalizeProfile validates public settings and applies their canonical values.
 // Variants are normalized in place; callers retaining them must clone the slice.
 func NormalizeProfile(p Profile) (Profile, error) {
+	if p.Kind != PrestoSQL && p.PrestoSQLOptions != (PrestoSQLOptions{}) {
+		return p, fmt.Errorf("%w: PrestoSQL options on another engine", ErrInvalid)
+	}
 	if p.Kind != Databend && p.DatabendOptions != (DatabendOptions{}) {
 		return p, fmt.Errorf("%w: Databend options on another engine", ErrInvalid)
 	}
@@ -157,10 +160,10 @@ func NormalizeProfile(p Profile) (Profile, error) {
 	}
 	p.Host = strings.TrimSpace(p.Host)
 	if p.Kind != Dameng {
-		if p.Kind != Databend && p.Kind != H2 && p.Kind != ZooKeeper && p.Kind != Consul && p.Kind != Etcd && p.Kind != Cassandra && p.Kind != Qdrant && p.Kind != Neo4j {
+		if p.Kind != PrestoSQL && p.Kind != Databend && p.Kind != H2 && p.Kind != ZooKeeper && p.Kind != Consul && p.Kind != Etcd && p.Kind != Cassandra && p.Kind != Qdrant && p.Kind != Neo4j {
 			p.Database = strings.TrimSpace(p.Database)
 		}
-		if p.Kind != Databend && p.Kind != RQLite && p.Kind != H2 && p.Kind != ZooKeeper && p.Kind != Consul && p.Kind != Etcd && p.Kind != Qdrant && p.Kind != Meilisearch && p.Kind != CouchDB && p.Kind != Solr && p.Kind != Cassandra && p.Kind != Neo4j {
+		if p.Kind != PrestoSQL && p.Kind != Databend && p.Kind != RQLite && p.Kind != H2 && p.Kind != ZooKeeper && p.Kind != Consul && p.Kind != Etcd && p.Kind != Qdrant && p.Kind != Meilisearch && p.Kind != CouchDB && p.Kind != Solr && p.Kind != Cassandra && p.Kind != Neo4j {
 			p.Username = strings.TrimSpace(p.Username)
 		}
 	}
@@ -178,6 +181,8 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		}
 	}
 	switch p.Kind {
+	case PrestoSQL:
+		return normalizePrestoSQLProfile(p)
 	case Databend:
 		return normalizeDatabendProfile(p)
 	case ZooKeeper:

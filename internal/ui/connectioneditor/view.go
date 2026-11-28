@@ -64,6 +64,7 @@ func (s *State) View(c *ui.Context, width, height float32) {
 		s.connectionEditorFooter(c, w)
 	})
 	s.mysqlInitialQueryModal(c)
+	s.prestoSQLRemoveModal(c)
 	if s.driverWork.results != nil {
 		c.After(25 * time.Millisecond)
 	}
@@ -71,7 +72,7 @@ func (s *State) View(c *ui.Context, width, height float32) {
 
 func connectionEditorTabNames(kind connections.Kind) []string {
 	switch kind {
-	case connections.Databend, connections.ZooKeeper:
+	case connections.PrestoSQL, connections.Databend, connections.ZooKeeper:
 		return []string{"常规", "高级", "SSL", "备注"}
 	case connections.TDengine, connections.QuestDB, connections.RQLite, connections.Consul, connections.Etcd, connections.Neo4j, connections.Qdrant, connections.Meilisearch:
 		return []string{"常规", "高级", "SSL", "备注"}
@@ -213,6 +214,10 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 		}
 		if p.Kind == connections.Consul {
 			s.editorConsulFields(c, labelWidth, fieldWidth)
+			return
+		}
+		if p.Kind == connections.PrestoSQL {
+			s.editorPrestoSQLFields(c, labelWidth, fieldWidth)
 			return
 		}
 		if p.Kind == connections.Databend {

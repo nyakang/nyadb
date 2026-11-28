@@ -12,6 +12,7 @@ import (
 // DriverPackages contains injected installed-package operations. Import uses
 // an explicitly chosen local package; returned snapshots contain no secrets.
 type DriverPackages struct {
+	Remove     func(context.Context, connections.Kind, connections.ManagedDriver) error
 	List       func(context.Context, connections.Kind, string) ([]connections.ManagedDriver, error)
 	Import     func(context.Context, connections.Kind, string, string) (connections.ManagedDriver, error)
 	ImportJDBC func(context.Context, connections.Kind, string, connections.JDBCImport) (connections.ManagedDriver, error)
@@ -23,6 +24,7 @@ type driverWorkResult struct {
 	directory, profile                          string
 	packages                                    []connections.ManagedDriver
 	imported                                    *connections.ManagedDriver
+	removed                                     *connections.ManagedDriver
 	err                                         error
 	jdbc                                        *connections.JDBCImport
 	baseChoice, rawClass, pinVersion, pinSHA256 string
@@ -60,7 +62,7 @@ func (s *State) cancelDriverWork() {
 }
 
 func (s *State) startDriverWork(file string) {
-	if !s.active || s.uriOpen || s.connectionDraft.Kind != connections.H2 && s.connectionDraft.Kind != connections.Databend && s.connectionDraft.Kind != connections.ZooKeeper && (s.connectionDraft.Kind != connections.Trino || s.connectionDraft.TrinoOptions.Mode != "jdbc") {
+	if !s.active || s.uriOpen || s.connectionDraft.Kind != connections.PrestoSQL && s.connectionDraft.Kind != connections.H2 && s.connectionDraft.Kind != connections.Databend && s.connectionDraft.Kind != connections.ZooKeeper && (s.connectionDraft.Kind != connections.Trino || s.connectionDraft.TrinoOptions.Mode != "jdbc") {
 		return
 	}
 	s.cancelDriverWork()
@@ -157,6 +159,10 @@ func (s *State) consumeDriverWork() {
 		if out.jdbc != nil && (out.profile != s.connectionDraft.H2Options.DriverProfile || out.baseChoice != s.h2CustomBase || out.rawClass != s.h2CustomClass || out.pinVersion != s.connectionDraft.H2Options.DriverVersion || out.pinSHA256 != s.connectionDraft.H2Options.DriverSHA256 || !slices.Equal(out.jdbc.Paths, s.h2CustomPaths)) {
 			return
 		}
+		if out.removed != nil {
+			s.consumePrestoSQLDriverRemoval(out)
+			return
+		}
 		if out.err != nil {
 			s.driverWork.message = "无法读取或导入驱动包，请检查文件、包类型和安装目录。"
 			return
@@ -173,7 +179,9 @@ func (s *State) consumeDriverWork() {
 				s.driverWork.packages = append(s.driverWork.packages, d)
 			}
 			if out.profile == selectedProfile {
-				if out.kind == connections.Databend {
+				if out.kind == connections.PrestoSQL {
+					s.selectPrestoSQLDriver(d)
+				} else if out.kind == connections.Databend {
 					s.selectDatabendDriver(d)
 				} else if out.kind == connections.Trino {
 					s.selectTrinoDriver(d)
@@ -200,6 +208,9 @@ func (s *State) consumeDriverWork() {
 						s.driverWork.message = "驱动包不包含当前 H2 版本，请选择匹配的版本。"
 						if out.kind == connections.Trino {
 							s.driverWork.message = "驱动包不包含 Trino 驱动。"
+						}
+						if out.kind == connections.PrestoSQL {
+							s.driverWork.message = "驱动包不包含 PrestoSQL 驱动。"
 						}
 						if out.kind == connections.Databend {
 							s.driverWork.message = "驱动包不包含 Databend 驱动。"
@@ -241,6 +252,10 @@ func (s *State) selectH2Driver(d connections.ManagedDriver) {
 }
 
 func (s *State) currentDriverSelection() (version, digest, directory, profile string) {
+	if s.connectionDraft.Kind == connections.PrestoSQL {
+		a := s.connectionDraft.PrestoSQLOptions
+		return a.DriverVersion, a.DriverSHA256, a.DriverDirectory, "prestosql"
+	}
 	if s.connectionDraft.Kind == connections.Databend {
 		a := s.connectionDraft.DatabendOptions
 		return a.DriverVersion, a.DriverSHA256, a.DriverDirectory, "databend"

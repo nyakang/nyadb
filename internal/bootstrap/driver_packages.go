@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"context"
+	"errors"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/driverstore"
@@ -10,10 +11,13 @@ import (
 
 func managedDriverPackages() connectioneditor.DriverPackages {
 	resolve := func(kind connections.Kind, directory string) (*driverstore.Store, driverstore.Product, error) {
-		if kind != connections.H2 && kind != connections.Trino && kind != connections.ZooKeeper && kind != connections.Databend {
+		if kind != connections.PrestoSQL && kind != connections.H2 && kind != connections.Trino && kind != connections.ZooKeeper && kind != connections.Databend {
 			return nil, driverstore.Product{}, connections.ErrInvalid
 		}
 		product := driverstore.Product{Key: "h2", Runtime: "java", MainClass: "com.dbx.agent.h2.H2Agent"}
+		if kind == connections.PrestoSQL {
+			product = driverstore.Product{Key: "prestosql", Runtime: "java", MainClass: "app.dbx.jdbc.DbxJdbcPlugin"}
+		}
 		if kind == connections.Databend {
 			product = driverstore.Product{Key: "databend", Runtime: "java", MainClass: "com.dbx.agent.databend.DatabendAgent"}
 		}
@@ -33,6 +37,17 @@ func managedDriverPackages() connectioneditor.DriverPackages {
 		return store, product, err
 	}
 	return connectioneditor.DriverPackages{
+		Remove: func(ctx context.Context, kind connections.Kind, d connections.ManagedDriver) error {
+			store, product, err := resolve(kind, d.Directory)
+			if err != nil || d.Key != product.Key {
+				return connections.ErrInvalid
+			}
+			err = store.RemovePinned(ctx, d.Key, d.Version, d.SHA256)
+			if errors.Is(err, driverstore.ErrBusy) {
+				return connections.ErrManagedDriverInUse
+			}
+			return err
+		},
 		List: func(ctx context.Context, kind connections.Kind, directory string) ([]connections.ManagedDriver, error) {
 			store, product, err := resolve(kind, directory)
 			if err != nil {

@@ -15,8 +15,9 @@ import (
 // URIImport contains a temporary secret, never part of Profile or storage.
 // Errors and formatted values deliberately do not contain the original URI.
 type URIImport struct {
-	Profile  Profile
-	Password string `json:"-"`
+	PrestoSQLCredentials PrestoSQLCredentials `json:"-"`
+	Profile              Profile
+	Password             string `json:"-"`
 }
 
 func (URIImport) String() string   { return "connection URI import (credentials redacted)" }
@@ -59,6 +60,8 @@ func ParseURI(raw string) (URIImport, error) {
 	}
 	var kind Kind
 	switch strings.ToLower(u.Scheme) {
+	case "prestosql":
+		return ParsePrestoSQLURI(raw)
 	case "databend":
 		return parseDatabendURI(u, jdbcDatabend)
 	case "tdengine", "taosws", "taoswss", "ws", "wss":

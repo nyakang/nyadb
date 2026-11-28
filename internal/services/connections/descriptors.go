@@ -12,6 +12,8 @@ type Descriptor struct {
 
 func Describe(kind Kind) (Descriptor, bool) {
 	switch kind {
+	case PrestoSQL:
+		return Descriptor{kind, "PrestoSQL", "prestosql", "server", "trino", 8080, contract.Capabilities{Query: true, Metadata: true, Schemas: true, EditableTables: true, Count: true, FieldChunks: true, Export: true, JSONL: true}}, true
 	case Databend:
 		return Descriptor{kind, "Databend", "databend", "server", "databend", 8000, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Objects: true, EditableTables: true, Count: true, FieldChunks: true, Export: true, JSONL: true}}, true
 	case TDengine:

@@ -202,6 +202,7 @@ func (s *State) Disconnect(id int64) {
 		w.objectCancel, w.objectResults = nil, nil
 		w.Password = ""
 		w.SentinelPassword = ""
+		w.PrestoSQLCredentials = connections.PrestoSQLCredentials{}
 		if w == s.current {
 			w.Databases = nil
 			s.ResetBrowser()
@@ -230,6 +231,7 @@ func (s *State) Close() {
 	s.DisconnectAll()
 	s.current.Password = ""
 	s.current.SentinelPassword = ""
+	s.current.PrestoSQLCredentials = connections.PrestoSQLCredentials{}
 	if s.engines.Close != nil {
 		_ = s.engines.Close()
 	}

@@ -28,6 +28,7 @@ type Dependencies struct {
 // buffered channels; they never retain a Workspace or write its fields.
 type Workspace struct {
 	SentinelPassword        string
+	PrestoSQLCredentials    connections.PrestoSQLCredentials
 	ProfileID               int64
 	Kind                    connections.Kind
 	Catalog                 string

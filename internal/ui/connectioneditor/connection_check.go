@@ -85,6 +85,21 @@ func (s *State) startMySQLConnectionTest(services ui.Services) {
 	}
 	s.connectionTesting = true
 	secret := s.connectionSecret // never log or persist this value
+	prestoSecrets := []string{}
+	if p.Kind == connections.PrestoSQL {
+		c := s.prestoCredentials()
+		prestoSecrets = append(prestoSecrets, c.Password)
+		for _, v := range c.Parameters() {
+			prestoSecrets = append(prestoSecrets, v)
+		}
+		secret, err = connections.EncodePrestoSQLCredentials(c)
+		if err != nil {
+			cancel()
+			s.connectionTesting = false
+			s.connectionError = locales.Text("请检查 PrestoSQL 凭据")
+			return
+		}
+	}
 	tunnelSecrets := s.tunnelSnapshot()
 	tunnelTester := s.mysqlTunnelTester
 	tester := s.mysqlConnectionTester
@@ -108,7 +123,7 @@ func (s *State) startMySQLConnectionTest(services ui.Services) {
 			err = tester(ctx, settings, secret)
 		}
 		if err != nil {
-			for _, sensitive := range []string{secret, sentinelPassword, tunnelSecrets.SSHPassword, tunnelSecrets.SSHPassphrase, tunnelSecrets.HTTPToken, tunnelSecrets.ProxyPassword, tunnelSecrets.HTTPKeyPassphrase} {
+			for _, sensitive := range append([]string{secret, sentinelPassword, tunnelSecrets.SSHPassword, tunnelSecrets.SSHPassphrase, tunnelSecrets.HTTPToken, tunnelSecrets.ProxyPassword, tunnelSecrets.HTTPKeyPassphrase}, prestoSecrets...) {
 				if sensitive != "" {
 					err = errors.New(strings.ReplaceAll(err.Error(), sensitive, "[已隐藏]"))
 				}

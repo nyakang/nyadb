@@ -481,6 +481,19 @@ func (l *Lease) Close() error {
 }
 
 func (s *Store) Remove(ctx context.Context, key, version string) error {
+	return s.remove(ctx, key, version, "")
+}
+
+// RemovePinned removes exactly the package confirmed by the caller. The
+// digest check and lease check share the cross-process store lock.
+func (s *Store) RemovePinned(ctx context.Context, key, version, digest string) error {
+	if !validDigest(digest) {
+		return ErrPackage
+	}
+	return s.remove(ctx, key, version, digest)
+}
+
+func (s *Store) remove(ctx context.Context, key, version, digest string) error {
 	if ctx == nil {
 		return ErrPackage
 	}
@@ -507,6 +520,17 @@ func (s *Store) Remove(ctx context.Context, key, version string) error {
 	}
 	if err != nil || !info.IsDir() {
 		return ErrPackage
+	}
+	if digest != "" {
+		bundle, e := root.OpenRoot(name)
+		if e != nil {
+			return ErrPackage
+		}
+		installed, e := readRegular(bundle, "archive.sha256", 64)
+		bundle.Close()
+		if e != nil || string(installed) != digest {
+			return ErrPackage
+		}
 	}
 	f, err := root.Open(name + "/.leases")
 	if err == nil {

@@ -78,6 +78,8 @@ func profileBrand(kind connections.Kind, p theme.Palette) (asset, fallback strin
 		return "PostgreSQL", "postgres-type", p.Blue
 	case connections.SQLite:
 		return "SQLite", "sqlite-type", p.Gold
+	case connections.PrestoSQL:
+		return "PrestoSQL", "database", ui.Hex("#dd5a9b")
 	case connections.Trino:
 		return "Trino", "database", ui.Hex("#dd5a9b")
 	case connections.StarRocks:

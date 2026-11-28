@@ -40,6 +40,20 @@ func (s *State) engineSessionToolbar(c *ui.Context) bool {
 	}
 	status := s.sessions.StatusFor(p.ID)
 	ui.Column(c).Gap(5).Children(func() {
+		if p.Kind == connections.PrestoSQL && status != "已连接" {
+			draft := &s.sessions.Current().PrestoSQLCredentials
+			ui.TextInput(c, &draft.Password).Password().Label(locales.Text("PrestoSQL 会话密码"))
+			if p.TLSMode != "disable" {
+				if p.PrestoSQLOptions.TrustStorePath != "" {
+					ui.TextInput(c, &draft.TrustStorePassword).Password().Label(locales.Text("PrestoSQL 会话信任库密码"))
+				}
+				if p.PrestoSQLOptions.KeyStorePath != "" {
+					ui.TextInput(c, &draft.KeyStorePassword).Password().Label(locales.Text("PrestoSQL 会话密钥库密码"))
+				}
+				ui.TextInput(c, &draft.AccessToken).Password().Label(locales.Text("PrestoSQL 会话访问令牌"))
+			}
+			ui.TextInput(c, &draft.ExtraCredentials).Password().Label(locales.Text("PrestoSQL 会话附加凭据"))
+		}
 		if (p.Kind == connections.Databend && p.DatabendOptions.Auth != "none" || p.Kind == connections.ZooKeeper && p.ZooKeeperOptions.Auth != "none" || p.Kind == connections.TDengine || p.Kind == connections.QuestDB || p.Kind == connections.RQLite && p.RQLiteOptions.Auth == "basic" || p.Kind == connections.H2 || p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.SelectDB || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind.IsREST() || p.Kind == connections.MongoDB || p.Kind == connections.Redis || p.Kind == connections.Neo4j && p.Neo4jOptions.Auth == "basic" || p.Kind == connections.Cassandra && p.CassandraOptions.Auth == "password" || p.Kind == connections.Etcd && p.EtcdOptions.Auth == "basic" || p.Kind == connections.Consul && p.ConsulOptions.Auth == "token") && status != "已连接" && !(p.Kind == connections.Solr && p.SolrOptions.Auth == "none") && !(p.Kind == connections.CouchDB && p.CouchDBOptions.Auth == "none") && !(p.Kind == connections.Meilisearch && p.MeilisearchOptions.Auth == "none") && !(p.Kind == connections.Qdrant && p.QdrantOptions.Auth == "none") {
 			label := locales.Text("PostgreSQL 会话密码")
 			if p.Kind == connections.Databend {
@@ -200,7 +214,7 @@ func (s *State) sqlStatementAtCaret(id int64, source string, cursor int) string 
 		if p.ID == id && p.Kind == connections.SQLServer {
 			return sqltext.SQLServerStatementAt(source, cursor)
 		}
-		if p.ID == id && p.Kind == connections.Trino {
+		if p.ID == id && (p.Kind == connections.Trino || p.Kind == connections.PrestoSQL) {
 			return sqltext.TrinoStatementAt(source, cursor)
 		}
 		if p.ID == id && (p.Kind == connections.ClickHouse || p.Kind == connections.TDengine) {
@@ -251,7 +265,7 @@ func (s *State) sqlFormat(id int64, source string) (string, error) {
 		if p.ID == id && p.Kind == connections.SQLServer {
 			return sqltext.FormatSQLServer(source)
 		}
-		if p.ID == id && p.Kind == connections.Trino {
+		if p.ID == id && (p.Kind == connections.Trino || p.Kind == connections.PrestoSQL) {
 			return sqltext.FormatTrino(source)
 		}
 		if p.ID == id && (p.Kind == connections.ClickHouse || p.Kind == connections.TDengine) {
@@ -271,7 +285,7 @@ func (s *State) sqlValidateExplain(id int64, source string) error {
 		}
 	}
 	for _, p := range s.navigation.Profiles() {
-		if p.ID == id && p.Kind == connections.Trino {
+		if p.ID == id && (p.Kind == connections.Trino || p.Kind == connections.PrestoSQL) {
 			return sqltext.SingleTrinoStatement(source)
 		}
 		if p.ID == id && p.Kind == connections.Oracle {
