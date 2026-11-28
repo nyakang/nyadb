@@ -15,7 +15,7 @@ import (
 	"github.com/nyakang/nyadb/internal/services/jdbcplugin"
 )
 
-// Provider is private until profile, driver, workspace and UI acceptance.
+// Provider opens original managed JDBC connections through the public runtime.
 // Observe receives copies on worker threads and must be concurrency-safe.
 type Provider struct {
 	Store   *driverstore.Store

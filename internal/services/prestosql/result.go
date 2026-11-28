@@ -1,5 +1,4 @@
 // Package prestosql adapts the original external JDBC plugin for PrestoSQL.
-// Public provider registration requires separate native workspace acceptance.
 package prestosql
 
 import (
