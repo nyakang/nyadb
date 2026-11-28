@@ -366,11 +366,11 @@ func dataMutationReceiptComplete(object contract.ObjectRef, edits []contract.Dat
 		if outcome.Kind != edit.Kind || !reflect.DeepEqual(outcome.Original, edit.Original) {
 			return false
 		}
-		if edit.Kind == "insert" || edit.Kind == "update" || edit.Kind == "copy" {
+		if edit.Kind == "insert" || edit.Kind == "update" || edit.Kind == "copy" || edit.Kind == "replace" {
 			// Complete original sequential acknowledgements can require a fresh
 			// read rather than fabricated saved values/keys. Identity and original
 			// destinations were validated above and at the owning acceptance site.
-			if (edit.Kind == "insert" || edit.Kind == "update") && result.Sequential != nil && result.RefreshRequired && outcome.Saved == nil {
+			if (edit.Kind == "insert" || edit.Kind == "update" || edit.Kind == "replace") && result.Sequential != nil && result.RefreshRequired && outcome.Saved == nil {
 				continue
 			}
 			if outcome.Saved == nil || outcome.Saved.Ref.Object != object || len(outcome.Saved.Ref.Columns) == 0 || len(outcome.Saved.Ref.Columns) != len(outcome.Saved.Ref.TypedValues) || len(outcome.Saved.Ref.Columns) != len(outcome.Saved.Ref.Values) {
@@ -436,6 +436,10 @@ func (s *State) dataMutationModal(c *ui.Context, d *Document) {
 							if p.CopyLabel != "" {
 								kind = locales.Text(p.CopyLabel)
 							}
+						case "replace":
+							if p.ReplaceLabel != "" {
+								kind = locales.Text(p.ReplaceLabel)
+							}
 						case "delete":
 							kind = locales.Text(p.DeleteLabel)
 						}
@@ -478,6 +482,8 @@ func dataEditDeletesRow(kind string) bool { return kind == "delete" || kind == "
 
 func dataMutationKind(kind string) string {
 	switch kind {
+	case "replace":
+		return locales.Text("替换整条记录")
 	case "copy":
 		return locales.Text("复制键")
 	case "insert":

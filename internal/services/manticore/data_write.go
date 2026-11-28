@@ -71,7 +71,7 @@ func (d *dataLease) prepareStatement(ctx context.Context, m *contract.TableStruc
 		if !ok {
 			continue
 		}
-		if !slices.Contains(permissions[c.Name], e.Kind) {
+		if !slices.Contains(permissions[c.Name], e.Kind) && !(e.Kind == "replace" && c.Name == "id") {
 			return s, contract.ErrUnsupported
 		}
 		size += len(v.Text) + len(v.Bytes)
@@ -89,6 +89,9 @@ func (d *dataLease) prepareStatement(ctx context.Context, m *contract.TableStruc
 	if len(names) != len(e.Values) {
 		return s, connections.ErrInvalid
 	}
+	if e.Kind == "replace" && len(e.Values) != len(m.Columns) {
+		return s, connections.ErrInvalid
+	}
 	var predicates []string
 	if e.Original != nil {
 		token, g, err := d.grant(e.Original.Ref)
@@ -101,6 +104,25 @@ func (d *dataLease) prepareStatement(ctx context.Context, m *contract.TableStruc
 		cells, err := d.readOriginal(ctx, m, g)
 		if err != nil {
 			return s, err
+		}
+		if e.Kind == "replace" {
+			if e.Original.Mode != "values" {
+				return s, connections.ErrInvalid
+			}
+			total := 0
+			for _, cell := range e.Original.Original {
+				if cell.Truncated {
+					return s, connections.ErrInvalid
+				}
+				total += len(cell.Text) + len(cell.Bytes)
+			}
+			if total > contract.DataEditMaxBytes {
+				return s, contract.ErrDataEditLimit
+			}
+			id, err := writeLiteral(contract.StructureColumn{Name: "id", DataType: "bigint"}, e.Values["id"])
+			if err != nil || id != g.id {
+				return s, connections.ErrInvalid
+			}
 		}
 		if e.Kind == "update" {
 			total := 0
@@ -138,6 +160,8 @@ func (d *dataLease) prepareStatement(ctx context.Context, m *contract.TableStruc
 	switch e.Kind {
 	case "insert":
 		s.SQL = "INSERT INTO " + name + " (" + strings.Join(names, ",") + ") VALUES (" + strings.Join(values, ",") + ")"
+	case "replace":
+		s.SQL = "REPLACE INTO " + name + " (" + strings.Join(names, ",") + ") VALUES (" + strings.Join(values, ",") + ")"
 	case "update":
 		s.SQL = "UPDATE " + name + " SET " + strings.Join(assignments, ",") + " WHERE " + strings.Join(predicates, " AND ")
 	case "delete":
@@ -186,6 +210,10 @@ func (d *dataLease) previewEdits(ctx context.Context, id int64, db, table string
 	if m.Engine == "percolate" {
 		scope = "Independent native statements without a batch transaction. Percolate deletion uses only the native id predicate. The complete stored record is checked before each statement, without atomic compare-and-delete; a change after that check may still be deleted. Omitted insert fields use native defaults. UPDATE is unsupported and is never replaced with REPLACE."
 		snapshot.Presentation = &contract.DataMutationPresentation{Title: "确认 Manticore 存储查询写入", Hint: "各语句独立执行，不提供批次事务。删除仅以原生 id 为条件；完整存储记录仅在提交前检查，不保证原子比较删除，检查后发生的更改仍可能被删除。新增时省略的字段使用原生默认值。未知或不完整回执保留草稿并禁止重放。", PreviewLabel: "Manticore 存储查询写入完整预览", HistoryLabel: "已确认的 Manticore 存储查询写入", CreateLabel: "新增存储查询", DeleteLabel: "删除存储查询"}
+	}
+	if slices.ContainsFunc(snapshot.Edits, func(e contract.DataEdit) bool { return e.Kind == "replace" }) {
+		scope = "Independent native statements without a batch transaction. Explicit REPLACE sends every stored field with the original id. The complete original record is checked before dispatch, without atomic compare-and-replace: a later change may be overwritten and a deleted record may be recreated. DELETE remains id-only without atomic compare-and-delete. Omitted INSERT fields use native defaults. UPDATE is unsupported."
+		snapshot.Presentation = &contract.DataMutationPresentation{Title: "确认 Manticore 存储查询替换", Hint: "替换会提交原 id 和全部存储字段。完整原记录仅在提交前检查，不保证原子比较替换；检查后的更改可能被覆盖，已删除的记录可能被重新创建。各语句独立执行，无批次事务；删除仅以 id 为条件，新增省略字段使用原生默认值。未知或不完整回执保留草稿并禁止重放。", PreviewLabel: "Manticore 存储查询替换完整预览", HistoryLabel: "已确认的 Manticore 存储查询替换", CreateLabel: "新增存储查询", DeleteLabel: "删除存储查询", ReplaceLabel: "替换整条存储查询"}
 	}
 	var statements []dataStatement
 	seen := map[string]bool{}

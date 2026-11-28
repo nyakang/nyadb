@@ -19,6 +19,8 @@ func TestDataCapabilitiesRequireEveryEditToHaveAnExecutor(t *testing.T) {
 		{"complete", DataRuntime{PreviewEdits: preview, SubmitEdits: submit, PreviewEditKinds: []string{"insert", "update", "delete"}}, true},
 		{"partial", DataRuntime{PreviewEdits: preview, SubmitEdits: submit, PreviewEditKinds: []string{"insert", "delete"}}, false},
 		{"only-update", DataRuntime{PreviewEdits: preview, SubmitEdits: submit, EditKinds: []string{"update"}, PreviewEditKinds: []string{"update"}}, true},
+		{"explicit-replace", DataRuntime{PreviewEdits: preview, SubmitEdits: submit, EditKinds: []string{"replace"}, PreviewEditKinds: []string{"replace"}}, true},
+		{"replace-without-confirmation", DataRuntime{PreviewEdits: preview, SubmitEdits: submit, EditKinds: []string{"replace"}, PreviewEditKinds: []string{"update"}}, false},
 		{"empty", DataRuntime{PreviewEdits: preview, SubmitEdits: submit, EditKinds: []string{}, PreviewEditKinds: []string{"update"}}, false},
 		{"missing-submit", DataRuntime{PreviewEdits: preview, PreviewEditKinds: []string{"insert", "update", "delete"}}, false},
 		{"missing-preview", DataRuntime{SubmitEdits: submit, PreviewEditKinds: []string{"insert", "update", "delete"}}, false},

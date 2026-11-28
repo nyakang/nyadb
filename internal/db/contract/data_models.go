@@ -219,7 +219,7 @@ type DataEdit struct {
 	// GraphEndpoints is only for explicit graph relationship insertion through
 	// an owning preview. Ordinary savers and unsupported providers reject it.
 	GraphEndpoints *DataGraphEndpoints `json:",omitempty"`
-	Kind           string              // insert | update | delete; copy only through PreviewKeyCopy
+	Kind           string              // insert | update | delete | replace (explicit whole record); copy only through PreviewKeyCopy
 	Original       *RowSnapshot
 	Values         map[string]DataValue
 }

@@ -27,6 +27,7 @@ type DataMutationItem struct {
 type DataMutationPresentation struct {
 	Title, Hint, PreviewLabel, HistoryLabel          string
 	CreateLabel, UpdateLabel, DeleteLabel, CopyLabel string
+	ReplaceLabel                                     string
 	ShowRelationships                                bool
 }
 

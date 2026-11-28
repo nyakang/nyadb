@@ -4509,5 +4509,12 @@
   "manticorePercolateWritePreview": "Complete Manticore stored-query write preview",
   "manticorePercolateWriteHistory": "Confirmed Manticore stored-query writes",
   "manticorePercolateWriteInsert": "Insert stored query",
-  "manticorePercolateWriteDelete": "Delete stored query"
+  "manticorePercolateWriteDelete": "Delete stored query",
+  "dataReplaceWholeRecord": "Replace entire record",
+  "dataReplaceWholeRecordHint": "Editing an entire replacement record. The original identity stays fixed; saving will confirm every field.",
+  "manticorePercolateReplaceTitle": "Confirm Manticore stored-query replacement",
+  "manticorePercolateReplaceHint": "Replacement sends the original id and every stored field. The complete original record is checked before dispatch, without atomic compare-and-replace; later changes may be overwritten and a deleted record may be recreated. Statements run independently without a batch transaction. Deletion uses only id; omitted insert fields use native defaults. Unknown or incomplete receipts retain drafts and block replay.",
+  "manticorePercolateReplacePreview": "Complete Manticore stored-query replacement preview",
+  "manticorePercolateReplaceHistory": "Confirmed Manticore stored-query replacement",
+  "manticorePercolateReplaceItem": "Replace entire stored query"
 }

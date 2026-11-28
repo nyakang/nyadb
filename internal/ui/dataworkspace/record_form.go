@@ -41,6 +41,9 @@ func (s *State) recordForm(c *ui.Context, t *Document) {
 			ui.Text(c, locales.Text("选择一条记录")).Padding(10)
 			return
 		}
+		if draft := mysqlDataDraftForRow(t, row); draft != nil && draft.Kind == "replace" {
+			ui.Text(c, locales.Text("正在编辑整条替换记录；原标识保持不变，保存时将确认全部字段。")).TextColor(p.Warning).Padding(3, 6)
+		}
 		ui.Scroll(c).Grow(1).MinHeight(0).Children(func() {
 			ui.Column(c).Padding(8).Gap(8).Children(func() {
 				for _, source := range recordFormColumnOrder(t) {

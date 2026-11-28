@@ -25,7 +25,7 @@ func HasDataWriteExecutor(r DataRuntime) bool {
 			if r.PreviewKeyCopy == nil {
 				return false
 			}
-		case "insert", "update", "delete", "detach_delete":
+		case "insert", "update", "delete", "detach_delete", "replace":
 			if r.PreviewEdits == nil || !slices.Contains(r.PreviewEditKinds, kind) {
 				return false
 			}

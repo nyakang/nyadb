@@ -45927,3 +45927,79 @@ func ManticorePercolateWriteDelete() string { return In(i18n.Locale()).Manticore
 func (msgs Messages) ManticorePercolateWriteDelete() string {
 	return Catalog.Format(msgs.locale, "manticorePercolateWriteDelete", nil)
 }
+
+// DataReplaceWholeRecord says "替换整条记录"
+// in the language the app shows.
+func DataReplaceWholeRecord() string { return In(i18n.Locale()).DataReplaceWholeRecord() }
+
+// DataReplaceWholeRecord says "替换整条记录"
+// in the language of msgs.
+func (msgs Messages) DataReplaceWholeRecord() string {
+	return Catalog.Format(msgs.locale, "dataReplaceWholeRecord", nil)
+}
+
+// DataReplaceWholeRecordHint says "正在编辑整条替换记录；原标识保持不变，保存时将确认全部字段。"
+// in the language the app shows.
+func DataReplaceWholeRecordHint() string { return In(i18n.Locale()).DataReplaceWholeRecordHint() }
+
+// DataReplaceWholeRecordHint says "正在编辑整条替换记录；原标识保持不变，保存时将确认全部字段。"
+// in the language of msgs.
+func (msgs Messages) DataReplaceWholeRecordHint() string {
+	return Catalog.Format(msgs.locale, "dataReplaceWholeRecordHint", nil)
+}
+
+// ManticorePercolateReplaceTitle says "确认 Manticore 存储查询替换"
+// in the language the app shows.
+func ManticorePercolateReplaceTitle() string {
+	return In(i18n.Locale()).ManticorePercolateReplaceTitle()
+}
+
+// ManticorePercolateReplaceTitle says "确认 Manticore 存储查询替换"
+// in the language of msgs.
+func (msgs Messages) ManticorePercolateReplaceTitle() string {
+	return Catalog.Format(msgs.locale, "manticorePercolateReplaceTitle", nil)
+}
+
+// ManticorePercolateReplaceHint says "替换会提交原 id …"
+// in the language the app shows.
+func ManticorePercolateReplaceHint() string { return In(i18n.Locale()).ManticorePercolateReplaceHint() }
+
+// ManticorePercolateReplaceHint says "替换会提交原 id …"
+// in the language of msgs.
+func (msgs Messages) ManticorePercolateReplaceHint() string {
+	return Catalog.Format(msgs.locale, "manticorePercolateReplaceHint", nil)
+}
+
+// ManticorePercolateReplacePreview says "Manticore 存储查询替换完整预览"
+// in the language the app shows.
+func ManticorePercolateReplacePreview() string {
+	return In(i18n.Locale()).ManticorePercolateReplacePreview()
+}
+
+// ManticorePercolateReplacePreview says "Manticore 存储查询替换完整预览"
+// in the language of msgs.
+func (msgs Messages) ManticorePercolateReplacePreview() string {
+	return Catalog.Format(msgs.locale, "manticorePercolateReplacePreview", nil)
+}
+
+// ManticorePercolateReplaceHistory says "已确认的 Manticore 存储查询替换"
+// in the language the app shows.
+func ManticorePercolateReplaceHistory() string {
+	return In(i18n.Locale()).ManticorePercolateReplaceHistory()
+}
+
+// ManticorePercolateReplaceHistory says "已确认的 Manticore 存储查询替换"
+// in the language of msgs.
+func (msgs Messages) ManticorePercolateReplaceHistory() string {
+	return Catalog.Format(msgs.locale, "manticorePercolateReplaceHistory", nil)
+}
+
+// ManticorePercolateReplaceItem says "替换整条存储查询"
+// in the language the app shows.
+func ManticorePercolateReplaceItem() string { return In(i18n.Locale()).ManticorePercolateReplaceItem() }
+
+// ManticorePercolateReplaceItem says "替换整条存储查询"
+// in the language of msgs.
+func (msgs Messages) ManticorePercolateReplaceItem() string {
+	return Catalog.Format(msgs.locale, "manticorePercolateReplaceItem", nil)
+}

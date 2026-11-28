@@ -53,7 +53,7 @@ func (d *dataLease) Runtime() contract.DataRuntime {
 		Loader: d.load, AdvancedLoader: d.page, Count: d.count, TableMetadata: d.metadata, TableInfo: d.info, Chunk: d.chunk,
 		Exporter: d.export, JSONL: d.jsonl, ExportFormats: []string{"TXT", "CSV", "TSV", "JSON", "XML", "HTML"},
 		RowReader: d.row, PreviewEdits: d.previewEdits, SubmitEdits: d.submitEdits,
-		EditKinds: []string{"insert", "update", "delete"}, PreviewEditKinds: []string{"insert", "update", "delete"},
+		EditKinds: []string{"insert", "update", "delete", "replace"}, PreviewEditKinds: []string{"insert", "update", "delete", "replace"},
 		EditValueKinds: []contract.CellKind{contract.Text, contract.Integer, contract.Floating, contract.Boolean, contract.JSON},
 		NativeReceipts: true, SequentialWrites: true, InsertOmittedValues: true,
 		MutationPresentation: &contract.DataMutationPresentation{Title: "确认 Manticore 数据写入", Hint: "各语句独立执行，不提供批次事务或整行并发隔离。提交前检查原始行；标量属性参与条件，全文、JSON 和集合仅作提交前检查。省略字段使用原生默认值；未知或不完整回执保留草稿并禁止重放。", PreviewLabel: "Manticore 原生写入完整预览", HistoryLabel: "已确认的 Manticore 数据写入", CreateLabel: "新增记录", UpdateLabel: "更新记录", DeleteLabel: "删除记录"},

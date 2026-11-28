@@ -178,7 +178,7 @@ func TestNativeDataPagesTypedValuesFiltersCompleteExportAndOriginalScope(t *test
 	runNative(t, q, "CREATE TABLE "+table+"_pq (title text) type='pq'")
 	_, pq := nativeData(t, s, table+"_pq")
 	percolate, e := pq.Loader(context.Background(), 69, "Manticore", table+"_pq", 0, 1)
-	if e != nil || percolate.Editable == nil || !*percolate.Editable || !slices.Equal(percolate.EditKinds, []string{"insert", "delete"}) || !slices.Equal(percolate.Columns, []string{"id", "query", "tags", "filters"}) {
+	if e != nil || percolate.Editable == nil || !*percolate.Editable || !slices.Equal(percolate.EditKinds, []string{"insert", "delete", "replace"}) || !slices.Equal(percolate.Columns, []string{"id", "query", "tags", "filters"}) {
 		t.Fatal("percolate lost its original row mode", percolate, e)
 	}
 	runNative(t, q, "DROP TABLE "+table+"_pq")

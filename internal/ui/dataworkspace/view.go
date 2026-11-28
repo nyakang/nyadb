@@ -378,6 +378,11 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *contract.DataP
 			if theme.IconButton(c, "", "plus").Label(locales.Text("添加记录")).Tooltip(locales.Text("添加记录")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!insertReady).Clicked() {
 				s.addMySQLDataRecord(c.Services(), t)
 			}
+			if t.allowsDataEdit("replace") {
+				if ui.Button(c, locales.Text("替换整条记录")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(!s.canReplaceDataRecord(t, t.selectedRow)).Clicked() {
+					s.ReplaceRecord(c.Services(), t, t.selectedRow)
+				}
+			}
 			if s.runtimeFor(t).PreviewKeyCopy != nil {
 				if theme.IconButton(c, "", "copy").Label(locales.Text("复制键到新键")).Tooltip(locales.Text("复制键到新键")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!s.canCopyDataKey(t, t.selectedRow)).Clicked() {
 					s.beginDataKeyCopy(t, t.selectedRow)

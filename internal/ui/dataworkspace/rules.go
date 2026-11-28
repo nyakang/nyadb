@@ -512,6 +512,9 @@ func (s *State) mysqlDataCellMenu(c *ui.Context, t *Document, m *ui.Menu, row, s
 			s.DeleteKeyPrefix(t)
 		}
 	}
+	if t.allowsDataEdit("replace") && m.Item(locales.Text("替换整条记录")).Disabled(!s.canReplaceDataRecord(t, row)).Chosen() {
+		s.ReplaceRecord(c.Services(), t, row)
+	}
 	if s.runtimeFor(t).PreviewKeyCopy != nil {
 		if m.Item(locales.Text("复制键到新键")).Disabled(!s.canCopyDataKey(t, row)).Chosen() {
 			s.beginDataKeyCopy(t, row)

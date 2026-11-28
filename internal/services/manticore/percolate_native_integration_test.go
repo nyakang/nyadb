@@ -51,7 +51,7 @@ func TestNativePercolateOriginalRowsPagingFiltersFieldsAndCompleteExport(t *test
 	_, runtime := nativeData(t, s, table)
 	ctx := context.Background()
 	page, err := runtime.Loader(ctx, 69, "Manticore", table, 0, 7)
-	if err != nil || len(page.Rows) != 7 || !slices.Equal(page.Columns, []string{"id", "query", "tags", "filters"}) || !page.HasMore || page.Editable == nil || !*page.Editable || !slices.Equal(page.EditKinds, []string{"insert", "delete"}) {
+	if err != nil || len(page.Rows) != 7 || !slices.Equal(page.Columns, []string{"id", "query", "tags", "filters"}) || !page.HasMore || page.Editable == nil || !*page.Editable || !slices.Equal(page.EditKinds, []string{"insert", "delete", "replace"}) {
 		t.Fatal(page, err)
 	}
 	if !page.Rows[0][2].Truncated || page.Rows[0][0].Value.Kind != contract.Integer || page.Rows[0][3].Null || page.Rows[0][3].Text != "" {

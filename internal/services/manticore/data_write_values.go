@@ -96,7 +96,7 @@ func writeKinds(m *contract.TableStructure) []string {
 	case "local":
 		return []string{"update"}
 	case "percolate":
-		return []string{"insert", "delete"}
+		return []string{"insert", "delete", "replace"}
 	default:
 		return []string{}
 	}
@@ -114,6 +114,9 @@ func writePermissions(m *contract.TableStructure) map[string][]string {
 		}
 		if m.Engine == "percolate" {
 			out[c.Name] = []string{"insert"}
+			if c.Name != "id" {
+				out[c.Name] = append(out[c.Name], "replace")
+			}
 			continue
 		}
 		if m.Engine != "rt" {

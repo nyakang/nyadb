@@ -4509,5 +4509,12 @@
   "manticorePercolateWritePreview": "Manticore 存储查询写入完整预览",
   "manticorePercolateWriteHistory": "已确认的 Manticore 存储查询写入",
   "manticorePercolateWriteInsert": "新增存储查询",
-  "manticorePercolateWriteDelete": "删除存储查询"
+  "manticorePercolateWriteDelete": "删除存储查询",
+  "dataReplaceWholeRecord": "替换整条记录",
+  "dataReplaceWholeRecordHint": "正在编辑整条替换记录；原标识保持不变，保存时将确认全部字段。",
+  "manticorePercolateReplaceTitle": "确认 Manticore 存储查询替换",
+  "manticorePercolateReplaceHint": "替换会提交原 id 和全部存储字段。完整原记录仅在提交前检查，不保证原子比较替换；检查后的更改可能被覆盖，已删除的记录可能被重新创建。各语句独立执行，无批次事务；删除仅以 id 为条件，新增省略字段使用原生默认值。未知或不完整回执保留草稿并禁止重放。",
+  "manticorePercolateReplacePreview": "Manticore 存储查询替换完整预览",
+  "manticorePercolateReplaceHistory": "已确认的 Manticore 存储查询替换",
+  "manticorePercolateReplaceItem": "替换整条存储查询"
 }

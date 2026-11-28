@@ -51,6 +51,7 @@ type mysqlEditResult struct {
 	Dedicated            bool
 	Err                  error
 	Verification         *contract.DataVerification
+	ReplacementSource    *contract.RowSnapshot
 	MutationEdits        []contract.DataEdit
 	MutationDestinations []contract.ObjectRef
 }
@@ -825,6 +826,10 @@ func (s *State) consumeEdits(services ui.Services) {
 				} else {
 					t.edit.Err = locales.Text("提交结果仍不确定，禁止重放；请检查数据库")
 				}
+				continue
+			}
+			if r.ReplacementSource != nil {
+				s.consumeDataReplacement(services, t, r)
 				continue
 			}
 			if r.Field != "" {
