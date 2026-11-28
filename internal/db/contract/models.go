@@ -92,6 +92,7 @@ type SQLResult struct {
 const StatementEnqueued = "enqueued"
 
 type StatementOutcome struct {
+	NativeJSON        string `json:",omitempty"` // Original per-statement native acknowledgement, independent of later reads.
 	SQL, State, Error string
 	AffectedRows      int64
 }

@@ -16,7 +16,7 @@ import (
 const previewBytes = 8 << 20
 const previewRows = 10000
 
-func execute(ctx context.Context, c driver.Conn, source string, index int, sink func(int, []contract.Column, []contract.Cell) error, budget *int) (contract.ResultSet, error) {
+func execute(ctx context.Context, c driver.Conn, source string, index int, sink func(int, []contract.Column, []contract.Cell) error, budget *int, receipt *nativeSQLStatement) (contract.ResultSet, error) {
 	tokens, err := sqltext.Tokens(source)
 	if err != nil {
 		return contract.ResultSet{}, contract.ErrUnsupported
@@ -30,15 +30,28 @@ func execute(ctx context.Context, c driver.Conn, source string, index int, sink 
 	}
 	switch first {
 	case "SELECT", "SHOW", "DESCRIBE", "DESC", "EXPLAIN", "CALL":
-		return read(ctx, c, source, index, sink, budget)
+		receipt.Dispatched = true
+		set, err := read(ctx, c, source, index, sink, budget)
+		receipt.Acknowledged = err == nil
+		return set, err
 	default:
 		// ExecContext returns the original OK packet's affected count. Using
 		// QueryContext here would discard it. No database/sql retry layer is used.
+		receipt.Dispatched = true
 		r, e := c.(driver.ExecerContext).ExecContext(ctx, source, nil)
 		if e != nil {
 			return contract.ResultSet{}, e
 		}
-		count, e := r.RowsAffected()
+		count, a := r.RowsAffected()
+		id, b := r.LastInsertId()
+		if a == nil {
+			receipt.AffectedRows = &count
+		}
+		if b == nil {
+			receipt.LastInsertID = &id
+		}
+		e = errors.Join(a, b)
+		receipt.Acknowledged = e == nil
 		return contract.ResultSet{AffectedRows: count}, e
 	}
 }

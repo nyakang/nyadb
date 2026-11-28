@@ -418,6 +418,8 @@ func (s *State) Consume() {
 					} else {
 						s.report(fmt.Sprintf(locales.Text("原生请求已完成 · %d 条响应 · %s"), len(result.Rows), result.Duration))
 					}
+				} else if sqlOutcomeNotice(result) != "" {
+					s.report(sqlOutcomeNotice(result))
 				} else if len(result.Columns) > 0 {
 					s.report(fmt.Sprintf(locales.Text("SQL 已完成 · %d 行 · %s"), len(result.Rows), result.Duration))
 				} else {
@@ -496,7 +498,11 @@ func (s *State) Recover(t *Document) {
 	t.recoverySchema = ""
 	t.rememberResultLayouts()
 	t.clearGraphVisual()
-	t.result = nil
+	// A new physical lease never replaces the original native acknowledgement.
+	// Keep that receipt visible until an explicit later execution supplies a result.
+	if t.result == nil || t.result.NativeJSON == "" {
+		t.result = nil
+	}
 
 	t.err = ""
 	if s.deps.Recovered != nil {

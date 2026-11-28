@@ -4493,5 +4493,13 @@
   "manticoreFunctionScope": "SHOW PLUGINS 返回的函数元数据；服务器未提供函数实现。",
   "manticoreIndexEnabled": "已启用",
   "manticoreIndexPercent": "覆盖率",
-  "manticoreStructureExpired": "原 Manticore 会话已失效，请刷新表结构"
+  "manticoreStructureExpired": "原 Manticore 会话已失效，请刷新表结构",
+  "sqlNativeOriginalReceipt": "原始执行回执",
+  "sqlNativeReceiptBody": "原始执行回执内容",
+  "sqlNativeReceiptScope": "保留原始语句确认、错误和未执行项；后续读取不会更改此回执。",
+  "sqlNativeReceiptBound": "仅显示回执前 64 KiB；复制和导出保留完整内容。",
+  "sqlNativeAffectedUnknown": "服务器未报告影响行数",
+  "sqlNativeAffectedVerify": "服务器未报告影响行数；请核对预期更改",
+  "sqlNativeUnknownOutcome": "原始执行结果不确定；后续读取不能替代原始回执",
+  "sqlHistoryAffectedUnknown": "耗时 %s · 预览 %d 行 · 服务器未报告影响行数"
 }

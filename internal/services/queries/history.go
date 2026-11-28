@@ -31,6 +31,7 @@ type HistorySettings struct {
 }
 type HistoryToken struct{ Epoch, ProfileEpoch uint64 }
 type HistoryEntry struct {
+	NativeJSON                          string `json:",omitempty"` // Complete original receipt, encrypted with the history entry.
 	ID                                  string
 	ProfileID                           int64
 	Database, Source, SQL, State, Error string
@@ -126,10 +127,10 @@ func (h *History) Prune(now time.Time) {
 
 // HistoryEntrySize bounds both persisted and pending operation metadata.
 func HistoryEntrySize(entry HistoryEntry) int {
-	return len(entry.ID) + len(entry.SQL) + len(entry.Error) + len(entry.Database) + len(entry.Object) + len(entry.Source) + len(entry.State) + 256
+	return len(entry.NativeJSON) + len(entry.ID) + len(entry.SQL) + len(entry.Error) + len(entry.Database) + len(entry.Object) + len(entry.Source) + len(entry.State) + 256
 }
 func ValidateHistoryEntry(entry HistoryEntry) error {
-	if entry.ID == "" || entry.ProfileID <= 0 || entry.Started.IsZero() || entry.Duration < 0 || len(entry.SQL) > 8<<20 || len(entry.Error) > 1<<20 || len(entry.Database) > 64<<10 || len(entry.Object) > 64<<10 || len(entry.Source) > 256 {
+	if len(entry.NativeJSON) > HistoryMaxBytes || entry.ID == "" || entry.ProfileID <= 0 || entry.Started.IsZero() || entry.Duration < 0 || len(entry.SQL) > 8<<20 || len(entry.Error) > 1<<20 || len(entry.Database) > 64<<10 || len(entry.Object) > 64<<10 || len(entry.Source) > 256 {
 		return ErrInvalidHistoryEntry
 	}
 	switch entry.State {

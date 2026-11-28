@@ -4493,5 +4493,13 @@
   "manticoreFunctionScope": "Function metadata returned by SHOW PLUGINS; the server does not provide the function implementation.",
   "manticoreIndexEnabled": "Enabled",
   "manticoreIndexPercent": "Percent",
-  "manticoreStructureExpired": "The original Manticore session has expired. Refresh the structure."
+  "manticoreStructureExpired": "The original Manticore session has expired. Refresh the structure.",
+  "sqlNativeOriginalReceipt": "Original execution receipt",
+  "sqlNativeReceiptBody": "Original execution receipt content",
+  "sqlNativeReceiptScope": "Original statement acknowledgements, errors and unsent items are retained. Later reads do not change this receipt.",
+  "sqlNativeReceiptBound": "Only the first 64 KiB is shown. Copy and export retain the complete receipt.",
+  "sqlNativeAffectedUnknown": "The server did not report affected rows",
+  "sqlNativeAffectedVerify": "The server did not report affected rows; verify the intended changes",
+  "sqlNativeUnknownOutcome": "The original outcome is uncertain; later reads cannot replace its receipt",
+  "sqlHistoryAffectedUnknown": "Duration %s · Preview %d rows · Affected rows not reported"
 }

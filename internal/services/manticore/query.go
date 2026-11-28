@@ -2,6 +2,7 @@ package manticore
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"strings"
@@ -174,26 +175,47 @@ func (l *queryLease) ExecuteStream(ctx context.Context, database, source string,
 	if err != nil || len(parts) == 0 {
 		return result, connections.ErrInvalid
 	}
+	original := nativeSQLReceipt{Object: l.s.Namespace("Manticore")}
+	for _, q := range parts {
+		original.Statements = append(original.Statements, nativeSQLStatement{SQL: q, State: "not_executed"})
+		result.Steps = append(result.Steps, contract.StatementOutcome{SQL: q, State: "not_executed"})
+	}
+	start := time.Now()
+	defer func() {
+		for i := range original.Statements {
+			raw, _ := json.Marshal(original.Statements[i])
+			result.Steps[i].NativeJSON = string(raw)
+		}
+		raw, _ := json.Marshal(original)
+		result.NativeJSON = string(raw)
+		result.Duration = time.Since(start)
+		result.SetLegacyView()
+	}()
 	if err = l.connect(child); err != nil {
 		return result, err
 	}
-	start := time.Now()
-	defer func() { result.Duration = time.Since(start); result.SetLegacyView() }()
 	budget := previewBytes
-	for _, q := range parts {
+	for i, q := range parts {
 		if err := child.Err(); err != nil {
 			return result, err
 		}
-		set, e := execute(child, l.conn, q, len(result.Sets), sink, &budget)
-		step := contract.StatementOutcome{SQL: q, State: "completed", AffectedRows: set.AffectedRows}
-		if len(set.Columns) > 0 {
+		receipt := &original.Statements[i]
+		set, e := execute(child, l.conn, q, len(result.Sets), sink, &budget, receipt)
+		step := &result.Steps[i]
+		step.State, step.AffectedRows = "completed", set.AffectedRows
+		if e == nil || len(set.Columns) > 0 {
 			result.Sets = append(result.Sets, set)
 		}
-		result.AffectedRows += set.AffectedRows
+		if e == nil {
+			result.AffectedRows = contract.AddAffectedRows(result.AffectedRows, set.AffectedRows)
+		}
 		if e != nil {
 			var server *mysqldriver.MySQLError
 			step.State = "failed"
-			if !errors.As(e, &server) || !l.conn.(driver.Validator).IsValid() {
+			if !receipt.Dispatched {
+				step.State = "not_executed"
+				e = safeError(e, l.s.profileSecret())
+			} else if !errors.As(e, &server) || !l.conn.(driver.Validator).IsValid() {
 				l.mu.Lock()
 				l.lost = true
 				l.mu.Unlock()
@@ -201,12 +223,21 @@ func (l *queryLease) ExecuteStream(ctx context.Context, database, source string,
 				step.State = "uncertain"
 				e = errors.Join(contract.ErrSQLSessionLost, safeError(e, l.s.profileSecret()))
 			} else {
+				receipt.Acknowledged = true
+				receipt.ErrorCode, receipt.SQLState = server.Number, string(server.SQLState[:])
+				receipt.Error = server.Message
+				if secret := l.s.profileSecret(); secret != "" {
+					receipt.Error = strings.ReplaceAll(receipt.Error, secret, "[redacted]")
+				}
 				e = safeError(e, l.s.profileSecret())
 			}
 			step.Error = e.Error()
+			if receipt.Error == "" {
+				receipt.Error = step.Error
+			}
 			err = e
 		}
-		result.Steps = append(result.Steps, step)
+		receipt.State = step.State
 		if err != nil {
 			return result, err
 		}

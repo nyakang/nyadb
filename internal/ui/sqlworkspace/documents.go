@@ -544,6 +544,7 @@ func (s *State) GuardWorkspaceClose(next func(ui.Services)) bool {
 	return false
 }
 func (s *State) Modals(c *ui.Context) {
+	s.nativeReceiptModal(c)
 	s.graphPropertyModals(c)
 	s.aiModal(c)
 	s.historyModals(c)

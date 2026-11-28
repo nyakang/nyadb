@@ -183,9 +183,23 @@ func completeHistory(job *historyExecution, result contract.SQLResult, err error
 				entry.State = "session_lost"
 			}
 		}
+		entry.NativeJSON = result.NativeJSON
 		for _, set := range result.ResultSets() {
 			entry.Rows += int64(len(set.Rows))
-			entry.AffectedRows += set.AffectedRows
+			entry.AffectedRows = contract.AddAffectedRows(entry.AffectedRows, set.AffectedRows)
+		}
+		if result.NativeJSON != "" {
+			entry.AffectedRows = result.AffectedRows
+			confirmed := false
+			for _, step := range result.Steps {
+				confirmed = confirmed || step.State == "completed" || step.State == "executed"
+				if step.State == "uncertain" {
+					entry.State = "uncertain"
+				}
+			}
+			if err != nil && confirmed && entry.State != "uncertain" {
+				entry.State = "partial"
+			}
 		}
 		if entry.Source == "file" {
 			bytes := 0
@@ -196,14 +210,15 @@ func completeHistory(job *historyExecution, result contract.SQLResult, err error
 				v := entry
 				v.ID = fmt.Sprintf("%s/%d", entry.ID, i)
 				v.SQL, v.Error = step.SQL, boundedHistoryError(step.Error)
-				if step.State == "executed" {
+				if step.State == "executed" || step.State == "completed" {
 					v.State = "success"
 				} else if step.State == "uncertain" {
 					v.State = "uncertain"
 				} else {
 					v.State = "error"
 				}
-				v.Rows, v.AffectedRows = 0, 0
+				v.Rows, v.AffectedRows = 0, step.AffectedRows
+				v.NativeJSON = step.NativeJSON
 				size := queries.HistoryEntrySize(v)
 				if len(r.entries) >= historyReceiptLimit || bytes+size > (8<<20)+historyErrorLimit {
 					r.dropped++
@@ -213,7 +228,11 @@ func completeHistory(job *historyExecution, result contract.SQLResult, err error
 				r.entries = append(r.entries, v)
 			}
 		} else {
-			r.entries = []queries.HistoryEntry{entry}
+			if queries.HistoryEntrySize(entry) <= queries.HistoryMaxBytes {
+				r.entries = []queries.HistoryEntry{entry}
+			} else {
+				r.dropped++
+			}
 		}
 	}
 	job.out <- r

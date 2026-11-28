@@ -47,6 +47,9 @@ func (s *State) openHistorySelection(id string) {
 	}
 }
 func (s *State) historyModals(c *ui.Context) {
+	if s.nativeReceipt != nil {
+		return
+	}
 	h := &s.history
 	s.historyRecoveryModal(c)
 	if !h.open {
@@ -151,7 +154,14 @@ func (s *State) historyModals(c *ui.Context) {
 			}
 			if b.row >= 0 && b.row < len(entries) {
 				e := entries[b.row]
-				ui.Text(c, fmt.Sprintf(locales.Text("耗时 %s · 预览 %d 行 · 影响 %d 行"), e.Duration, e.Rows, e.AffectedRows)).FontSize(theme.Font(c, 11))
+				summary := fmt.Sprintf(locales.Text("耗时 %s · 预览 %d 行 · 影响 %d 行"), e.Duration, e.Rows, e.AffectedRows)
+				if e.AffectedRows < 0 {
+					summary = fmt.Sprintf(locales.Text("耗时 %s · 预览 %d 行 · 服务器未报告影响行数"), e.Duration, e.Rows)
+				}
+				ui.Text(c, summary).FontSize(theme.Font(c, 11))
+				if e.NativeJSON != "" && ui.Button(c, locales.Text("原始执行回执")).Clicked() {
+					s.openNativeReceipt(e.ID, e.NativeJSON)
+				}
 				if e.Summary {
 					ui.Text(c, locales.Text("操作摘要；不含参数值，不能作为 SQL 重新打开。")).FontSize(theme.Font(c, 11))
 				}

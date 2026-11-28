@@ -45761,3 +45761,83 @@ func ManticoreStructureExpired() string { return In(i18n.Locale()).ManticoreStru
 func (msgs Messages) ManticoreStructureExpired() string {
 	return Catalog.Format(msgs.locale, "manticoreStructureExpired", nil)
 }
+
+// SqlNativeOriginalReceipt says "原始执行回执"
+// in the language the app shows.
+func SqlNativeOriginalReceipt() string { return In(i18n.Locale()).SqlNativeOriginalReceipt() }
+
+// SqlNativeOriginalReceipt says "原始执行回执"
+// in the language of msgs.
+func (msgs Messages) SqlNativeOriginalReceipt() string {
+	return Catalog.Format(msgs.locale, "sqlNativeOriginalReceipt", nil)
+}
+
+// SqlNativeReceiptBody says "原始执行回执内容"
+// in the language the app shows.
+func SqlNativeReceiptBody() string { return In(i18n.Locale()).SqlNativeReceiptBody() }
+
+// SqlNativeReceiptBody says "原始执行回执内容"
+// in the language of msgs.
+func (msgs Messages) SqlNativeReceiptBody() string {
+	return Catalog.Format(msgs.locale, "sqlNativeReceiptBody", nil)
+}
+
+// SqlNativeReceiptScope says "保留原始语句确认、错误和未执行项；后续读取不会更改此回执。"
+// in the language the app shows.
+func SqlNativeReceiptScope() string { return In(i18n.Locale()).SqlNativeReceiptScope() }
+
+// SqlNativeReceiptScope says "保留原始语句确认、错误和未执行项；后续读取不会更改此回执。"
+// in the language of msgs.
+func (msgs Messages) SqlNativeReceiptScope() string {
+	return Catalog.Format(msgs.locale, "sqlNativeReceiptScope", nil)
+}
+
+// SqlNativeReceiptBound says "仅显示回执前 64 KiB；复制和导出保留完整内容。"
+// in the language the app shows.
+func SqlNativeReceiptBound() string { return In(i18n.Locale()).SqlNativeReceiptBound() }
+
+// SqlNativeReceiptBound says "仅显示回执前 64 KiB；复制和导出保留完整内容。"
+// in the language of msgs.
+func (msgs Messages) SqlNativeReceiptBound() string {
+	return Catalog.Format(msgs.locale, "sqlNativeReceiptBound", nil)
+}
+
+// SqlNativeAffectedUnknown says "服务器未报告影响行数"
+// in the language the app shows.
+func SqlNativeAffectedUnknown() string { return In(i18n.Locale()).SqlNativeAffectedUnknown() }
+
+// SqlNativeAffectedUnknown says "服务器未报告影响行数"
+// in the language of msgs.
+func (msgs Messages) SqlNativeAffectedUnknown() string {
+	return Catalog.Format(msgs.locale, "sqlNativeAffectedUnknown", nil)
+}
+
+// SqlNativeAffectedVerify says "服务器未报告影响行数；请核对预期更改"
+// in the language the app shows.
+func SqlNativeAffectedVerify() string { return In(i18n.Locale()).SqlNativeAffectedVerify() }
+
+// SqlNativeAffectedVerify says "服务器未报告影响行数；请核对预期更改"
+// in the language of msgs.
+func (msgs Messages) SqlNativeAffectedVerify() string {
+	return Catalog.Format(msgs.locale, "sqlNativeAffectedVerify", nil)
+}
+
+// SqlNativeUnknownOutcome says "原始执行结果不确定；后续读取不能替代原始回执"
+// in the language the app shows.
+func SqlNativeUnknownOutcome() string { return In(i18n.Locale()).SqlNativeUnknownOutcome() }
+
+// SqlNativeUnknownOutcome says "原始执行结果不确定；后续读取不能替代原始回执"
+// in the language of msgs.
+func (msgs Messages) SqlNativeUnknownOutcome() string {
+	return Catalog.Format(msgs.locale, "sqlNativeUnknownOutcome", nil)
+}
+
+// SqlHistoryAffectedUnknown says "耗时 %s · 预览 %d 行 · 服务器未报告影响行数"
+// in the language the app shows.
+func SqlHistoryAffectedUnknown() string { return In(i18n.Locale()).SqlHistoryAffectedUnknown() }
+
+// SqlHistoryAffectedUnknown says "耗时 %s · 预览 %d 行 · 服务器未报告影响行数"
+// in the language of msgs.
+func (msgs Messages) SqlHistoryAffectedUnknown() string {
+	return Catalog.Format(msgs.locale, "sqlHistoryAffectedUnknown", nil)
+}

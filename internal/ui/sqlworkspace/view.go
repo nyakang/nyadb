@@ -314,6 +314,9 @@ func sqlResultSummary(t *Document) string {
 	if len(set.Columns) > 0 {
 		return fmt.Sprintf(locales.Text("%d 行 / %d 列 · %s"), len(set.Rows), len(set.Columns), duration)
 	}
+	if sqlOutcomeNotice(*t.result) != "" {
+		return sqlOutcomeNotice(*t.result) + " · " + duration
+	}
 	if set.AffectedRows < 0 {
 		return fmt.Sprintf(locales.Text("原生执行已确认 · %s"), duration)
 	}
@@ -369,6 +372,9 @@ func (s *State) resultContent(c *ui.Context, t *Document) {
 					}
 				}
 			})
+			if r.NativeJSON != "" && ui.Button(c, locales.Text("原始执行回执")).Clicked() {
+				s.openNativeReceipt(t.Name(), r.NativeJSON)
+			}
 			if ui.Button(c, locales.Text("复制结果选区")).Clicked() {
 				s.copyResult(c, t)
 			}
@@ -395,6 +401,13 @@ func (s *State) resultContent(c *ui.Context, t *Document) {
 							state = locales.Text("结果不确定")
 						}
 						text := fmt.Sprintf("%d · %s", i+1, state)
+						if step.State == "completed" || step.State == "executed" {
+							if step.AffectedRows < 0 {
+								text += " · " + locales.Text("服务器未报告影响行数")
+							} else {
+								text += " · " + fmt.Sprintf(locales.Text("影响 %d 行"), step.AffectedRows)
+							}
+						}
 						if step.Error != "" {
 							text += " · " + step.Error
 						}
@@ -411,6 +424,8 @@ func (s *State) resultContent(c *ui.Context, t *Document) {
 			ack := fmt.Sprintf(locales.Text("影响 %d 行"), set.AffectedRows)
 			if r.Graph != nil && !r.Graph.Completed {
 				ack = graphSummary(r.Graph)
+			} else if sqlOutcomeNotice(*r) != "" {
+				ack = sqlOutcomeNotice(*r)
 			} else if set.AffectedRows < 0 {
 				ack = locales.Text("原生执行已确认")
 			}

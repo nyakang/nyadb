@@ -21,13 +21,13 @@ type resultSnapshot struct {
 }
 
 func resultSnapshotSize(r *contract.SQLResult) int64 {
-	var n int64
+	n := int64(len(r.NativeJSON))
 	if r.Graph != nil {
 		raw, _ := json.Marshal(r.Graph)
 		n += int64(len(raw))
 	}
 	for _, step := range r.Steps {
-		n += int64(len(step.SQL) + len(step.State) + len(step.Error) + 64)
+		n += int64(len(step.NativeJSON) + len(step.SQL) + len(step.State) + len(step.Error) + 64)
 	}
 	for _, set := range r.ResultSets() {
 		n += int64(128 + len(set.LayoutKey) + (len(set.DefaultHiddenColumns)+len(set.OriginColumns))*8)
@@ -65,7 +65,7 @@ func (s *State) pinResult(d *Document) bool {
 		d.err = locales.Text("每个查询最多保留 3 个结果快照，总计 16 MiB；请先移除旧快照")
 		return false
 	}
-	r := &contract.SQLResult{Steps: append([]contract.StatementOutcome(nil), d.result.Steps...), Duration: d.result.Duration, AffectedRows: d.result.AffectedRows, Truncated: d.result.Truncated}
+	r := &contract.SQLResult{NativeJSON: d.result.NativeJSON, Steps: append([]contract.StatementOutcome(nil), d.result.Steps...), Duration: d.result.Duration, AffectedRows: d.result.AffectedRows, Truncated: d.result.Truncated}
 	if d.result.Graph != nil {
 		graph := d.result.Graph.Clone()
 		r.Graph = &graph

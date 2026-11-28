@@ -176,6 +176,8 @@ func (d *Document) sourceScope() (int64, string) {
 // State owns all SQL documents and their shared split position. Executor and
 // Invalidate are injectable; background jobs capture them before starting.
 type State struct {
+	nativeReceipt *sqlNativeReceipt
+
 	completionCache   map[string][]sqltext.CompletionObject
 	completionObjects map[string]sqltext.CompletionObject
 	ai                aiState
@@ -312,6 +314,7 @@ func (s *State) Close(d *Document) {
 	}
 }
 func (s *State) CloseAll() {
+	s.nativeReceipt = nil
 	s.completionCache = nil
 	s.completionObjects = nil
 	s.closeAI()
