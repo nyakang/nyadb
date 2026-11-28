@@ -4501,5 +4501,7 @@
   "sqlNativeAffectedUnknown": "The server did not report affected rows",
   "sqlNativeAffectedVerify": "The server did not report affected rows; verify the intended changes",
   "sqlNativeUnknownOutcome": "The original outcome is uncertain; later reads cannot replace its receipt",
-  "sqlHistoryAffectedUnknown": "Duration %s · Preview %d rows · Affected rows not reported"
+  "sqlHistoryAffectedUnknown": "Duration %s · Preview %d rows · Affected rows not reported",
+  "manticorePercolateDefinitionScope": "This definition describes input fields of documents to match. Stored queries use the id, query, tags and filters columns.",
+  "manticorePercolateFieldsScope": "These columns describe stored queries. See the native definition for input fields of documents to match."
 }

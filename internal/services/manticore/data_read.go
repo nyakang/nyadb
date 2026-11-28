@@ -95,7 +95,7 @@ func (d *dataLease) page(ctx context.Context, id int64, database, table string, 
 	sequence := d.pageSequence
 	d.mu.Unlock()
 	grants := map[string]*dataGrant{}
-	editable := true
+	editable := len(writeKinds(m)) > 0
 	page := &contract.DataPage{Object: d.object, Editable: &editable, Database: database, Table: table, Offset: o.Offset, Limit: o.Limit, ColumnMetadata: m.Columns, EditKinds: writeKinds(m), ColumnEditKinds: writePermissions(m), FilterColumns: []string{}, SortColumns: []string{}, QuerySQL: q.display, LiveRead: true}
 	for _, c := range m.Columns {
 		page.Columns = append(page.Columns, c.Name)
@@ -221,14 +221,14 @@ func (d *dataLease) info(ctx context.Context, id int64, database, table string) 
 			return nil, contract.ErrDataPage
 		}
 		switch row[0].Text {
-		case "indexed_documents", "disk_bytes":
+		case "indexed_documents", "stored_queries", "disk_bytes":
 			n, e := strconv.ParseInt(row[1].Text, 10, 64)
 			if e != nil || n < 0 {
 				return nil, contract.ErrDataPage
 			}
-			if row[0].Text == "indexed_documents" {
+			if row[0].Text == "indexed_documents" && m.Engine != "percolate" || row[0].Text == "stored_queries" && m.Engine == "percolate" {
 				info.EstimatedRows = &n
-			} else {
+			} else if row[0].Text == "disk_bytes" {
 				info.DataLength = &n
 			}
 		}

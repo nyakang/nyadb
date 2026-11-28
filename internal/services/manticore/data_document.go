@@ -141,9 +141,28 @@ func (d *dataLease) table(ctx context.Context) (*contract.TableStructure, error)
 	if e != nil {
 		return nil, e
 	}
-	// RT and local/plain rows have native id/attribute semantics. Percolate and
-	// distributed tables expose different data schemas and need their own path.
-	if m.Engine != "rt" && m.Engine != "local" || len(m.Columns) == 0 || len(m.Columns) > 512 {
+	// Percolate DESCRIBE describes stored queries. Its CREATE definition instead
+	// describes match-input fields; those must never become data-row columns.
+	switch m.Engine {
+	case "rt", "local":
+	case "percolate":
+		if len(m.Columns) != 4 {
+			return nil, contract.ErrUnsupported
+		}
+		for i, name := range []string{"id", "query", "tags", "filters"} {
+			typ := "string"
+			if i == 0 {
+				typ = "bigint"
+			}
+			if m.Columns[i].Name != name || m.Columns[i].DataType != typ {
+				return nil, contract.ErrUnsupported
+			}
+		}
+	default:
+		// Distributed DESCRIBE returns agents, not a stored-row schema.
+		return nil, contract.ErrUnsupported
+	}
+	if len(m.Columns) == 0 || len(m.Columns) > 512 {
 		return nil, contract.ErrUnsupported
 	}
 	return m, nil

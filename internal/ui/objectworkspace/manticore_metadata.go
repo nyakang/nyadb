@@ -103,6 +103,9 @@ func (s *State) manticoreStructureView(c *ui.Context, d *Document) {
 				ui.Text(c, value).SingleLine().Tooltip(value)
 			}).Grow(1)
 		case 2:
+			if d.data.Engine == "percolate" {
+				ui.Text(c, locales.Text("此定义描述待匹配文档的输入字段；存储查询使用 id、query、tags 和 filters 列。")).TextColor(p.Muted)
+			}
 			for _, definition := range d.data.Definitions {
 				if definition.Kind == "manticore_definition" {
 					var observation contract.NativeMetadataObservation
@@ -121,6 +124,9 @@ func (s *State) manticoreStructureView(c *ui.Context, d *Document) {
 				})
 			})
 		default:
+			if d.data.Engine == "percolate" {
+				ui.Text(c, locales.Text("这些列描述已存储的查询；待匹配文档的输入字段见原生定义。")).TextColor(p.Muted)
+			}
 			cols := []ui.TableColumn{{ID: "name", Title: locales.Text("字段"), Width: 240}, {ID: "type", Title: locales.Text("类型"), Width: 180}, {ID: "properties", Title: locales.Text("原生属性"), Width: 360}}
 			if len(d.data.Columns) == 0 {
 				theme.EmptyTable(c, &d.columns, cols, locales.Text("没有已加载的字段"))

@@ -45841,3 +45841,25 @@ func SqlHistoryAffectedUnknown() string { return In(i18n.Locale()).SqlHistoryAff
 func (msgs Messages) SqlHistoryAffectedUnknown() string {
 	return Catalog.Format(msgs.locale, "sqlHistoryAffectedUnknown", nil)
 }
+
+// ManticorePercolateDefinitionScope says "此定义描述待匹配文档的输入字段；存储查询使用 id、query、tags 和 filters 列。"
+// in the language the app shows.
+func ManticorePercolateDefinitionScope() string {
+	return In(i18n.Locale()).ManticorePercolateDefinitionScope()
+}
+
+// ManticorePercolateDefinitionScope says "此定义描述待匹配文档的输入字段；存储查询使用 id、query、tags 和 filters 列。"
+// in the language of msgs.
+func (msgs Messages) ManticorePercolateDefinitionScope() string {
+	return Catalog.Format(msgs.locale, "manticorePercolateDefinitionScope", nil)
+}
+
+// ManticorePercolateFieldsScope says "这些列描述已存储的查询；待匹配文档的输入字段见原生定义。"
+// in the language the app shows.
+func ManticorePercolateFieldsScope() string { return In(i18n.Locale()).ManticorePercolateFieldsScope() }
+
+// ManticorePercolateFieldsScope says "这些列描述已存储的查询；待匹配文档的输入字段见原生定义。"
+// in the language of msgs.
+func (msgs Messages) ManticorePercolateFieldsScope() string {
+	return Catalog.Format(msgs.locale, "manticorePercolateFieldsScope", nil)
+}

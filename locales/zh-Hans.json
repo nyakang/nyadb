@@ -4501,5 +4501,7 @@
   "sqlNativeAffectedUnknown": "服务器未报告影响行数",
   "sqlNativeAffectedVerify": "服务器未报告影响行数；请核对预期更改",
   "sqlNativeUnknownOutcome": "原始执行结果不确定；后续读取不能替代原始回执",
-  "sqlHistoryAffectedUnknown": "耗时 %s · 预览 %d 行 · 服务器未报告影响行数"
+  "sqlHistoryAffectedUnknown": "耗时 %s · 预览 %d 行 · 服务器未报告影响行数",
+  "manticorePercolateDefinitionScope": "此定义描述待匹配文档的输入字段；存储查询使用 id、query、tags 和 filters 列。",
+  "manticorePercolateFieldsScope": "这些列描述已存储的查询；待匹配文档的输入字段见原生定义。"
 }
