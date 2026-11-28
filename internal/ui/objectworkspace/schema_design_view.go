@@ -50,6 +50,10 @@ func (s *State) schemaDesignView(c *ui.Context, d *Document) {
 			ui.Box(c).Grow(1)
 			return
 		}
+		if x.original.Schema.Engine == "manticoresearch" {
+			s.manticoreSchemaFields(c, d, locked)
+			return
+		}
 		names := []string{locales.Text("字段"), locales.Text("约束"), locales.Text("索引"), locales.Text("触发器"), locales.Text("表选项"), locales.Text("原始 DDL")}
 		if x.owner != nil {
 			names = append(names, locales.Text("原始结构回执"))
@@ -282,6 +286,9 @@ func (s *State) schemaDesignModals(c *ui.Context, d *Document) {
 			ui.Column(c).Width(min(float32(780), width-68)).MaxHeight(height - 68).Gap(8).Children(func() {
 				ui.Text(c, locales.Text("SQL 预览")).Bold()
 				ui.Text(c, d.database+" / "+d.table)
+				if x.plan.ScopeHint != "" {
+					ui.Text(c, locales.Text(x.plan.ScopeHint))
+				}
 				raw := strings.Join(x.plan.SQL, ";\n\n")
 				ui.TextArea(c, &raw).ReadOnly(true).Height(min(float32(270), height-250)).MinHeight(80)
 				if len(x.plan.Dropped) > 0 {

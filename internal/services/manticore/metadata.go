@@ -121,7 +121,15 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 	return objects, nil
 }
 func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*contract.TableStructure, error) {
-	return s.tableMetadata(ctx, o, true)
+	native := o
+	if native.Kind == "table" {
+		native.Kind = "TABLE"
+	}
+	m, err := s.tableMetadata(ctx, native, true)
+	if m != nil {
+		m.Object, m.Kind = o, o.Kind
+	}
+	return m, err
 }
 
 // Data grants compare stable column/DDL observations, never changing index

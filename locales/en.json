@@ -4521,5 +4521,11 @@
   "manticoreRTReplaceHint": "Replacement sends the original id, every stored field and attribute, and rebuilds the full-text index. The complete original record is checked before dispatch, without atomic compare-and-replace; later changes may be overwritten and deleted records recreated. Native JSON null is preserved with a JSON null literal, not an empty object. Statements run independently without a batch transaction. Unknown or incomplete receipts retain drafts and block replay.",
   "manticoreRTReplacePreview": "Complete Manticore RT replacement preview",
   "manticoreRTReplaceHistory": "Confirmed Manticore RT replacement",
-  "manticoreRTReplaceItem": "Replace entire RT record"
+  "manticoreRTReplaceItem": "Replace entire RT record",
+  "manticoreRTSingleColumnHint": "Add or drop one RT field at a time. Existing field names, types and table options remain fixed.",
+  "manticoreRTColumnName": "RT field name %d",
+  "manticoreRTColumnType": "RT field type %d",
+  "manticoreRTColumnDrop": "Drop RT field %s",
+  "manticoreRTColumnScope": "Each operation executes one native RT field addition or removal, which cannot be rolled back. The original definition is checked before dispatch without a concurrent schema lock; later changes may affect the outcome. Actual structure is checked after a successful acknowledgement. Unknown or unverified receipts retain the draft and prohibit replay.",
+  "manticoreRTDropField": "Drop RT field"
 }

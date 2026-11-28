@@ -46053,3 +46053,63 @@ func ManticoreRTReplaceItem() string { return In(i18n.Locale()).ManticoreRTRepla
 func (msgs Messages) ManticoreRTReplaceItem() string {
 	return Catalog.Format(msgs.locale, "manticoreRTReplaceItem", nil)
 }
+
+// ManticoreRTSingleColumnHint says "每次添加或删除一个 RT 字段；原有字段名称、类型和表选项保持不变。"
+// in the language the app shows.
+func ManticoreRTSingleColumnHint() string { return In(i18n.Locale()).ManticoreRTSingleColumnHint() }
+
+// ManticoreRTSingleColumnHint says "每次添加或删除一个 RT 字段；原有字段名称、类型和表选项保持不变。"
+// in the language of msgs.
+func (msgs Messages) ManticoreRTSingleColumnHint() string {
+	return Catalog.Format(msgs.locale, "manticoreRTSingleColumnHint", nil)
+}
+
+// ManticoreRTColumnName says "RT 字段名称 %d"
+// in the language the app shows.
+func ManticoreRTColumnName() string { return In(i18n.Locale()).ManticoreRTColumnName() }
+
+// ManticoreRTColumnName says "RT 字段名称 %d"
+// in the language of msgs.
+func (msgs Messages) ManticoreRTColumnName() string {
+	return Catalog.Format(msgs.locale, "manticoreRTColumnName", nil)
+}
+
+// ManticoreRTColumnType says "RT 字段类型 %d"
+// in the language the app shows.
+func ManticoreRTColumnType() string { return In(i18n.Locale()).ManticoreRTColumnType() }
+
+// ManticoreRTColumnType says "RT 字段类型 %d"
+// in the language of msgs.
+func (msgs Messages) ManticoreRTColumnType() string {
+	return Catalog.Format(msgs.locale, "manticoreRTColumnType", nil)
+}
+
+// ManticoreRTColumnDrop says "删除 RT 字段 %s"
+// in the language the app shows.
+func ManticoreRTColumnDrop() string { return In(i18n.Locale()).ManticoreRTColumnDrop() }
+
+// ManticoreRTColumnDrop says "删除 RT 字段 %s"
+// in the language of msgs.
+func (msgs Messages) ManticoreRTColumnDrop() string {
+	return Catalog.Format(msgs.locale, "manticoreRTColumnDrop", nil)
+}
+
+// ManticoreRTColumnScope says "每次只执行一条原生 RT …"
+// in the language the app shows.
+func ManticoreRTColumnScope() string { return In(i18n.Locale()).ManticoreRTColumnScope() }
+
+// ManticoreRTColumnScope says "每次只执行一条原生 RT …"
+// in the language of msgs.
+func (msgs Messages) ManticoreRTColumnScope() string {
+	return Catalog.Format(msgs.locale, "manticoreRTColumnScope", nil)
+}
+
+// ManticoreRTDropField says "删除 RT 字段"
+// in the language the app shows.
+func ManticoreRTDropField() string { return In(i18n.Locale()).ManticoreRTDropField() }
+
+// ManticoreRTDropField says "删除 RT 字段"
+// in the language of msgs.
+func (msgs Messages) ManticoreRTDropField() string {
+	return Catalog.Format(msgs.locale, "manticoreRTDropField", nil)
+}

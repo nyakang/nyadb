@@ -4521,5 +4521,11 @@
   "manticoreRTReplaceHint": "替换会提交原 id、全部存储字段和属性，并重建全文索引。完整原记录仅在提交前检查，不保证原子比较替换；检查后的更改可能被覆盖，已删除的记录可能被重新创建。原生 JSON 空值使用 JSON null 字面量保留，不会变成空对象。各语句独立执行，无批次事务；未知或不完整回执保留草稿并禁止重放。",
   "manticoreRTReplacePreview": "Manticore RT 整条替换完整预览",
   "manticoreRTReplaceHistory": "已确认的 Manticore RT 整条替换",
-  "manticoreRTReplaceItem": "替换整条 RT 记录"
+  "manticoreRTReplaceItem": "替换整条 RT 记录",
+  "manticoreRTSingleColumnHint": "每次添加或删除一个 RT 字段；原有字段名称、类型和表选项保持不变。",
+  "manticoreRTColumnName": "RT 字段名称 %d",
+  "manticoreRTColumnType": "RT 字段类型 %d",
+  "manticoreRTColumnDrop": "删除 RT 字段 %s",
+  "manticoreRTColumnScope": "每次只执行一条原生 RT 字段增删，不能通过回滚撤销。提交前检查原始定义，不提供并发结构锁；检查后的更改仍可能影响结果。成功回执之后会再次核对实际结构。未知或未核验回执保留草稿并禁止重放。",
+  "manticoreRTDropField": "删除 RT 字段"
 }

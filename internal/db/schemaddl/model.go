@@ -97,6 +97,7 @@ func (t Table) Columns() []Clause {
 type Mapping struct{ ID, Source, Destination string }
 type Plan struct {
 	Mode                 string
+	ScopeHint            string `json:",omitempty"`
 	SQL                  []string
 	Mappings             []Mapping
 	Dropped              []string

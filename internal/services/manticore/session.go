@@ -30,6 +30,7 @@ type Session struct {
 	closed                  bool
 	leases                  map[*queryLease]bool
 	dataLeases              map[*dataLease]bool
+	schemaDocuments         map[string]*schemaDocument
 	nextOwner               uint64
 	dataSlots               chan struct{}
 	metadataSlots, sqlSlots chan struct{}
@@ -173,12 +174,19 @@ func (s *Session) Close() error {
 		for d := range s.dataLeases {
 			documents = append(documents, d)
 		}
+		schemas := make([]*schemaDocument, 0, len(s.schemaDocuments))
+		for _, d := range s.schemaDocuments {
+			schemas = append(schemas, d)
+		}
 		all := make([]*queryLease, 0, len(s.leases))
 		for l := range s.leases {
 			all = append(all, l)
 		}
 		s.mu.Unlock()
 		for _, d := range documents {
+			_ = d.Close()
+		}
+		for _, d := range schemas {
 			_ = d.Close()
 		}
 		for _, l := range all {
