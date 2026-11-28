@@ -305,3 +305,24 @@ func VerifyManticoreRT(desired, actual Table) error {
 	}
 	return nil
 }
+
+// PlanManticoreRTTableOperation never interprets a data delete or missing-table
+// success as an original DROP/TRUNCATE. Only the complete supported RT schema
+// accepted by the field planner can authorize these table-level statements.
+func PlanManticoreRTTableOperation(original Snapshot, operation string) (Plan, error) {
+	if _, err := PlanManticoreRT(original, original.Table.Clone(), false); err != nil {
+		return Plan{}, err
+	}
+	plan := Plan{Mode: "native_" + operation}
+	switch operation {
+	case "drop":
+		plan.SQL = []string{"DROP TABLE " + manticoreQuote(original.Table.Name)}
+		plan.ScopeHint = "删除原 RT 表及全部数据，不能回滚。提交前检查原始定义，不锁定并发更改；同名同定义的重建无法区分。成功回执后核验表已不存在；未知或未核验回执禁止重放。"
+	case "truncate":
+		plan.SQL = []string{"TRUNCATE TABLE " + manticoreQuote(original.Table.Name)}
+		plan.ScopeHint = "使用原生 TRUNCATE 清空 RT 表并保留结构，不能回滚。原始回执行数保留为服务器返回值，不表示删除记录数。检查不锁定并发更改；成功回执后核验结构和空表，未知或未核验回执禁止重放。"
+	default:
+		return Plan{}, ErrUnsupported
+	}
+	return plan, nil
+}

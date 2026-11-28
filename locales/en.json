@@ -4527,5 +4527,7 @@
   "manticoreRTColumnType": "RT field type %d",
   "manticoreRTColumnDrop": "Drop RT field %s",
   "manticoreRTColumnScope": "Each operation executes one native RT field addition or removal, which cannot be rolled back. The original definition is checked before dispatch without a concurrent schema lock; later changes may affect the outcome. Actual structure is checked after a successful acknowledgement. Unknown or unverified receipts retain the draft and prohibit replay.",
-  "manticoreRTDropField": "Drop RT field"
+  "manticoreRTDropField": "Drop RT field",
+  "manticoreRTDropTableScope": "Drop the original RT table and all its data. This cannot be rolled back. The original definition is checked without locking concurrent changes; recreation with the same name and definition cannot be distinguished. After acknowledgement, verify that the table is absent. Unknown or unverified receipts prohibit replay.",
+  "manticoreRTTruncateTableScope": "Use native TRUNCATE to empty the RT table and retain its structure. This cannot be rolled back. Keep the server's original acknowledgement count; it does not report deleted records. Checks do not lock concurrent changes. After acknowledgement, verify the structure and empty table; unknown or unverified receipts prohibit replay."
 }

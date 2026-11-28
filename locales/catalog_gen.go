@@ -46113,3 +46113,23 @@ func ManticoreRTDropField() string { return In(i18n.Locale()).ManticoreRTDropFie
 func (msgs Messages) ManticoreRTDropField() string {
 	return Catalog.Format(msgs.locale, "manticoreRTDropField", nil)
 }
+
+// ManticoreRTDropTableScope says "删除原 RT …"
+// in the language the app shows.
+func ManticoreRTDropTableScope() string { return In(i18n.Locale()).ManticoreRTDropTableScope() }
+
+// ManticoreRTDropTableScope says "删除原 RT …"
+// in the language of msgs.
+func (msgs Messages) ManticoreRTDropTableScope() string {
+	return Catalog.Format(msgs.locale, "manticoreRTDropTableScope", nil)
+}
+
+// ManticoreRTTruncateTableScope says "使用原生 TRUNCATE 清空 RT …"
+// in the language the app shows.
+func ManticoreRTTruncateTableScope() string { return In(i18n.Locale()).ManticoreRTTruncateTableScope() }
+
+// ManticoreRTTruncateTableScope says "使用原生 TRUNCATE 清空 RT …"
+// in the language of msgs.
+func (msgs Messages) ManticoreRTTruncateTableScope() string {
+	return Catalog.Format(msgs.locale, "manticoreRTTruncateTableScope", nil)
+}

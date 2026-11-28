@@ -4527,5 +4527,7 @@
   "manticoreRTColumnType": "RT 字段类型 %d",
   "manticoreRTColumnDrop": "删除 RT 字段 %s",
   "manticoreRTColumnScope": "每次只执行一条原生 RT 字段增删，不能通过回滚撤销。提交前检查原始定义，不提供并发结构锁；检查后的更改仍可能影响结果。成功回执之后会再次核对实际结构。未知或未核验回执保留草稿并禁止重放。",
-  "manticoreRTDropField": "删除 RT 字段"
+  "manticoreRTDropField": "删除 RT 字段",
+  "manticoreRTDropTableScope": "删除原 RT 表及全部数据，不能回滚。提交前检查原始定义，不锁定并发更改；同名同定义的重建无法区分。成功回执后核验表已不存在；未知或未核验回执禁止重放。",
+  "manticoreRTTruncateTableScope": "使用原生 TRUNCATE 清空 RT 表并保留结构，不能回滚。原始回执行数保留为服务器返回值，不表示删除记录数。检查不锁定并发更改；成功回执后核验结构和空表，未知或未核验回执禁止重放。"
 }

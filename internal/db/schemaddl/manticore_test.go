@@ -132,3 +132,36 @@ func TestManticoreDeclarationRejectsAmbiguousOrUnsupportedSyntax(t *testing.T) {
 		}
 	}
 }
+
+func TestManticoreTablePlansRequireCompleteOriginalRT(t *testing.T) {
+	original := manticoreOriginal(t)
+	for _, op := range []string{"drop", "truncate"} {
+		p, e := PlanManticoreRTTableOperation(original, op)
+		if e != nil || len(p.SQL) != 1 || p.ScopeHint == "" || !strings.HasSuffix(p.SQL[0], "TABLE `rt_original`") {
+			t.Fatal(p, e)
+		}
+		for _, mode := range []string{"absent", "mode", "ddl", "table", "foreign"} {
+			v := original.Clone()
+			switch mode {
+			case "absent":
+				v.Exists = false
+			case "mode":
+				v.Engine = "mysql"
+			case "ddl":
+				v.DDL += "; DROP TABLE other"
+			case "table":
+				v.Table.Name = "other"
+			case "foreign":
+				v.Postgres = &PostgreSQLCatalog{}
+			}
+			if p, e = PlanManticoreRTTableOperation(v, op); e == nil {
+				t.Fatal(mode, p)
+			}
+		}
+	}
+	for _, op := range []string{"delete", "clear", "rename", "DROP", "truncate; drop"} {
+		if p, e := PlanManticoreRTTableOperation(original, op); e == nil {
+			t.Fatal(p)
+		}
+	}
+}

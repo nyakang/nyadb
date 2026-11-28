@@ -119,10 +119,11 @@ func (d *schemaDocument) Operations() contract.SchemaDesignOperations {
 	if closed {
 		return contract.SchemaDesignOperations{}
 	}
-	return contract.SchemaDesignOperations{Snapshot: d.snapshot, Plan: d.plan, CanApply: d.writable, Apply: d.apply}
+	return contract.SchemaDesignOperations{Snapshot: d.snapshot, Plan: d.plan, CanApply: d.writable, Apply: d.apply, CanDrop: d.writable, Drop: d.drop, CanTruncate: d.writable, Truncate: d.truncate}
 }
 func (s *Session) SchemaDesignDocumentFeatures() contract.SchemaDesignDocumentFeatures {
-	return contract.SchemaDesignDocumentFeatures{CanApply: func(t contract.SchemaDesignTarget) bool { return s.checkSchemaTarget(t) == nil }}
+	can := func(t contract.SchemaDesignTarget) bool { return s.checkSchemaTarget(t) == nil }
+	return contract.SchemaDesignDocumentFeatures{CanApply: can, CanDrop: can, CanTruncate: can}
 }
 func (s *Session) SchemaDesign() contract.SchemaDesignOperations {
 	return contract.SchemaDesignOperations{Snapshot: func(ctx context.Context, t contract.SchemaDesignTarget) (contract.SchemaDesignSnapshot, error) {
@@ -202,18 +203,24 @@ func (d *schemaDocument) snapshot(ctx context.Context, t contract.SchemaDesignTa
 	defer done()
 	return d.s.schemaSnapshot(child, t, d.key[:])
 }
-func (d *schemaDocument) plan(r contract.SchemaDesignRequest) (schemaddl.Plan, error) {
-	r = r.Clone()
+func (d *schemaDocument) checkProof(original contract.SchemaDesignSnapshot) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if d.closed {
-		return schemaddl.Plan{}, contract.ErrRevoked
+		return contract.ErrRevoked
 	}
 	if d.blocked {
-		return schemaddl.Plan{}, contract.ErrSchemaCommitUncertain
+		return contract.ErrSchemaCommitUncertain
 	}
-	if r.Original.Target != d.target || !hmac.Equal([]byte(r.Original.Schema.Revision), []byte(sealSchema(r.Original, d.key[:]))) {
-		return schemaddl.Plan{}, schemaddl.ErrConflict
+	if original.Target != d.target || !hmac.Equal([]byte(original.Schema.Revision), []byte(sealSchema(original, d.key[:]))) {
+		return schemaddl.ErrConflict
+	}
+	return nil
+}
+func (d *schemaDocument) plan(r contract.SchemaDesignRequest) (schemaddl.Plan, error) {
+	r = r.Clone()
+	if err := d.checkProof(r.Original); err != nil {
+		return schemaddl.Plan{}, err
 	}
 	p, err := schemaddl.PlanManticoreRT(r.Original.Schema, r.Desired, r.AllowColumnDrop)
 	if err == nil {
@@ -235,16 +242,32 @@ func (d *schemaDocument) apply(ctx context.Context, r contract.SchemaDesignReque
 		out.Error = e
 		return
 	}
-	if len(p.SQL) != 1 {
+	desired := r.Desired.Clone()
+	receipt := contract.SchemaDesignWriteReceipt{Operation: "apply", Original: r.Original.Clone(), Desired: &desired, Destination: r.Desired.Name, AllowColumnDrop: r.AllowColumnDrop, Statements: append([]string(nil), p.SQL...)}
+	return d.executeSchema(child, receipt, func(ctx context.Context) (contract.SchemaDesignSnapshot, error) {
+		actual, err := d.s.schemaSnapshot(ctx, r.Original.Target, d.key[:])
+		if err == nil {
+			err = schemaddl.VerifyManticoreRT(r.Desired, actual.Schema.Table)
+		}
+		return actual, err
+	})
+}
+
+// The caller owns serial admission, validates its document proof and rebuilds
+// exactly one fixed native statement before invoking this common settlement.
+func (d *schemaDocument) executeSchema(child context.Context, receipt contract.SchemaDesignWriteReceipt, verify func(context.Context) (contract.SchemaDesignSnapshot, error)) (out contract.SchemaDesignOutcome) {
+	receipt = receipt.Clone()
+	out.State = "not_executed"
+	if len(receipt.Statements) != 1 {
 		out.Error = contract.ErrUnsupported
 		return
 	}
-	current, e := d.s.schemaSnapshot(child, r.Original.Target, d.key[:])
+	current, e := d.s.schemaSnapshot(child, receipt.Original.Target, d.key[:])
 	if e != nil {
 		out.Error = e
 		return
 	}
-	if !reflect.DeepEqual(current, r.Original) {
+	if !reflect.DeepEqual(current, receipt.Original) {
 		out.Error = schemaddl.ErrConflict
 		return
 	}
@@ -252,14 +275,13 @@ func (d *schemaDocument) apply(ctx context.Context, r contract.SchemaDesignReque
 		out.Error = e
 		return
 	}
-	native, callErr := d.primary.write(child, p.SQL[0])
+	native, callErr := d.primary.write(child, receipt.Statements[0])
 	out.Error = callErr
 	if !native.Dispatched {
 		return
 	}
-	// A dispatched operation consumes its source proof, even if a later
-	// operation restores the exact original definition. Only a fresh snapshot
-	// (including the verified postflight snapshot below) can authorize a write.
+	// Dispatch consumes the source proof, including on an acknowledged error.
+	// Returning to the exact old definition cannot authorize its old request.
 	d.mu.Lock()
 	d.key = sha256.Sum256(d.key[:])
 	d.sequence++
@@ -274,10 +296,7 @@ func (d *schemaDocument) apply(ctx context.Context, r contract.SchemaDesignReque
 		}
 	}
 	if out.State == "committed" {
-		actual, err := d.s.schemaSnapshot(child, r.Original.Target, d.key[:])
-		if err == nil {
-			err = schemaddl.VerifyManticoreRT(r.Desired, actual.Schema.Table)
-		}
+		actual, err := verify(child)
 		if err == nil && callErr == nil && child.Err() == nil {
 			out.Verified = true
 			out.Actual = &actual
@@ -287,8 +306,9 @@ func (d *schemaDocument) apply(ctx context.Context, r contract.SchemaDesignReque
 	raw, _ := json.Marshal(native)
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	desired := r.Desired.Clone()
-	out.Receipt = &contract.SchemaDesignWriteReceipt{DocumentID: d.id, Sequence: d.sequence, Operation: "apply", Original: r.Original.Clone(), Desired: &desired, Destination: r.Desired.Name, AllowColumnDrop: r.AllowColumnDrop, Statements: append([]string(nil), p.SQL...), NativeJSON: string(raw), State: out.State, Verified: out.Verified, Rows: out.Rows, Actual: out.Actual}
+	receipt.DocumentID, receipt.Sequence = d.id, d.sequence
+	receipt.NativeJSON, receipt.State, receipt.Verified, receipt.Rows, receipt.Actual = string(raw), out.State, out.Verified, out.Rows, out.Actual
+	out.Receipt = &receipt
 	if out.State == "uncertain" || out.State == "committed" && !out.Verified {
 		d.blocked = true
 		out.Error = errors.Join(out.Error, contract.ErrSchemaCommitUncertain)

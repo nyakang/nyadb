@@ -246,7 +246,7 @@ func (s *State) consumeSchemaDrop(services ui.Services) {
 			}
 		} else if reply.err != nil {
 			x.err = reply.err.Error()
-		} else if reply.snapshot.Target != x.target || !reply.snapshot.Schema.Exists || (reply.snapshot.Schema.Engine != "sqlite" && reply.snapshot.Schema.Engine != "postgresql" && reply.snapshot.Schema.Engine != "opengauss" && reply.snapshot.Schema.Engine != "databend") || reply.snapshot.Schema.Engine == "opengauss" && reply.snapshot.Schema.OpenGauss == nil || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.Table.Name != x.target.Object.Name {
+		} else if reply.snapshot.Target != x.target || !reply.snapshot.Schema.Exists || (reply.snapshot.Schema.Engine != "sqlite" && reply.snapshot.Schema.Engine != "postgresql" && reply.snapshot.Schema.Engine != "opengauss" && reply.snapshot.Schema.Engine != "databend" && reply.snapshot.Schema.Engine != "manticoresearch") || reply.snapshot.Schema.Engine == "opengauss" && reply.snapshot.Schema.OpenGauss == nil || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.Table.Name != x.target.Object.Name {
 			x.err = errors.New("original table snapshot is incomplete or unavailable").Error()
 		} else {
 			snapshot := reply.snapshot.Clone()
@@ -266,13 +266,16 @@ func (s *State) schemaDropModal(c *ui.Context) {
 	}
 	theme.Modal(c, &x.open, func() {
 		height := float32(430)
-		if x.original != nil && x.original.Schema.Engine == "databend" {
+		if x.original != nil && (x.original.Schema.Engine == "databend" || x.original.Schema.Engine == "manticoresearch") {
 			height = 540
 		}
 		ui.Column(c).Width(680).MaxWidthPercent(92).Height(height).MaxHeightPercent(90).Gap(10).Children(func() {
 			ui.Text(c, locales.Text("删除表")).Bold()
 			ui.Text(c, fmt.Sprintf("#%d · %s / %s · %s", x.target.Object.ProfileID, x.target.Object.Catalog, x.target.Object.Schema, x.target.Object.Name)).SingleLine().Tooltip(x.target.Object.Name)
-			if x.original != nil && x.original.Schema.Engine == "databend" {
+			if x.original != nil && x.original.Schema.Engine == "manticoresearch" {
+				plan, _ := schemaddl.PlanManticoreRTTableOperation(x.original.Schema, "drop")
+				ui.Text(c, locales.Text(plan.ScopeHint))
+			} else if x.original != nil && x.original.Schema.Engine == "databend" {
 				ui.Text(c, locales.Text("删除原表及数据；引用它的视图可能失效。检查不锁定并发更改；未核验的回执禁止重放。"))
 			} else if x.original != nil {
 				ui.Text(c, locales.Text("事务删除原表及其索引、触发器和数据；存在外键、视图或触发器依赖时拒绝删除。"))
@@ -295,6 +298,14 @@ func (s *State) schemaDropModal(c *ui.Context) {
 				raw = "DROP TABLE " + schemaddl.Quote(schemaSQLQualifier(*x.original)) + "." + schemaddl.Quote(x.target.Object.Name)
 				if x.original.Schema.Engine == "postgresql" || x.original.Schema.Engine == "opengauss" {
 					raw += " RESTRICT"
+				}
+				if x.original.Schema.Engine == "manticoresearch" {
+					plan, err := schemaddl.PlanManticoreRTTableOperation(x.original.Schema, "drop")
+					if err == nil {
+						raw = plan.SQL[0]
+					} else {
+						raw = ""
+					}
 				}
 				raw += ";"
 			}

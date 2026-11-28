@@ -175,8 +175,12 @@ func (s *State) schemaClearRequest(x *schemaClearOperation) (contract.SchemaClea
 	}
 	r := contract.SchemaClearRequest{Original: x.original.Clone(), ResetIdentity: x.resetIdentity}
 	if x.truncate {
-		if r.ResetIdentity || r.Original.Schema.Engine != "databend" {
+		if r.ResetIdentity {
 			return r, contract.ErrUnsupported
+		}
+		if r.Original.Schema.Engine == "manticoresearch" {
+			_, err := schemaddl.PlanManticoreRTTableOperation(r.Original.Schema, "truncate")
+			return r, err
 		}
 		_, err := schemaddl.PlanDatabendTruncate(r.Original.Schema, r.Original.Target.Object.Schema)
 		return r, err
@@ -338,7 +342,7 @@ func (s *State) consumeSchemaClear(services ui.Services) {
 			}
 		} else if reply.err != nil {
 			x.err = reply.err.Error()
-		} else if reply.snapshot.Target != x.target || !reply.snapshot.Schema.Exists || (reply.snapshot.Schema.Engine != "sqlite" && reply.snapshot.Schema.Engine != "postgresql" && reply.snapshot.Schema.Engine != "opengauss" && reply.snapshot.Schema.Engine != "databend") || reply.snapshot.Schema.Engine == "opengauss" && reply.snapshot.Schema.OpenGauss == nil || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.Table.Name != x.target.Object.Name {
+		} else if reply.snapshot.Target != x.target || !reply.snapshot.Schema.Exists || (reply.snapshot.Schema.Engine != "sqlite" && reply.snapshot.Schema.Engine != "postgresql" && reply.snapshot.Schema.Engine != "opengauss" && reply.snapshot.Schema.Engine != "databend" && reply.snapshot.Schema.Engine != "manticoresearch") || reply.snapshot.Schema.Engine == "opengauss" && reply.snapshot.Schema.OpenGauss == nil || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.Table.Name != x.target.Object.Name {
 			x.err = errors.New("original table snapshot is incomplete or unavailable").Error()
 		} else {
 			snapshot := reply.snapshot.Clone()
@@ -357,15 +361,19 @@ func (s *State) schemaClearModal(c *ui.Context) {
 		return
 	}
 	databend := x.original != nil && x.original.Schema.Engine == "databend" || x.original == nil && s.deps.Engine != nil && s.deps.Engine(x.target.Object.ProfileID) == "databend"
+	manticore := x.original != nil && x.original.Schema.Engine == "manticoresearch" || x.original == nil && s.deps.Engine != nil && s.deps.Engine(x.target.Object.ProfileID) == "manticoresearch"
 	gap := float32(10)
-	if databend {
+	if databend || manticore {
 		gap = 8
 	}
 	theme.Modal(c, &x.open, func() {
 		ui.Column(c).Width(800).MaxWidthPercent(92).Height(620).MaxHeightPercent(90).Gap(gap).Children(func() {
 			ui.Text(c, x.title()).Bold()
 			ui.Text(c, fmt.Sprintf("#%d · %s / %s · %s", x.target.Object.ProfileID, x.target.Object.Catalog, x.target.Object.Schema, x.target.Object.Name)).SingleLine().Tooltip(x.target.Object.Name)
-			if x.truncate {
+			if manticore && x.original != nil {
+				plan, _ := schemaddl.PlanManticoreRTTableOperation(x.original.Schema, "truncate")
+				ui.Text(c, locales.Text(plan.ScopeHint))
+			} else if x.truncate {
 				ui.Text(c, locales.Text("使用 TRUNCATE 清空原表并保留结构，核验原表身份和空表结果。服务器不返回删除行数；检查不锁定并发更改，未核验的回执禁止重放，取消不表示回滚。"))
 			} else if databend {
 				ui.Text(c, locales.Text("使用 DELETE 删除原表全部行并保留结构，核验原表身份和空表结果。检查不锁定并发更改；未核验的原始回执禁止重放，取消不表示回滚。"))
@@ -374,7 +382,7 @@ func (s *State) schemaClearModal(c *ui.Context) {
 				ui.Text(c, locales.Text("删除触发器和外键级联会执行，可能修改同库其他表；任一步失败则回滚。"))
 			}
 			resetAvailable := x.original != nil && x.original.Schema.Engine == "sqlite" && schemaddl.SQLiteAutoIncrement(x.original.Schema.Table)
-			if !databend {
+			if !databend && !manticore {
 				ui.Checkbox(c, &x.resetIdentity, locales.Text("重置自增值")).Disabled(x.busy || x.completed || !resetAvailable)
 				ui.Text(c, locales.Text("不勾选时不主动重置自增值；原触发器的自增行为仍会执行。"))
 			}
@@ -398,6 +406,14 @@ func (s *State) schemaClearModal(c *ui.Context) {
 					raw = "TRUNCATE TABLE " + schemaddl.Quote(schemaSQLQualifier(*x.original)) + "." + schemaddl.Quote(x.target.Object.Name)
 				}
 
+				if manticore && x.truncate {
+					plan, err := schemaddl.PlanManticoreRTTableOperation(x.original.Schema, "truncate")
+					if err == nil {
+						raw = plan.SQL[0]
+					} else {
+						raw = ""
+					}
+				}
 				raw += ";"
 				if x.resetIdentity && resetAvailable {
 					raw += "\nDELETE FROM " + schemaddl.Quote(schemaSQLQualifier(*x.original)) + ".sqlite_sequence WHERE name='" + strings.ReplaceAll(x.target.Object.Name, "'", "''") + "';"
