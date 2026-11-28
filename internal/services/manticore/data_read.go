@@ -96,7 +96,7 @@ func (d *dataLease) page(ctx context.Context, id int64, database, table string, 
 	d.mu.Unlock()
 	grants := map[string]*dataGrant{}
 	editable := true
-	page := &contract.DataPage{Object: d.object, Editable: &editable, Database: database, Table: table, Offset: o.Offset, Limit: o.Limit, ColumnMetadata: m.Columns, ColumnEditKinds: writePermissions(m), FilterColumns: []string{}, SortColumns: []string{}, QuerySQL: q.display, LiveRead: true}
+	page := &contract.DataPage{Object: d.object, Editable: &editable, Database: database, Table: table, Offset: o.Offset, Limit: o.Limit, ColumnMetadata: m.Columns, EditKinds: writeKinds(m), ColumnEditKinds: writePermissions(m), FilterColumns: []string{}, SortColumns: []string{}, QuerySQL: q.display, LiveRead: true}
 	for _, c := range m.Columns {
 		page.Columns = append(page.Columns, c.Name)
 		page.ColumnKinds = append(page.ColumnKinds, c.DataType)

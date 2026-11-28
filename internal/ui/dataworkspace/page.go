@@ -267,6 +267,7 @@ func (s *State) consumePages(services ui.Services) {
 			}
 			clearDraftHistory(t)
 			t.page = result.page
+			t.page.EditKinds = appendOptionalColumns(result.page.EditKinds)
 			t.page.ColumnEditKinds = contract.CloneDataColumnEditKinds(result.page.ColumnEditKinds)
 			t.page.FilterColumns = appendOptionalColumns(result.page.FilterColumns)
 			t.page.SortColumns = appendOptionalColumns(result.page.SortColumns)

@@ -388,6 +388,10 @@ func (s *State) addMySQLDataRecord(services ui.Services, t *Document) {
 }
 
 func (s *State) stageMySQLDataRecord(services ui.Services, t *Document, endpoints *contract.DataGraphEndpoints) {
+	// Recheck the original page mode when an asynchronous create form returns.
+	if t == nil || t.page == nil || !t.editable() || !t.allowsDataEdit("insert") {
+		return
+	}
 	done := beginDraftChange(t)
 	defer done()
 	row := len(t.page.Rows)

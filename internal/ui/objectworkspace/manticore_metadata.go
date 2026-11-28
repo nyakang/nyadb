@@ -19,7 +19,7 @@ func (s *State) manticoreStructure(d *Document) bool {
 	}
 	if d.data != nil {
 		for _, definition := range d.data.Definitions {
-			if definition.Kind == "manticore_indexes" {
+			if definition.Kind == "manticore_indexes" || definition.Kind == "manticore_definition" {
 				return true
 			}
 		}
@@ -103,6 +103,16 @@ func (s *State) manticoreStructureView(c *ui.Context, d *Document) {
 				ui.Text(c, value).SingleLine().Tooltip(value)
 			}).Grow(1)
 		case 2:
+			for _, definition := range d.data.Definitions {
+				if definition.Kind == "manticore_definition" {
+					var observation contract.NativeMetadataObservation
+					if json.Unmarshal([]byte(definition.SQL), &observation) == nil && observation.ErrorCode != 0 {
+						ui.Text(c, observation.Command).TextColor(p.Muted)
+						ui.Text(c, fmt.Sprintf("[%d / %s] %s", observation.ErrorCode, observation.SQLState, observation.Error)).TextColor(p.Error)
+						return
+					}
+				}
+			}
 			ui.ScrollBoth(c).Fill().Children(func() {
 				ui.Column(c).Padding(8).Gap(3).Children(func() {
 					for _, line := range definitionLines(d.data.Definition) {

@@ -218,6 +218,9 @@ func (d *Document) editable() bool {
 }
 
 func (d *Document) allowsDataEdit(kind string) bool {
+	if d.page != nil && d.page.EditKinds != nil && !slices.Contains(d.page.EditKinds, kind) {
+		return false
+	}
 	if d.boundRuntime == nil || d.boundRuntime.EditKinds == nil {
 		return kind == "insert" || kind == "update" || kind == "delete"
 	}

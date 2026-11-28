@@ -57,7 +57,7 @@ func (d *dataLease) writeAdmission() error {
 }
 func (d *dataLease) prepareStatement(ctx context.Context, m *contract.TableStructure, e contract.DataEdit) (dataStatement, error) {
 	s := dataStatement{}
-	if e.GraphEndpoints != nil || e.Kind != "insert" && e.Kind != "update" && e.Kind != "delete" {
+	if e.GraphEndpoints != nil || !slices.Contains(writeKinds(m), e.Kind) {
 		return s, contract.ErrUnsupported
 	}
 	if e.Kind == "insert" && e.Original != nil || e.Kind != "insert" && e.Original == nil || e.Kind == "delete" && len(e.Values) != 0 || e.Kind != "delete" && len(e.Values) == 0 {

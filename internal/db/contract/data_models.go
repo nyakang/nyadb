@@ -292,6 +292,9 @@ type DataPage struct {
 	// legacy behavior; a non-nil map permits only explicitly listed edit kinds.
 	// Existing immutable keys can allow insert while rejecting update.
 	ColumnEditKinds map[string][]string
+	// EditKinds limits operations for the captured original object mode. Nil
+	// preserves runtime defaults; an explicit list can only narrow them.
+	EditKinds []string
 
 	Database, Table string
 	Columns         []string

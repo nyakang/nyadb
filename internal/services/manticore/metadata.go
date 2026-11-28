@@ -3,10 +3,14 @@ package manticore
 import (
 	"context"
 	"database/sql/driver"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"strings"
 	"unicode"
 	"unicode/utf8"
 
+	mysqldriver "github.com/go-sql-driver/mysql"
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
@@ -167,14 +171,31 @@ func (s *Session) tableMetadata(ctx context.Context, o contract.ObjectRef, index
 			// In particular, the implicit id column must not become a fabricated PK.
 			structure.Columns = append(structure.Columns, contract.StructureColumn{Name: row[0].Text, Type: row[1].Text, DataType: row[1].Text, Extra: row[2].Text, Position: int64(i + 1), ValueKind: valueKind(row[1].Text)})
 		}
-		ddl, e := read(child, c, "SHOW CREATE TABLE "+quote(o.Name), 0, nil, nil)
+		command := "SHOW CREATE TABLE " + quote(o.Name)
+		ddl, e := read(child, c, command, 0, nil, nil)
 		if e != nil {
-			return e
+			// A plain/local index has readable fields and attributes but no
+			// CREATE TABLE definition. Admit only this original native response;
+			// a missing table, transport failure or cancellation still fails.
+			var server *mysqldriver.MySQLError
+			if structure.Engine != "local" || child.Err() != nil || !errors.As(e, &server) || server.Number != 1146 || string(server.SQLState[:]) != "42S02" || server.Message != fmt.Sprintf("table '%s' is not real-time or percolate", o.Name) {
+				return e
+			}
+			message := server.Message
+			if secret := s.profileSecret(); secret != "" {
+				message = strings.ReplaceAll(message, secret, "[redacted]")
+			}
+			raw, err := json.Marshal(contract.NativeMetadataObservation{Command: command, ErrorCode: server.Number, SQLState: string(server.SQLState[:]), Error: message})
+			if err != nil {
+				return err
+			}
+			structure.Definitions = append(structure.Definitions, contract.Definition{Name: o.Name, Kind: "manticore_definition", SQL: string(raw)})
+		} else {
+			if len(ddl.Truncation) > 0 || len(ddl.Rows) != 1 || len(ddl.Rows[0]) != 2 || ddl.Rows[0][0].Text != o.Name {
+				return contract.ErrUnsupported
+			}
+			structure.Definition = ddl.Rows[0][1].Text
 		}
-		if len(ddl.Truncation) > 0 || len(ddl.Rows) != 1 || len(ddl.Rows[0]) != 2 || ddl.Rows[0][0].Text != o.Name {
-			return contract.ErrUnsupported
-		}
-		structure.Definition = ddl.Rows[0][1].Text
 		if indexes {
 			observation, e := s.indexObservation(child, c, o)
 			if e != nil {

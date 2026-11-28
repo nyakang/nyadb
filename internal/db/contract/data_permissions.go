@@ -3,7 +3,7 @@ package contract
 import "slices"
 
 func DataColumnEditAllowed(p *DataPage, name, kind string) bool {
-	return p != nil && (p.ColumnEditKinds == nil || slices.Contains(p.ColumnEditKinds[name], kind))
+	return p != nil && (p.EditKinds == nil || slices.Contains(p.EditKinds, kind)) && (p.ColumnEditKinds == nil || slices.Contains(p.ColumnEditKinds[name], kind))
 }
 
 func CloneDataColumnEditKinds(kinds map[string][]string) map[string][]string {

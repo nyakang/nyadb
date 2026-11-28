@@ -139,9 +139,9 @@ func (d *dataLease) table(ctx context.Context) (*contract.TableStructure, error)
 	if e != nil {
 		return nil, e
 	}
-	// RT rows have the observed native id/attribute semantics. Percolate and
+	// RT and local/plain rows have native id/attribute semantics. Percolate and
 	// distributed tables expose different data schemas and need their own path.
-	if m.Engine != "rt" || len(m.Columns) == 0 || len(m.Columns) > 512 {
+	if m.Engine != "rt" && m.Engine != "local" || len(m.Columns) == 0 || len(m.Columns) > 512 {
 		return nil, contract.ErrUnsupported
 	}
 	return m, nil

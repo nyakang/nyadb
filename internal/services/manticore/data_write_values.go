@@ -89,9 +89,30 @@ func writeLiteral(c contract.StructureColumn, v contract.DataValue) (string, err
 		return "", contract.ErrUnsupported
 	}
 }
+func writeKinds(m *contract.TableStructure) []string {
+	switch m.Engine {
+	case "rt":
+		return []string{"insert", "update", "delete"}
+	case "local":
+		return []string{"update"}
+	default:
+		return []string{}
+	}
+}
 func writePermissions(m *contract.TableStructure) map[string][]string {
 	out := map[string][]string{}
 	for _, c := range m.Columns {
+		if m.Engine == "local" {
+			// Plain uint attributes have verified conditional native updates.
+			// Other attribute encodings require their own original acceptance.
+			if c.Name != "id" && c.DataType == "uint" {
+				out[c.Name] = []string{"update"}
+			}
+			continue
+		}
+		if m.Engine != "rt" {
+			continue
+		}
 		switch c.DataType {
 		case "text", "string", "json", "mva", "mva64", "bool", "float", "double", "bigint", "uint", "integer", "timestamp":
 			out[c.Name] = []string{"insert"}
