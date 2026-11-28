@@ -32,7 +32,7 @@ func (s *Session) ReserveDataDocument(object contract.ObjectRef) (contract.DataD
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.closed {
+	if !s.aliveLocked() {
 		return nil, contract.ErrRevoked
 	}
 	if len(s.dataLeases) >= 32 || s.nextOwner == ^uint64(0) {
@@ -91,7 +91,7 @@ func (d *dataLease) auxiliary() (*queryLease, error) {
 	s := d.session
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.closed || d.ctx.Err() != nil {
+	if !s.aliveLocked() || d.ctx.Err() != nil {
 		return nil, contract.ErrRevoked
 	}
 	if s.nextOwner == ^uint64(0) {

@@ -31,7 +31,7 @@ type queryLease struct {
 func (s *Session) ReserveQuery(doc uint64) (contract.QueryLease, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.closed {
+	if !s.aliveLocked() {
 		return nil, contract.ErrRevoked
 	}
 	if doc == 0 {

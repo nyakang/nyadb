@@ -28,6 +28,8 @@ type Session struct {
 	ctx                     context.Context
 	cancel                  context.CancelFunc
 	closed                  bool
+	transport               SessionTransport
+	transportDone           <-chan struct{}
 	leases                  map[*queryLease]bool
 	dataLeases              map[*dataLease]bool
 	schemaDocuments         map[string]*schemaDocument
@@ -41,6 +43,16 @@ type Session struct {
 
 // Open is intentionally not registered with dbruntime or the public catalog.
 func Open(ctx context.Context, profileID int64, cfg connections.ManticoreConfig, password string) (*Session, error) {
+	return openSession(ctx, profileID, cfg, password, nil)
+}
+
+func openSession(ctx context.Context, profileID int64, cfg connections.ManticoreConfig, password string, owned SessionTransport) (*Session, error) {
+	transferred := false
+	defer func() {
+		if owned != nil && !transferred {
+			_ = owned.Close()
+		}
+	}()
 	if ctx == nil || profileID <= 0 {
 		return nil, connections.ErrInvalid
 	}
@@ -50,6 +62,16 @@ func Open(ctx context.Context, profileID int64, cfg connections.ManticoreConfig,
 	}
 	root, cancel := context.WithCancel(context.Background())
 	s := &Session{profileID: profileID, config: cfg, password: password, ctx: root, cancel: cancel, leases: map[*queryLease]bool{}, dataLeases: map[*dataLease]bool{}, dataSlots: make(chan struct{}, cfg.MaxConnections), metadataSlots: make(chan struct{}, cfg.MaxConnections), sqlSlots: make(chan struct{}, cfg.SQLMaxConnections), closedDone: make(chan struct{})}
+	s.transport = owned
+	if owned != nil {
+		s.transportDone = owned.Done()
+		if s.transportDone == nil {
+			cancel()
+			return nil, connections.ErrInvalid
+		}
+		go s.watchTransport()
+	}
+	transferred = true
 	err = s.withConnection(ctx, func(child context.Context, c driver.Conn) error {
 		if e := s.verifyDataCatalog(child, c); e != nil {
 			return e
@@ -69,10 +91,13 @@ func Open(ctx context.Context, profileID int64, cfg connections.ManticoreConfig,
 		_, e = tableObjects(s.Namespace("Manticore"), tables)
 		return e
 	})
-	if err != nil || ctx.Err() != nil {
+	if err != nil || ctx.Err() != nil || !s.Alive() {
 		_ = s.Close()
 		if err == nil {
 			err = ctx.Err()
+			if err == nil {
+				err = contract.ErrRevoked
+			}
 		}
 		// withConnection has already removed secrets from driver errors. A
 		// second sanitization would erase the original authentication rejection.
@@ -97,17 +122,42 @@ func connectionConfig(c connections.ManticoreConfig, password string) *mysqldriv
 
 func (s *Session) connect(ctx context.Context) (driver.Conn, error) {
 	s.mu.Lock()
-	password, closed := s.password, s.closed
+	password, alive := s.password, s.aliveLocked()
 	s.mu.Unlock()
-	if closed {
+	if !alive {
 		return nil, contract.ErrRevoked
 	}
 	cfg := connectionConfig(s.config, password)
+	var physical net.Conn
+	if s.transport != nil {
+		cfg.DialFunc = func(ctx context.Context, network, addr string) (net.Conn, error) {
+			c, err := s.transport.DialContext(ctx, network, addr)
+			if err == nil {
+				physical = c
+			}
+			return c, err
+		}
+	}
 	connector, err := mysqldriver.NewConnector(cfg)
 	if err != nil {
 		return nil, err
 	}
-	return connector.Connect(ctx)
+	c, err := connector.Connect(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if physical != nil {
+		c = &transportConnection{Conn: c, ExecerContext: c.(driver.ExecerContext), QueryerContext: c.(driver.QueryerContext), Validator: c.(driver.Validator), physical: physical}
+	}
+	if !s.Alive() {
+		closeConnection(c)
+		return nil, contract.ErrRevoked
+	}
+	if err := ctx.Err(); err != nil {
+		closeConnection(c)
+		return nil, err
+	}
+	return c, nil
 }
 
 func (s *Session) request(ctx context.Context) (context.Context, func(), error) {
@@ -118,7 +168,7 @@ func (s *Session) request(ctx context.Context) (context.Context, func(), error) 
 		return nil, nil, err
 	}
 	s.mu.Lock()
-	if s.closed {
+	if !s.aliveLocked() {
 		s.mu.Unlock()
 		return nil, nil, contract.ErrRevoked
 	}
@@ -159,7 +209,7 @@ func (s *Session) profileSecret() string { s.mu.Lock(); defer s.mu.Unlock(); ret
 func (s *Session) ProfileID() int64      { return s.profileID }
 func (s *Session) Generation() uint64    { return 1 }
 func (s *Session) Catalog() string       { return "Manticore" }
-func (s *Session) Alive() bool           { s.mu.Lock(); defer s.mu.Unlock(); return !s.closed }
+func (s *Session) Alive() bool           { s.mu.Lock(); defer s.mu.Unlock(); return s.aliveLocked() }
 func (s *Session) Capabilities() contract.Capabilities {
 	return contract.Capabilities{Query: true, Metadata: true}
 }
@@ -181,6 +231,9 @@ func (s *Session) Close() error {
 			all = append(all, l)
 		}
 		s.mu.Unlock()
+		if s.transport != nil {
+			_ = s.transport.Close()
+		}
 		for _, d := range documents {
 			_ = d.Close()
 		}

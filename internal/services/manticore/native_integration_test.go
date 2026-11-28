@@ -204,6 +204,7 @@ func TestNativeMetadataQueriesWritesAndExplicitLeases(t *testing.T) {
 type packetGate struct {
 	listener net.Listener
 	target   string
+	dial     func(context.Context, string, string) (net.Conn, error)
 	mu       sync.Mutex
 	conns    map[net.Conn]bool
 	query    string
@@ -216,12 +217,16 @@ type packetGate struct {
 }
 
 func newPacketGate(t *testing.T, target string) *packetGate {
+	return newPacketGateWithDial(t, target, (&net.Dialer{Timeout: 3 * time.Second}).DialContext)
+}
+
+func newPacketGateWithDial(t *testing.T, target string, dial func(context.Context, string, string) (net.Conn, error)) *packetGate {
 	t.Helper()
 	ln, e := net.Listen("tcp", "127.0.0.1:0")
 	if e != nil {
 		t.Fatal(e)
 	}
-	g := &packetGate{listener: ln, target: target, conns: map[net.Conn]bool{}, closed: make(chan struct{})}
+	g := &packetGate{listener: ln, target: target, dial: dial, conns: map[net.Conn]bool{}, closed: make(chan struct{})}
 	g.wg.Add(1)
 	go func() {
 		defer g.wg.Done()
@@ -271,7 +276,9 @@ func (g *packetGate) forward(front net.Conn) {
 	defer g.wg.Done()
 	defer front.Close()
 	defer func() { g.mu.Lock(); delete(g.conns, front); g.mu.Unlock() }()
-	back, e := net.DialTimeout("tcp", g.target, 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	back, e := g.dial(ctx, "tcp", g.target)
+	cancel()
 	if e != nil {
 		return
 	}

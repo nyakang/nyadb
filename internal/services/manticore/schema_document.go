@@ -58,7 +58,7 @@ func (s *Session) ReserveSchemaDesignDocument(r contract.SchemaDesignDocumentReq
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.closed {
+	if !s.aliveLocked() {
 		return nil, contract.ErrRevoked
 	}
 	if s.schemaDocuments[r.DocumentID] != nil {
