@@ -45601,3 +45601,63 @@ func ManticoreDataReadScope() string { return In(i18n.Locale()).ManticoreDataRea
 func (msgs Messages) ManticoreDataReadScope() string {
 	return Catalog.Format(msgs.locale, "manticoreDataReadScope", nil)
 }
+
+// ManticoreWriteTitle says "确认 Manticore 数据写入"
+// in the language the app shows.
+func ManticoreWriteTitle() string { return In(i18n.Locale()).ManticoreWriteTitle() }
+
+// ManticoreWriteTitle says "确认 Manticore 数据写入"
+// in the language of msgs.
+func (msgs Messages) ManticoreWriteTitle() string {
+	return Catalog.Format(msgs.locale, "manticoreWriteTitle", nil)
+}
+
+// ManticoreWriteHint says "…"
+// in the language the app shows.
+func ManticoreWriteHint() string { return In(i18n.Locale()).ManticoreWriteHint() }
+
+// ManticoreWriteHint says "…"
+// in the language of msgs.
+func (msgs Messages) ManticoreWriteHint() string {
+	return Catalog.Format(msgs.locale, "manticoreWriteHint", nil)
+}
+
+// ManticoreWritePreview says "Manticore 原生写入完整预览"
+// in the language the app shows.
+func ManticoreWritePreview() string { return In(i18n.Locale()).ManticoreWritePreview() }
+
+// ManticoreWritePreview says "Manticore 原生写入完整预览"
+// in the language of msgs.
+func (msgs Messages) ManticoreWritePreview() string {
+	return Catalog.Format(msgs.locale, "manticoreWritePreview", nil)
+}
+
+// ManticoreWriteHistory says "已确认的 Manticore 数据写入"
+// in the language the app shows.
+func ManticoreWriteHistory() string { return In(i18n.Locale()).ManticoreWriteHistory() }
+
+// ManticoreWriteHistory says "已确认的 Manticore 数据写入"
+// in the language of msgs.
+func (msgs Messages) ManticoreWriteHistory() string {
+	return Catalog.Format(msgs.locale, "manticoreWriteHistory", nil)
+}
+
+// ManticoreWriteCreate says "新增记录"
+// in the language the app shows.
+func ManticoreWriteCreate() string { return In(i18n.Locale()).ManticoreWriteCreate() }
+
+// ManticoreWriteCreate says "新增记录"
+// in the language of msgs.
+func (msgs Messages) ManticoreWriteCreate() string {
+	return Catalog.Format(msgs.locale, "manticoreWriteCreate", nil)
+}
+
+// ManticoreWriteUpdate says "更新记录"
+// in the language the app shows.
+func ManticoreWriteUpdate() string { return In(i18n.Locale()).ManticoreWriteUpdate() }
+
+// ManticoreWriteUpdate says "更新记录"
+// in the language of msgs.
+func (msgs Messages) ManticoreWriteUpdate() string {
+	return Catalog.Format(msgs.locale, "manticoreWriteUpdate", nil)
+}

@@ -4477,5 +4477,11 @@
   "prestoPublic46": "驱动包不包含 PrestoSQL 驱动。",
   "prestoPublic47": "驱动包仍在使用，请先关闭相关连接。",
   "prestoPublic48": "驱动包已移除。",
-  "manticoreDataReadScope": "Manticore 分页和导出读取当前可见数据；跨次读取不提供一致快照。全文字段不支持普通属性筛选。"
+  "manticoreDataReadScope": "Manticore 分页和导出读取当前可见数据；跨次读取不提供一致快照。全文字段不支持普通属性筛选。",
+  "manticoreWriteTitle": "确认 Manticore 数据写入",
+  "manticoreWriteHint": "各语句独立执行，不提供批次事务或整行并发隔离。提交前检查原始行；标量属性参与条件，全文、JSON 和集合仅作提交前检查。省略字段使用原生默认值；未知或不完整回执保留草稿并禁止重放。",
+  "manticoreWritePreview": "Manticore 原生写入完整预览",
+  "manticoreWriteHistory": "已确认的 Manticore 数据写入",
+  "manticoreWriteCreate": "新增记录",
+  "manticoreWriteUpdate": "更新记录"
 }

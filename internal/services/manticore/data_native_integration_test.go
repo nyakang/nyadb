@@ -55,7 +55,7 @@ func TestNativeDataPagesTypedValuesFiltersCompleteExportAndOriginalScope(t *test
 	}
 	d, r := nativeData(t, s, table)
 	object := s.Namespace("Manticore").Object("TABLE", table)
-	if r.Chunk != nil || r.Saver != nil || r.Capabilities.EditableTables || r.Capabilities.Transactions || !r.Capabilities.Count || !r.Capabilities.Export {
+	if r.Chunk != nil || r.Saver != nil || !r.Capabilities.EditableTables || r.Capabilities.Transactions || r.PreviewEdits == nil || r.SubmitEdits == nil || !r.Capabilities.Count || !r.Capabilities.Export {
 		t.Fatal("unverified capability published")
 	}
 	first, e := r.AdvancedLoader(context.Background(), 69, "Manticore", table, contract.DataOptions{Object: object, Limit: 3})
@@ -65,8 +65,8 @@ func TestNativeDataPagesTypedValuesFiltersCompleteExportAndOriginalScope(t *test
 	if len(first.Rows) != 3 || !first.HasMore || first.Rows[0][0].Value.Text != "-9223372036854775808" || first.Rows[1][0].Value.Text != "-1" || first.Rows[2][0].Value.Text != "1" {
 		t.Fatalf("original signed id ordering %+v", first)
 	}
-	if first.Editable == nil || *first.Editable || first.StableOrder || len(first.RowRefs) > 0 || len(first.RowSnapshots) > 0 || first.ColumnMetadata[0].Key != "" {
-		t.Fatal("invented editable identity")
+	if first.Editable == nil || !*first.Editable || first.StableOrder || len(first.RowRefs) != 3 || len(first.RowSnapshots) != 3 || first.ColumnMetadata[0].Key != "" {
+		t.Fatal("missing original grants or invented primary key")
 	}
 	if !first.Rows[0][1].Truncated || utf8.RuneCountInString(first.Rows[0][1].Value.Text) != 1024 || first.Rows[0][5].Value.Kind != contract.JSON {
 		t.Fatal("typed preview", first.Rows[0])

@@ -86,8 +86,17 @@ func (d *dataLease) page(ctx context.Context, id int64, database, table string, 
 	if e != nil {
 		return nil, e
 	}
-	editable := false
-	page := &contract.DataPage{Object: d.object, Editable: &editable, Database: database, Table: table, Offset: o.Offset, Limit: o.Limit, ColumnMetadata: m.Columns, FilterColumns: []string{}, SortColumns: []string{}, QuerySQL: q.display, LiveRead: true}
+	d.mu.Lock()
+	if d.pageSequence == ^uint64(0) {
+		d.mu.Unlock()
+		return nil, contract.ErrDataPage
+	}
+	d.pageSequence++
+	sequence := d.pageSequence
+	d.mu.Unlock()
+	grants := map[string]*dataGrant{}
+	editable := true
+	page := &contract.DataPage{Object: d.object, Editable: &editable, Database: database, Table: table, Offset: o.Offset, Limit: o.Limit, ColumnMetadata: m.Columns, ColumnEditKinds: writePermissions(m), FilterColumns: []string{}, SortColumns: []string{}, QuerySQL: q.display, LiveRead: true}
 	for _, c := range m.Columns {
 		page.Columns = append(page.Columns, c.Name)
 		page.ColumnKinds = append(page.ColumnKinds, c.DataType)
@@ -100,6 +109,10 @@ func (d *dataLease) page(ctx context.Context, id int64, database, table string, 
 	_, e = d.primary.ExecuteStream(child, database, q.sql, func(_ int, columns []contract.Column, row []contract.Cell) error {
 		if len(page.Rows) > o.Limit {
 			return contract.ErrDataPage
+		}
+		full, e := dataCells(m.Columns, columns, row, false)
+		if e != nil {
+			return e
 		}
 		cells, e := dataCells(m.Columns, columns, row, true)
 		if e != nil {
@@ -114,6 +127,14 @@ func (d *dataLease) page(ctx context.Context, id int64, database, table string, 
 			v := cell
 			values = append(values, contract.DataCell{Value: &v, Text: v.Display(), Null: v.Kind == contract.Null, Truncated: v.Truncated})
 		}
+		token, g, e := d.pageGrant(m, full, cells)
+		if e != nil {
+			return e
+		}
+		grants[token] = g
+		published := snapshotCopy(g.preview)
+		page.RowRefs = append(page.RowRefs, &published.Ref)
+		page.RowSnapshots = append(page.RowSnapshots, snapshotCopy(g.preview))
 		page.Rows = append(page.Rows, values)
 		return nil
 	})
@@ -122,8 +143,18 @@ func (d *dataLease) page(ctx context.Context, id int64, database, table string, 
 	}
 	page.HasMore = len(page.Rows) > o.Limit
 	if page.HasMore {
+		delete(grants, string(page.RowRefs[o.Limit].Values[0]))
+		page.RowRefs = page.RowRefs[:o.Limit]
+		page.RowSnapshots = page.RowSnapshots[:o.Limit]
 		page.Rows = page.Rows[:o.Limit]
 	}
+	d.mu.Lock()
+	if d.closed || child.Err() != nil || sequence != d.pageSequence {
+		d.mu.Unlock()
+		return nil, contract.ErrDataConflict
+	}
+	d.grants = grants
+	d.mu.Unlock()
 	page.CompletedAt = time.Now()
 	page.Duration = time.Since(start)
 	return page, nil

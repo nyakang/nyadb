@@ -105,7 +105,7 @@ func TestManticoreNativeSharedGridPermissionsPagingParkingAndRecovery(t *testing
 	if d.err != "" || d.page == nil || len(d.page.Rows) != 2 || !d.page.HasMore || d.page.Rows[0][1].Text != "猫 原始行" || !d.page.Rows[1][1].Truncated {
 		t.Fatal("native shared page", d.err)
 	}
-	if d.editable() || d.capabilities.EditableTables || d.boundRuntime.Chunk != nil {
+	if !d.editable() || !d.capabilities.EditableTables || d.boundRuntime.Chunk != nil {
 		t.Fatal("unaccepted tools enabled")
 	}
 	if !slices.Equal(s.filterColumns(d, d.page.Columns), []string{"id", "qty", "tag"}) {
@@ -135,6 +135,7 @@ func TestManticoreNativeSharedGridPermissionsPagingParkingAndRecovery(t *testing
 			ui.Box(c).Grow(1).MinWidth(0).FillHeight().Children(func() { s.View(c, d) })
 			ui.Box(c).Width(320).FillHeight().Children(func() { s.InspectorView(c, d) })
 		})
+		s.Modals(c)
 	}, 1280, 800)
 	tt.Frame()
 	if !tt.HasText("猫 原始行") || !tt.HasText("qty") {
@@ -161,6 +162,108 @@ func TestManticoreNativeSharedGridPermissionsPagingParkingAndRecovery(t *testing
 	}
 	capture("zh-Hans")
 	capture("en")
+
+	// Real original row read promotes the bounded cached snapshot for editing.
+	full, e := d.boundRuntime.RowReader(context.Background(), 7001, "Manticore", table, *d.page.RowRefs[1])
+	if e != nil || !dataCompleteRowMatches(d.page.RowSnapshots[1], full) || len(full.Values["title"].Text) != len(strings.Repeat("猫", 2049)) {
+		t.Fatal("complete original row", e)
+	}
+	if contract.DataColumnEditAllowed(d.page, "id", "update") || contract.DataColumnEditAllowed(d.page, "title", "update") || !contract.DataColumnEditAllowed(d.page, "qty", "update") {
+		t.Fatal("native edit permissions")
+	}
+	d.edit.Batch = true
+	draft := s.mysqlRowDraft(d, 0)
+	draft.Values["qty"] = contract.DataValue{Kind: contract.Integer, Text: "17"}
+	s.saveMySQLData(ui.Services{}, d)
+	wait(func() bool { return d.mutation.results == nil })
+	if !d.mutation.open || d.mutation.plan == nil {
+		t.Fatal("missing native confirmation", d.edit.Err)
+	}
+	// Render the real immutable preview in both languages.
+	for _, locale := range []string{"zh-Hans", "en"} {
+		i18n.SetLocaleFunc(func() string { return locale })
+		tt.Frame()
+		if !tt.HasText(locales.Text("确认 Manticore 数据写入")) || locale == "en" && !strings.Contains(strings.Join(tt.Texts(), " "), "Update record") {
+			t.Fatal("confirmation missing", locale, tt.Texts())
+		}
+		if dir := os.Getenv("NYADB_MANTICORE_EVIDENCE"); dir != "" {
+			f, e := os.Create(filepath.Join(dir, locale+"-write-confirm.png"))
+			if e != nil {
+				t.Fatal(e)
+			}
+			e = png.Encode(f, tt.Image())
+			f.Close()
+			if e != nil {
+				t.Fatal(e)
+			}
+		}
+	}
+	s.confirmDataMutation(ui.Services{}, d)
+	// A completed original write waits while a different profile is active.
+	results := d.edit.Results
+	active.ProfileID = 7999
+	var written mysqlEditResult
+	select {
+	case written = <-results:
+	case <-time.After(20 * time.Second):
+		t.Fatal("native write completion missing")
+	}
+	if written.Err != nil || written.Saved == nil || !contract.DataWriteComplete(written.Saved, 1) {
+		t.Fatal(written.Err)
+	}
+	parked := make(chan mysqlEditResult, 1)
+	parked <- written
+	d.edit.Results = parked
+	s.Consume(ui.Services{})
+	if !d.edit.Busy || len(parked) != 1 || !d.HasDraft() {
+		t.Fatal("write published to foreign profile")
+	}
+	active.ProfileID = 7001
+	s.Consume(ui.Services{})
+	wait(func() bool { return !d.edit.Busy && !d.loading })
+	if d.edit.Err != "" || d.HasDraft() || d.nativeReceipt.JSON == "" || d.page.Rows[0][2].Text != "17" {
+		t.Fatal("write did not refresh original page", d.edit.Err, d.Error())
+	}
+	d.nativeReceipt.Open = true
+	tt.Frame()
+	if !tt.HasText(locales.Text("原生顺序写入回执")) {
+		t.Fatal("native receipt missing")
+	}
+	d.nativeReceipt.Open = false
+	// Insert and delete use the same actual State/Document confirmation path.
+	s.stageMySQLDataRecord(ui.Services{}, d, nil)
+	d.edit.Editor = nil
+	for _, draft := range d.edit.Drafts {
+		draft.Values = map[string]contract.DataValue{"id": {Kind: contract.Integer, Text: "3"}, "title": {Kind: contract.Text, Text: "native inserted"}}
+	}
+	s.saveMySQLData(ui.Services{}, d)
+	wait(func() bool { return d.mutation.results == nil })
+	if !d.mutation.open {
+		t.Fatal(d.edit.Err)
+	}
+	s.confirmDataMutation(ui.Services{}, d)
+	wait(func() bool { return !d.edit.Busy && !d.loading })
+	if d.HasDraft() || d.edit.Err != "" {
+		t.Fatal(d.edit.Err)
+	}
+	s.changeMySQLDataPage(ui.Services{}, d, 2)
+	wait(func() bool { return !d.loading })
+	if d.page.Rows[0][0].Text != "3" {
+		t.Fatal("insert missing")
+	}
+	s.deleteMySQLDataRecords(ui.Services{}, d, 0)
+	s.saveMySQLData(ui.Services{}, d)
+	wait(func() bool { return d.mutation.results == nil })
+	if !d.mutation.open {
+		t.Fatal(d.edit.Err)
+	}
+	s.confirmDataMutation(ui.Services{}, d)
+	wait(func() bool { return !d.edit.Busy && !d.loading })
+	if d.HasDraft() || d.edit.Err != "" {
+		t.Fatal(d.edit.Err)
+	}
+	s.changeMySQLDataPage(ui.Services{}, d, 0)
+	wait(func() bool { return !d.loading })
 	s.changeMySQLDataPage(ui.Services{}, d, 2)
 	wait(func() bool { return !d.loading })
 	if d.err != "" || len(d.page.Rows) != 1 || d.page.HasMore || d.page.Rows[0][0].Text != "9223372036854775807" {
@@ -171,11 +274,11 @@ func TestManticoreNativeSharedGridPermissionsPagingParkingAndRecovery(t *testing
 	// An actual completed page remains buffered while another profile is active.
 	oldPage := d.page
 	s.Load(ui.Services{}, d, true)
-	results := d.results
+	resultsPage := d.results
 	active.ProfileID = 7999
 	var original mysqlDataResult
 	select {
-	case original = <-results:
+	case original = <-resultsPage:
 	case <-time.After(20 * time.Second):
 		t.Fatal("original page did not return")
 	}
@@ -198,9 +301,9 @@ func TestManticoreNativeSharedGridPermissionsPagingParkingAndRecovery(t *testing
 	// buffered page and document must not attach themselves to the fresh session.
 	oldPage = d.page
 	s.Load(ui.Services{}, d, true)
-	results = d.results
+	resultsPage = d.results
 	select {
-	case original = <-results:
+	case original = <-resultsPage:
 	case <-time.After(20 * time.Second):
 		t.Fatal("late original page missing")
 	}

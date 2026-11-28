@@ -4477,5 +4477,11 @@
   "prestoPublic46": "The package does not contain a PrestoSQL driver.",
   "prestoPublic47": "The driver package is in use. Close its connections first.",
   "prestoPublic48": "Driver package removed.",
-  "manticoreDataReadScope": "Manticore pages and exports read currently visible data without a consistent snapshot across requests. Full-text fields do not support ordinary attribute filters."
+  "manticoreDataReadScope": "Manticore pages and exports read currently visible data without a consistent snapshot across requests. Full-text fields do not support ordinary attribute filters.",
+  "manticoreWriteTitle": "Confirm Manticore data writes",
+  "manticoreWriteHint": "Statements execute independently, without a batch transaction or whole-row concurrency isolation. Original rows are checked before submission; scalar attributes enter the condition, while full-text, JSON and sets are checked only beforehand. Omitted fields use native defaults. Unknown or incomplete receipts retain drafts and block replay.",
+  "manticoreWritePreview": "Complete Manticore native write preview",
+  "manticoreWriteHistory": "Confirmed Manticore data writes",
+  "manticoreWriteCreate": "Insert record",
+  "manticoreWriteUpdate": "Update record"
 }
