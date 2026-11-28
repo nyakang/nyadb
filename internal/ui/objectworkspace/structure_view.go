@@ -86,6 +86,10 @@ func (s *State) View(c *ui.Context, t *Document) {
 		s.nativeDefinitionView(c, t)
 		return
 	}
+	if s.manticoreStructure(t) {
+		s.manticoreStructureView(c, t)
+		return
+	}
 	if s.cassandraStructure(t) {
 		s.cassandraStructureView(c, t)
 		return

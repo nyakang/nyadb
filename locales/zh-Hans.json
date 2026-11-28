@@ -4483,5 +4483,15 @@
   "manticoreWritePreview": "Manticore 原生写入完整预览",
   "manticoreWriteHistory": "已确认的 Manticore 数据写入",
   "manticoreWriteCreate": "新增记录",
-  "manticoreWriteUpdate": "更新记录"
+  "manticoreWriteUpdate": "更新记录",
+  "manticoreStructureTitle": "Manticore 原生结构（只读）",
+  "manticoreIndexRejected": "服务器拒绝索引查询；这不表示索引为空。",
+  "manticoreIndexScope": "原生搜索索引状态不声明 SQL 主键或唯一约束。",
+  "manticoreIndexEmpty": "服务器返回空索引列表",
+  "manticoreProperties": "原生属性",
+  "manticoreFunctionTitle": "Manticore 原生函数元数据（只读）",
+  "manticoreFunctionScope": "SHOW PLUGINS 返回的函数元数据；服务器未提供函数实现。",
+  "manticoreIndexEnabled": "已启用",
+  "manticoreIndexPercent": "覆盖率",
+  "manticoreStructureExpired": "原 Manticore 会话已失效，请刷新表结构"
 }

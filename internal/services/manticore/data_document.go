@@ -135,7 +135,7 @@ func (d *dataLease) metadata(ctx context.Context, id int64, database, table stri
 	return d.table(child)
 }
 func (d *dataLease) table(ctx context.Context) (*contract.TableStructure, error) {
-	m, e := d.session.TableMetadata(ctx, d.object)
+	m, e := d.session.tableMetadata(ctx, d.object, false)
 	if e != nil {
 		return nil, e
 	}

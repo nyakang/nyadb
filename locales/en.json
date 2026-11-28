@@ -4483,5 +4483,15 @@
   "manticoreWritePreview": "Complete Manticore native write preview",
   "manticoreWriteHistory": "Confirmed Manticore data writes",
   "manticoreWriteCreate": "Insert record",
-  "manticoreWriteUpdate": "Update record"
+  "manticoreWriteUpdate": "Update record",
+  "manticoreStructureTitle": "Manticore native structure (read-only)",
+  "manticoreIndexRejected": "The server rejected the index query; this does not mean the index list is empty.",
+  "manticoreIndexScope": "Native search index status does not establish SQL primary keys or unique constraints.",
+  "manticoreIndexEmpty": "The server returned an empty index list",
+  "manticoreProperties": "Native properties",
+  "manticoreFunctionTitle": "Manticore native function metadata (read-only)",
+  "manticoreFunctionScope": "Function metadata returned by SHOW PLUGINS; the server does not provide the function implementation.",
+  "manticoreIndexEnabled": "Enabled",
+  "manticoreIndexPercent": "Percent",
+  "manticoreStructureExpired": "The original Manticore session has expired. Refresh the structure."
 }

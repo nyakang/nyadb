@@ -19,6 +19,10 @@ func (d *programDocument) View(c *ui.Context) {
 	}
 	palette := theme.Colors(c)
 	obj := d.data
+	if obj.Engine == "Manticore Search" {
+		d.manticoreFunctionView(c)
+		return
+	}
 	if obj.Engine == "Neo4j" {
 		d.graphDefinitionView(c)
 		return

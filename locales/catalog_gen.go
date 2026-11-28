@@ -45661,3 +45661,103 @@ func ManticoreWriteUpdate() string { return In(i18n.Locale()).ManticoreWriteUpda
 func (msgs Messages) ManticoreWriteUpdate() string {
 	return Catalog.Format(msgs.locale, "manticoreWriteUpdate", nil)
 }
+
+// ManticoreStructureTitle says "Manticore 原生结构（只读）"
+// in the language the app shows.
+func ManticoreStructureTitle() string { return In(i18n.Locale()).ManticoreStructureTitle() }
+
+// ManticoreStructureTitle says "Manticore 原生结构（只读）"
+// in the language of msgs.
+func (msgs Messages) ManticoreStructureTitle() string {
+	return Catalog.Format(msgs.locale, "manticoreStructureTitle", nil)
+}
+
+// ManticoreIndexRejected says "服务器拒绝索引查询；这不表示索引为空。"
+// in the language the app shows.
+func ManticoreIndexRejected() string { return In(i18n.Locale()).ManticoreIndexRejected() }
+
+// ManticoreIndexRejected says "服务器拒绝索引查询；这不表示索引为空。"
+// in the language of msgs.
+func (msgs Messages) ManticoreIndexRejected() string {
+	return Catalog.Format(msgs.locale, "manticoreIndexRejected", nil)
+}
+
+// ManticoreIndexScope says "原生搜索索引状态不声明 SQL 主键或唯一约束。"
+// in the language the app shows.
+func ManticoreIndexScope() string { return In(i18n.Locale()).ManticoreIndexScope() }
+
+// ManticoreIndexScope says "原生搜索索引状态不声明 SQL 主键或唯一约束。"
+// in the language of msgs.
+func (msgs Messages) ManticoreIndexScope() string {
+	return Catalog.Format(msgs.locale, "manticoreIndexScope", nil)
+}
+
+// ManticoreIndexEmpty says "服务器返回空索引列表"
+// in the language the app shows.
+func ManticoreIndexEmpty() string { return In(i18n.Locale()).ManticoreIndexEmpty() }
+
+// ManticoreIndexEmpty says "服务器返回空索引列表"
+// in the language of msgs.
+func (msgs Messages) ManticoreIndexEmpty() string {
+	return Catalog.Format(msgs.locale, "manticoreIndexEmpty", nil)
+}
+
+// ManticoreProperties says "原生属性"
+// in the language the app shows.
+func ManticoreProperties() string { return In(i18n.Locale()).ManticoreProperties() }
+
+// ManticoreProperties says "原生属性"
+// in the language of msgs.
+func (msgs Messages) ManticoreProperties() string {
+	return Catalog.Format(msgs.locale, "manticoreProperties", nil)
+}
+
+// ManticoreFunctionTitle says "Manticore 原生函数元数据（只读）"
+// in the language the app shows.
+func ManticoreFunctionTitle() string { return In(i18n.Locale()).ManticoreFunctionTitle() }
+
+// ManticoreFunctionTitle says "Manticore 原生函数元数据（只读）"
+// in the language of msgs.
+func (msgs Messages) ManticoreFunctionTitle() string {
+	return Catalog.Format(msgs.locale, "manticoreFunctionTitle", nil)
+}
+
+// ManticoreFunctionScope says "SHOW PLUGINS 返回的函数元数据；服务器未提供函数实现。"
+// in the language the app shows.
+func ManticoreFunctionScope() string { return In(i18n.Locale()).ManticoreFunctionScope() }
+
+// ManticoreFunctionScope says "SHOW PLUGINS 返回的函数元数据；服务器未提供函数实现。"
+// in the language of msgs.
+func (msgs Messages) ManticoreFunctionScope() string {
+	return Catalog.Format(msgs.locale, "manticoreFunctionScope", nil)
+}
+
+// ManticoreIndexEnabled says "已启用"
+// in the language the app shows.
+func ManticoreIndexEnabled() string { return In(i18n.Locale()).ManticoreIndexEnabled() }
+
+// ManticoreIndexEnabled says "已启用"
+// in the language of msgs.
+func (msgs Messages) ManticoreIndexEnabled() string {
+	return Catalog.Format(msgs.locale, "manticoreIndexEnabled", nil)
+}
+
+// ManticoreIndexPercent says "覆盖率"
+// in the language the app shows.
+func ManticoreIndexPercent() string { return In(i18n.Locale()).ManticoreIndexPercent() }
+
+// ManticoreIndexPercent says "覆盖率"
+// in the language of msgs.
+func (msgs Messages) ManticoreIndexPercent() string {
+	return Catalog.Format(msgs.locale, "manticoreIndexPercent", nil)
+}
+
+// ManticoreStructureExpired says "原 Manticore 会话已失效，请刷新表结构"
+// in the language the app shows.
+func ManticoreStructureExpired() string { return In(i18n.Locale()).ManticoreStructureExpired() }
+
+// ManticoreStructureExpired says "原 Manticore 会话已失效，请刷新表结构"
+// in the language of msgs.
+func (msgs Messages) ManticoreStructureExpired() string {
+	return Catalog.Format(msgs.locale, "manticoreStructureExpired", nil)
+}

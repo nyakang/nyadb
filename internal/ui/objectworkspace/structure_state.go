@@ -542,6 +542,9 @@ func (s *State) Consume(services ui.Services) {
 			s.cancel(d)
 			if r.generation != session.Generation || !session.Connected {
 				d.err = "原 MySQL 会话已失效，请刷新表结构"
+				if s.manticoreStructure(d) {
+					d.err = "原 Manticore 会话已失效，请刷新表结构"
+				}
 				continue
 			}
 			if r.err != nil {

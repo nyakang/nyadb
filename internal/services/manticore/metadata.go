@@ -97,11 +97,32 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 			return e
 		}
 		objects, e = tableObjects(n, set)
-		return e
+		if e != nil {
+			return e
+		}
+		plugins, e := read(child, c, "SHOW PLUGINS", 0, nil, nil)
+		if e != nil {
+			return e
+		}
+		functions, e := pluginObjects(n, plugins)
+		if e != nil {
+			return e
+		}
+		objects = append(objects, functions...)
+		return nil
 	})
-	return objects, err
+	if err != nil {
+		return nil, err
+	}
+	return objects, nil
 }
 func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*contract.TableStructure, error) {
+	return s.tableMetadata(ctx, o, true)
+}
+
+// Data grants compare stable column/DDL observations, never changing index
+// coverage or status. Extra native metadata belongs to explicit structure reads.
+func (s *Session) tableMetadata(ctx context.Context, o contract.ObjectRef, indexes bool) (*contract.TableStructure, error) {
 	if e := s.checkNamespace(o.Namespace()); e != nil {
 		return nil, e
 	}
@@ -154,6 +175,13 @@ func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*con
 			return contract.ErrUnsupported
 		}
 		structure.Definition = ddl.Rows[0][1].Text
+		if indexes {
+			observation, e := s.indexObservation(child, c, o)
+			if e != nil {
+				return e
+			}
+			structure.Definitions = append(structure.Definitions, observation)
+		}
 		return nil
 	})
 	if err != nil {
