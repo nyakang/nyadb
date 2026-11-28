@@ -95,6 +95,8 @@ func writeKinds(m *contract.TableStructure) []string {
 		return []string{"insert", "update", "delete"}
 	case "local":
 		return []string{"update"}
+	case "percolate":
+		return []string{"insert", "delete"}
 	default:
 		return []string{}
 	}
@@ -108,6 +110,10 @@ func writePermissions(m *contract.TableStructure) map[string][]string {
 			if c.Name != "id" && c.DataType == "uint" {
 				out[c.Name] = []string{"update"}
 			}
+			continue
+		}
+		if m.Engine == "percolate" {
+			out[c.Name] = []string{"insert"}
 			continue
 		}
 		if m.Engine != "rt" {

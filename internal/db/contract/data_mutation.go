@@ -21,8 +21,9 @@ type DataMutationItem struct {
 	Blocked               bool
 }
 
-// Optional immutable text keys for the shared confirmation. Nil on DataRuntime
-// preserves the graph presentation. Adapters supply text; the UI localizes it.
+// Optional immutable text keys for the shared confirmation. A plan snapshot may
+// override the runtime defaults for its original mode. Adapters supply text; the
+// UI localizes it. Nil on both preserves the graph presentation.
 type DataMutationPresentation struct {
 	Title, Hint, PreviewLabel, HistoryLabel          string
 	CreateLabel, UpdateLabel, DeleteLabel, CopyLabel string
@@ -30,16 +31,22 @@ type DataMutationPresentation struct {
 }
 
 type DataMutationSnapshot struct {
-	Object     ObjectRef
-	Edits      []DataEdit
-	Items      []DataMutationItem
-	NativeJSON string // Complete bounded original observations and native parameters.
+	// Presentation belongs to this captured plan, independent of later metadata.
+	Presentation *DataMutationPresentation
+	Object       ObjectRef
+	Edits        []DataEdit
+	Items        []DataMutationItem
+	NativeJSON   string // Complete bounded original observations and native parameters.
 	// KeyPrefixDelete binds the original complete candidate-set operation.
 	KeyPrefixDelete      *DataKeyPrefixDelete
 	KeyPrefixDeleteBatch *DataKeyPrefixDeleteBatch
 }
 
 func CloneDataMutationSnapshot(s DataMutationSnapshot) DataMutationSnapshot {
+	if s.Presentation != nil {
+		copy := *s.Presentation
+		s.Presentation = &copy
+	}
 	if s.KeyPrefixDeleteBatch != nil {
 		copy := *s.KeyPrefixDeleteBatch
 		s.KeyPrefixDeleteBatch = &copy

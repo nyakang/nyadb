@@ -116,10 +116,12 @@ func (d *dataLease) prepareStatement(ctx context.Context, m *contract.TableStruc
 		}
 		s.token, s.grant = token, g
 		predicates = append(predicates, "id="+g.id)
-		// These native attribute predicates narrow the original id. Full-row
+		// Percolate accepts only the id predicate; its original record is checked
+		// beforehand and does not acquire atomic compare-and-delete semantics.
+		// These RT/plain attribute predicates narrow the original id. Full-row
 		// comparison is a separate preflight observation, not an atomic CAS claim.
 		for i, c := range m.Columns {
-			if c.Name == "id" {
+			if c.Name == "id" || m.Engine == "percolate" {
 				continue
 			}
 			switch c.DataType {
@@ -180,6 +182,11 @@ func (d *dataLease) previewEdits(ctx context.Context, id int64, db, table string
 	if err != nil {
 		return nil, err
 	}
+	scope := writeScope
+	if m.Engine == "percolate" {
+		scope = "Independent native statements without a batch transaction. Percolate deletion uses only the native id predicate. The complete stored record is checked before each statement, without atomic compare-and-delete; a change after that check may still be deleted. Omitted insert fields use native defaults. UPDATE is unsupported and is never replaced with REPLACE."
+		snapshot.Presentation = &contract.DataMutationPresentation{Title: "确认 Manticore 存储查询写入", Hint: "各语句独立执行，不提供批次事务。删除仅以原生 id 为条件；完整存储记录仅在提交前检查，不保证原子比较删除，检查后发生的更改仍可能被删除。新增时省略的字段使用原生默认值。未知或不完整回执保留草稿并禁止重放。", PreviewLabel: "Manticore 存储查询写入完整预览", HistoryLabel: "已确认的 Manticore 存储查询写入", CreateLabel: "新增存储查询", DeleteLabel: "删除存储查询"}
+	}
 	var statements []dataStatement
 	seen := map[string]bool{}
 	for _, edit := range snapshot.Edits {
@@ -221,7 +228,7 @@ func (d *dataLease) previewEdits(ctx context.Context, id int64, db, table string
 		Object          contract.ObjectRef
 		Metadata, Scope string
 		Statements      []dataStatement
-	}{d.object, sig, writeScope, statements})
+	}{d.object, sig, scope, statements})
 	if err != nil || len(raw)+size > dataPlanMaxBytes {
 		return nil, contract.ErrDataEditLimit
 	}

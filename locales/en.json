@@ -4503,5 +4503,11 @@
   "sqlNativeUnknownOutcome": "The original outcome is uncertain; later reads cannot replace its receipt",
   "sqlHistoryAffectedUnknown": "Duration %s · Preview %d rows · Affected rows not reported",
   "manticorePercolateDefinitionScope": "This definition describes input fields of documents to match. Stored queries use the id, query, tags and filters columns.",
-  "manticorePercolateFieldsScope": "These columns describe stored queries. See the native definition for input fields of documents to match."
+  "manticorePercolateFieldsScope": "These columns describe stored queries. See the native definition for input fields of documents to match.",
+  "manticorePercolateWriteTitle": "Confirm Manticore stored-query writes",
+  "manticorePercolateWriteHint": "Statements execute independently without a batch transaction. Deletion uses only the native id condition. The complete stored record is checked beforehand, without atomic compare-and-delete; changes after that check may still be deleted. Omitted insert fields use native defaults. Unknown or incomplete receipts retain drafts and block replay.",
+  "manticorePercolateWritePreview": "Complete Manticore stored-query write preview",
+  "manticorePercolateWriteHistory": "Confirmed Manticore stored-query writes",
+  "manticorePercolateWriteInsert": "Insert stored query",
+  "manticorePercolateWriteDelete": "Delete stored query"
 }

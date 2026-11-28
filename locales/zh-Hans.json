@@ -4503,5 +4503,11 @@
   "sqlNativeUnknownOutcome": "原始执行结果不确定；后续读取不能替代原始回执",
   "sqlHistoryAffectedUnknown": "耗时 %s · 预览 %d 行 · 服务器未报告影响行数",
   "manticorePercolateDefinitionScope": "此定义描述待匹配文档的输入字段；存储查询使用 id、query、tags 和 filters 列。",
-  "manticorePercolateFieldsScope": "这些列描述已存储的查询；待匹配文档的输入字段见原生定义。"
+  "manticorePercolateFieldsScope": "这些列描述已存储的查询；待匹配文档的输入字段见原生定义。",
+  "manticorePercolateWriteTitle": "确认 Manticore 存储查询写入",
+  "manticorePercolateWriteHint": "各语句独立执行，不提供批次事务。删除仅以原生 id 为条件；完整存储记录仅在提交前检查，不保证原子比较删除，检查后发生的更改仍可能被删除。新增时省略的字段使用原生默认值。未知或不完整回执保留草稿并禁止重放。",
+  "manticorePercolateWritePreview": "Manticore 存储查询写入完整预览",
+  "manticorePercolateWriteHistory": "已确认的 Manticore 存储查询写入",
+  "manticorePercolateWriteInsert": "新增存储查询",
+  "manticorePercolateWriteDelete": "删除存储查询"
 }

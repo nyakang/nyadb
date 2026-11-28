@@ -51,7 +51,7 @@ func TestNativePercolateOriginalRowsPagingFiltersFieldsAndCompleteExport(t *test
 	_, runtime := nativeData(t, s, table)
 	ctx := context.Background()
 	page, err := runtime.Loader(ctx, 69, "Manticore", table, 0, 7)
-	if err != nil || len(page.Rows) != 7 || !slices.Equal(page.Columns, []string{"id", "query", "tags", "filters"}) || !page.HasMore || page.Editable == nil || *page.Editable || page.EditKinds == nil || len(page.EditKinds) != 0 {
+	if err != nil || len(page.Rows) != 7 || !slices.Equal(page.Columns, []string{"id", "query", "tags", "filters"}) || !page.HasMore || page.Editable == nil || !*page.Editable || !slices.Equal(page.EditKinds, []string{"insert", "delete"}) {
 		t.Fatal(page, err)
 	}
 	if !page.Rows[0][2].Truncated || page.Rows[0][0].Value.Kind != contract.Integer || page.Rows[0][3].Null || page.Rows[0][3].Text != "" {
@@ -60,11 +60,10 @@ func TestNativePercolateOriginalRowsPagingFiltersFieldsAndCompleteExport(t *test
 	if !slices.Equal(page.FilterColumns, page.Columns) || !slices.Equal(page.SortColumns, page.Columns) {
 		t.Fatal(page.FilterColumns, page.SortColumns)
 	}
-	for _, edit := range []contract.DataEdit{{Kind: "insert", Values: map[string]contract.DataValue{"query": {Text: "hello"}}}, {Kind: "update", Original: page.RowSnapshots[0], Values: map[string]contract.DataValue{"tags": {Text: "unsupported"}}}, {Kind: "delete", Original: page.RowSnapshots[0]}} {
-		if _, err = runtime.PreviewEdits(ctx, 69, "Manticore", table, []contract.DataEdit{edit}); !errors.Is(err, contract.ErrUnsupported) {
-			t.Fatal("unaccepted percolate mutation admitted", edit.Kind, err)
-		}
+	if _, err = runtime.PreviewEdits(ctx, 69, "Manticore", table, []contract.DataEdit{{Kind: "update", Original: page.RowSnapshots[0], Values: map[string]contract.DataValue{"tags": {Text: "unsupported"}}}}); !errors.Is(err, contract.ErrUnsupported) {
+		t.Fatal("percolate update must never mean replacement", err)
 	}
+
 	complete := ""
 	for _, offset := range []int64{0, 1024, 2048} {
 		fragment := nativeField(t, runtime, table, "tags", *page.RowRefs[0], offset, 1024)

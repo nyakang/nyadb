@@ -45863,3 +45863,67 @@ func ManticorePercolateFieldsScope() string { return In(i18n.Locale()).Manticore
 func (msgs Messages) ManticorePercolateFieldsScope() string {
 	return Catalog.Format(msgs.locale, "manticorePercolateFieldsScope", nil)
 }
+
+// ManticorePercolateWriteTitle says "确认 Manticore 存储查询写入"
+// in the language the app shows.
+func ManticorePercolateWriteTitle() string { return In(i18n.Locale()).ManticorePercolateWriteTitle() }
+
+// ManticorePercolateWriteTitle says "确认 Manticore 存储查询写入"
+// in the language of msgs.
+func (msgs Messages) ManticorePercolateWriteTitle() string {
+	return Catalog.Format(msgs.locale, "manticorePercolateWriteTitle", nil)
+}
+
+// ManticorePercolateWriteHint says "各语句独立执行，不提供批次事务。删除仅以原生 id …"
+// in the language the app shows.
+func ManticorePercolateWriteHint() string { return In(i18n.Locale()).ManticorePercolateWriteHint() }
+
+// ManticorePercolateWriteHint says "各语句独立执行，不提供批次事务。删除仅以原生 id …"
+// in the language of msgs.
+func (msgs Messages) ManticorePercolateWriteHint() string {
+	return Catalog.Format(msgs.locale, "manticorePercolateWriteHint", nil)
+}
+
+// ManticorePercolateWritePreview says "Manticore 存储查询写入完整预览"
+// in the language the app shows.
+func ManticorePercolateWritePreview() string {
+	return In(i18n.Locale()).ManticorePercolateWritePreview()
+}
+
+// ManticorePercolateWritePreview says "Manticore 存储查询写入完整预览"
+// in the language of msgs.
+func (msgs Messages) ManticorePercolateWritePreview() string {
+	return Catalog.Format(msgs.locale, "manticorePercolateWritePreview", nil)
+}
+
+// ManticorePercolateWriteHistory says "已确认的 Manticore 存储查询写入"
+// in the language the app shows.
+func ManticorePercolateWriteHistory() string {
+	return In(i18n.Locale()).ManticorePercolateWriteHistory()
+}
+
+// ManticorePercolateWriteHistory says "已确认的 Manticore 存储查询写入"
+// in the language of msgs.
+func (msgs Messages) ManticorePercolateWriteHistory() string {
+	return Catalog.Format(msgs.locale, "manticorePercolateWriteHistory", nil)
+}
+
+// ManticorePercolateWriteInsert says "新增存储查询"
+// in the language the app shows.
+func ManticorePercolateWriteInsert() string { return In(i18n.Locale()).ManticorePercolateWriteInsert() }
+
+// ManticorePercolateWriteInsert says "新增存储查询"
+// in the language of msgs.
+func (msgs Messages) ManticorePercolateWriteInsert() string {
+	return Catalog.Format(msgs.locale, "manticorePercolateWriteInsert", nil)
+}
+
+// ManticorePercolateWriteDelete says "删除存储查询"
+// in the language the app shows.
+func ManticorePercolateWriteDelete() string { return In(i18n.Locale()).ManticorePercolateWriteDelete() }
+
+// ManticorePercolateWriteDelete says "删除存储查询"
+// in the language of msgs.
+func (msgs Messages) ManticorePercolateWriteDelete() string {
+	return Catalog.Format(msgs.locale, "manticorePercolateWriteDelete", nil)
+}

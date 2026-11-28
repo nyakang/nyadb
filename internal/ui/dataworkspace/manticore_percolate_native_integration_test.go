@@ -24,7 +24,7 @@ import (
 	"github.com/nyakang/nyadb/locales"
 )
 
-func TestManticoreNativePercolateReadOnlyGridFieldsParkingAndRecovery(t *testing.T) {
+func TestManticoreNativePercolateGridFieldsParkingAndRecovery(t *testing.T) {
 	if os.Getenv("NYADB_MANTICORE_IT") != "1" {
 		t.Skip("requires owned real Manticore fixture")
 	}
@@ -108,22 +108,17 @@ func TestManticoreNativePercolateReadOnlyGridFieldsParkingAndRecovery(t *testing
 	}
 	s.Load(ui.Services{}, d, false)
 	wait(func() bool { return !d.loading })
-	if d.err != "" || d.page == nil || len(d.page.Rows) != 7 || !d.page.HasMore || d.allowsDataEdit("insert") || d.allowsDataEdit("delete") || mysqlDataCanEdit(d, 0, 2) || mysqlDataCanEdit(d, 0, 1) || mysqlDataCanEdit(d, 0, 0) {
+	if d.err != "" || d.page == nil || len(d.page.Rows) != 7 || !d.page.HasMore || !d.allowsDataEdit("insert") || !d.allowsDataEdit("delete") || mysqlDataCanEdit(d, 0, 2) || mysqlDataCanEdit(d, 0, 1) || mysqlDataCanEdit(d, 0, 0) {
 		t.Fatal("percolate original mode permissions", d.err)
 	}
 
-	if d.editable() || !slices.Equal(d.page.Columns, []string{"id", "query", "tags", "filters"}) || !slices.Equal(s.filterColumns(d, d.page.Columns), d.page.Columns) {
-		t.Fatal("read-only stored-query mode lost")
+	if !d.editable() || !slices.Equal(d.page.Columns, []string{"id", "query", "tags", "filters"}) || !slices.Equal(s.filterColumns(d, d.page.Columns), d.page.Columns) {
+		t.Fatal("stored-query mode lost")
 	}
 	for _, c := range d.columns {
 		if !c.Sortable {
 			t.Fatal("native string sort disabled", c.ID)
 		}
-	}
-	s.stageMySQLDataRecord(ui.Services{}, d, nil)
-	s.deleteMySQLDataRecords(ui.Services{}, d, 0)
-	if d.HasDraft() || d.edit.Editor != nil {
-		t.Fatal("read-only actions created a draft")
 	}
 	s.changeMySQLDataPage(ui.Services{}, d, 1000)
 	wait(func() bool { return !d.loading })

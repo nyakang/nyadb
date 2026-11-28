@@ -7,9 +7,10 @@ import (
 
 func TestDataMutationSnapshotCopiesAllOriginalEditAndIdentityEvidence(t *testing.T) {
 	f := "original fingerprint"
-	s := DataMutationSnapshot{Items: []DataMutationItem{{Kind: "detach_delete", AffectedRelationships: 2}}, Edits: []DataEdit{{Kind: "delete", Values: map[string]DataValue{"bytes": {Bytes: []byte{1, 2}}}, Original: &RowSnapshot{Ref: RowRef{Columns: []string{"id"}, Values: [][]byte{{1}}, TypedValues: []Cell{{Kind: Binary, Bytes: []byte{2}}}}, Columns: []string{"bytes"}, Original: []Cell{{Kind: Binary, Bytes: []byte{3}}}, Fingerprints: []*string{&f}}}}}
+	s := DataMutationSnapshot{Presentation: &DataMutationPresentation{Title: "original mode", Hint: "original scope"}, Items: []DataMutationItem{{Kind: "detach_delete", AffectedRelationships: 2}}, Edits: []DataEdit{{Kind: "delete", Values: map[string]DataValue{"bytes": {Bytes: []byte{1, 2}}}, Original: &RowSnapshot{Ref: RowRef{Columns: []string{"id"}, Values: [][]byte{{1}}, TypedValues: []Cell{{Kind: Binary, Bytes: []byte{2}}}}, Columns: []string{"bytes"}, Original: []Cell{{Kind: Binary, Bytes: []byte{3}}}, Fingerprints: []*string{&f}}}}}
 	copy := CloneDataMutationSnapshot(s)
 	want, _ := json.Marshal(copy)
+	s.Presentation.Hint = "changed scope"
 	s.Items[0].Kind = "insert"
 	s.Edits[0].Kind = "insert"
 	s.Edits[0].Values["bytes"].Bytes[0] = 9

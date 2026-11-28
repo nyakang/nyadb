@@ -240,6 +240,10 @@ func (s *State) consumeDataMutation(d *Document) {
 				err = contract.ErrDataConflict
 			} else {
 				m.snapshot = contract.CloneDataMutationSnapshot(snapshot)
+				if snapshot.Presentation != nil {
+					p := *snapshot.Presentation
+					m.presentation = &p
+				}
 			}
 		}
 		if err != nil {
