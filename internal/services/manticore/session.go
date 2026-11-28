@@ -51,12 +51,8 @@ func Open(ctx context.Context, profileID int64, cfg connections.ManticoreConfig,
 	root, cancel := context.WithCancel(context.Background())
 	s := &Session{profileID: profileID, config: cfg, password: password, ctx: root, cancel: cancel, leases: map[*queryLease]bool{}, dataLeases: map[*dataLease]bool{}, dataSlots: make(chan struct{}, cfg.MaxConnections), metadataSlots: make(chan struct{}, cfg.MaxConnections), sqlSlots: make(chan struct{}, cfg.SQLMaxConnections), closedDone: make(chan struct{})}
 	err = s.withConnection(ctx, func(child context.Context, c driver.Conn) error {
-		namespaces, e := read(child, c, "SHOW DATABASES", 0, nil, nil)
-		if e != nil {
+		if e := s.verifyDataCatalog(child, c); e != nil {
 			return e
-		}
-		if !hasDataCatalog(namespaces) {
-			return contract.ErrUnsupported
 		}
 		version, e := read(child, c, "SELECT VERSION()", 0, nil, nil)
 		if e != nil {
@@ -78,7 +74,9 @@ func Open(ctx context.Context, profileID int64, cfg connections.ManticoreConfig,
 		if err == nil {
 			err = ctx.Err()
 		}
-		return nil, safeError(err, password)
+		// withConnection has already removed secrets from driver errors. A
+		// second sanitization would erase the original authentication rejection.
+		return nil, err
 	}
 	return s, nil
 }

@@ -37,12 +37,8 @@ func (s *Session) checkNamespace(n contract.NamespaceRef) error {
 func (s *Session) Namespaces(ctx context.Context) ([]contract.Namespace, error) {
 	var result []contract.Namespace
 	err := s.withConnection(ctx, func(child context.Context, c driver.Conn) error {
-		set, e := read(child, c, "SHOW DATABASES", 0, nil, nil)
-		if e != nil {
+		if e := s.verifyDataCatalog(child, c); e != nil {
 			return e
-		}
-		if !hasDataCatalog(set) {
-			return contract.ErrUnsupported
 		}
 		result = append(result, contract.Namespace{Ref: s.Namespace("Manticore"), Label: "Manticore"})
 		return nil
@@ -51,6 +47,41 @@ func (s *Session) Namespaces(ctx context.Context) ([]contract.Namespace, error) 
 		return nil, err
 	}
 	return result, nil
+}
+
+func nativePermissionDenied(err error) bool {
+	var server *mysqldriver.MySQLError
+	return errors.As(err, &server) && server.Number == 1045 && string(server.SQLState[:]) == "42000"
+}
+
+func (s *Session) verifyDataCatalog(ctx context.Context, c driver.Conn) error {
+	set, err := read(ctx, c, "SHOW DATABASES", 0, nil, nil)
+	if err == nil {
+		if !hasDataCatalog(set) {
+			return contract.ErrUnsupported
+		}
+		return nil
+	}
+	if ctx.Err() != nil || !nativePermissionDenied(err) {
+		return err
+	}
+	// Authenticated newer servers require schema privileges for SHOW DATABASES.
+	// The native current-catalog response and complete table shape establish
+	// a restricted reader's namespace without depending on Buddy's SQL rewriting.
+	// Older servers keep the original catalog path.
+	set, err = read(ctx, c, "SELECT DATABASE()", 0, nil, nil)
+	if err != nil {
+		return err
+	}
+	if !metadataShape(set, "database()") || len(set.Rows) != 1 || set.Rows[0][0].Text != "Manticore" {
+		return contract.ErrUnsupported
+	}
+	set, err = read(ctx, c, "SHOW TABLES", 0, nil, nil)
+	if err != nil {
+		return err
+	}
+	_, err = tableObjects(s.Namespace("Manticore"), set)
+	return err
 }
 
 // The native data catalog is distinct from the information_schema compatibility
@@ -95,6 +126,7 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 		return nil, e
 	}
 	var objects []contract.DBObject
+	var partial *contract.PartialMetadataError
 	err := s.withConnection(ctx, func(child context.Context, c driver.Conn) error {
 		set, e := read(child, c, "SHOW TABLES", 0, nil, nil)
 		if e != nil {
@@ -106,6 +138,16 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 		}
 		plugins, e := read(child, c, "SHOW PLUGINS", 0, nil, nil)
 		if e != nil {
+			if child.Err() == nil && nativePermissionDenied(e) {
+				var server *mysqldriver.MySQLError
+				errors.As(e, &server)
+				message := server.Message
+				if secret := s.profileSecret(); secret != "" {
+					message = strings.ReplaceAll(message, secret, "[redacted]")
+				}
+				partial = &contract.PartialMetadataError{Observation: contract.NativeMetadataObservation{Command: "SHOW PLUGINS", ErrorCode: server.Number, SQLState: string(server.SQLState[:]), Error: message}}
+				return nil
+			}
 			return e
 		}
 		functions, e := pluginObjects(n, plugins)
@@ -117,6 +159,12 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 	})
 	if err != nil {
 		return nil, err
+	}
+	if err = ctx.Err(); err != nil {
+		return nil, err
+	}
+	if partial != nil {
+		return objects, partial
 	}
 	return objects, nil
 }

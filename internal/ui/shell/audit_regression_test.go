@@ -214,17 +214,24 @@ func TestWorkspaceSaveFailurePreservesTabsAndStoredRecovery(t *testing.T) {
 	if err := store.SaveWorkspace(context.Background(), baseline); err != nil {
 		t.Fatal(err)
 	}
+	// Reject every write after the stored recovery snapshot.
+	repo.fail.Store(true)
 	s.SetSQLPersistence(store, sqlworkspace.Files{}, nil)
-	deadline := time.Now().Add(time.Second)
+	deadline := time.Now().Add(10 * time.Second)
 	for s.sqlWorkspace.PersistenceLoading() && time.Now().Before(deadline) {
-		tt.Frame()
+		// Consume restoration on the UI thread without rendering/autosave, so
+		// the first save attempt belongs to the explicit workspace switch.
+		s.sqlWorkspace.ConsumeDocuments(s.editServices)
 		time.Sleep(time.Millisecond)
+	}
+	if s.sqlWorkspace.PersistenceLoading() {
+		t.Fatal("workspace recovery did not finish loading")
 	}
 	s.openQuery()
 	current := s.currentTab()
 	current.query.Editor.Insert("SELECT unsaved_recovery")
-	repo.fail.Store(true)
 	s.switchWorkspace(queries.Workspace{SnapshotVersion: 2, ActiveID: 1})
+	deadline = time.Now().Add(10 * time.Second)
 	for time.Now().Before(deadline) {
 		tt.Frame()
 		if strings.Contains(s.status, "workspace save failure") {
@@ -232,12 +239,15 @@ func TestWorkspaceSaveFailurePreservesTabsAndStoredRecovery(t *testing.T) {
 		}
 		time.Sleep(time.Millisecond)
 	}
+	if !strings.Contains(s.status, "workspace save failure") {
+		t.Fatalf("workspace save failure was not consumed: %q", s.status)
+	}
 	if s.currentTab() != current || current.query.Editor == nil || len(s.tabs) != 2 {
 		t.Fatal("failed flush replaced current tabs")
 	}
 	w, err := store.LoadWorkspace(context.Background())
 	if err != nil || w.Revision != 1 {
-		t.Fatal("failed flush replaced original recovery", err)
+		t.Fatalf("failed flush replaced original recovery: revision=%d err=%v", w.Revision, err)
 	}
 }
 

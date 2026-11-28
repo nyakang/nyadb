@@ -200,10 +200,14 @@ func (s *State) consumeObjects() {
 		}
 		w.objectCancel = nil
 		if result.err != nil {
-			if !errors.Is(result.err, context.Canceled) {
-				w.Errors[result.database] = result.err.Error()
+			if errors.Is(result.err, context.Canceled) {
+				return
 			}
-			return
+			w.Errors[result.database] = result.err.Error()
+			var partial *contract.PartialMetadataError
+			if !errors.As(result.err, &partial) {
+				return
+			}
 		}
 		w.Cache[result.database] = result.objects
 		if namespace, ok := w.Namespaces[result.database]; ok {
@@ -212,7 +216,9 @@ func (s *State) consumeObjects() {
 			}
 			w.QualifiedCache[namespace] = result.objects
 		}
-		delete(w.Errors, result.database)
+		if result.err == nil {
+			delete(w.Errors, result.database)
+		}
 		if s.deps.ObjectsChanged != nil {
 			s.deps.ObjectsChanged(w.ProfileID, result.database)
 		}
