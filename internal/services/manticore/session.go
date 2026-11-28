@@ -29,6 +29,9 @@ type Session struct {
 	cancel                  context.CancelFunc
 	closed                  bool
 	leases                  map[*queryLease]bool
+	dataLeases              map[*dataLease]bool
+	nextOwner               uint64
+	dataSlots               chan struct{}
 	metadataSlots, sqlSlots chan struct{}
 	active                  sync.WaitGroup
 	closeOnce               sync.Once
@@ -45,7 +48,7 @@ func Open(ctx context.Context, profileID int64, cfg connections.ManticoreConfig,
 		return nil, err
 	}
 	root, cancel := context.WithCancel(context.Background())
-	s := &Session{profileID: profileID, config: cfg, password: password, ctx: root, cancel: cancel, leases: map[*queryLease]bool{}, metadataSlots: make(chan struct{}, cfg.MaxConnections), sqlSlots: make(chan struct{}, cfg.SQLMaxConnections), closedDone: make(chan struct{})}
+	s := &Session{profileID: profileID, config: cfg, password: password, ctx: root, cancel: cancel, leases: map[*queryLease]bool{}, dataLeases: map[*dataLease]bool{}, dataSlots: make(chan struct{}, cfg.MaxConnections), metadataSlots: make(chan struct{}, cfg.MaxConnections), sqlSlots: make(chan struct{}, cfg.SQLMaxConnections), closedDone: make(chan struct{})}
 	err = s.withConnection(ctx, func(child context.Context, c driver.Conn) error {
 		namespaces, e := read(child, c, "SHOW DATABASES", 0, nil, nil)
 		if e != nil {
@@ -166,11 +169,18 @@ func (s *Session) Close() error {
 		s.mu.Lock()
 		s.closed = true
 		s.cancel()
+		documents := make([]*dataLease, 0, len(s.dataLeases))
+		for d := range s.dataLeases {
+			documents = append(documents, d)
+		}
 		all := make([]*queryLease, 0, len(s.leases))
 		for l := range s.leases {
 			all = append(all, l)
 		}
 		s.mu.Unlock()
+		for _, d := range documents {
+			_ = d.Close()
+		}
 		for _, l := range all {
 			l.Release()
 		}

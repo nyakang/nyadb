@@ -280,8 +280,11 @@ type DataSearchResult struct {
 }
 
 type DataPage struct {
-	Object   ObjectRef
-	Editable *bool
+	// Optional original-object permissions. Nil preserves runtime defaults;
+	// a non-nil list admits only the named columns for this published page.
+	FilterColumns, SortColumns []string
+	Object                     ObjectRef
+	Editable                   *bool
 	// ReadOnlyRows contains captured provider permissions for original row
 	// ordinals. Providers own this map until publishing; consumers only read it.
 	ReadOnlyRows map[int]bool

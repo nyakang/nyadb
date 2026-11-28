@@ -24,6 +24,7 @@ type queryLease struct {
 	conn                 driver.Conn
 	released, lost, slot bool
 	releasedDone         chan struct{}
+	pool                 chan struct{}
 }
 
 func (s *Session) ReserveQuery(doc uint64) (contract.QueryLease, error) {
@@ -35,11 +36,18 @@ func (s *Session) ReserveQuery(doc uint64) (contract.QueryLease, error) {
 	if doc == 0 {
 		return nil, connections.ErrInvalid
 	}
-	ctx, cancel := context.WithCancel(s.ctx)
-	l := &queryLease{s: s, doc: doc, ctx: ctx, cancel: cancel, releasedDone: make(chan struct{})}
-	s.leases[l] = true
-	return l, nil
+	return s.ownerLocked(s.ctx, doc, s.sqlSlots), nil
 }
+
+// Caller holds the session mutex. All physical owners remain registered until
+// release, including a document's independently cancellable auxiliary reads.
+func (s *Session) ownerLocked(parent context.Context, doc uint64, pool chan struct{}) *queryLease {
+	ctx, cancel := context.WithCancel(parent)
+	l := &queryLease{s: s, doc: doc, ctx: ctx, cancel: cancel, pool: pool, releasedDone: make(chan struct{})}
+	s.leases[l] = true
+	return l
+}
+
 func (l *queryLease) CheckQueryLease() error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -65,7 +73,7 @@ func (l *queryLease) Release() {
 	closeConnection(l.conn)
 	l.conn = nil
 	if l.slot {
-		<-l.s.sqlSlots
+		<-l.pool
 		l.slot = false
 	}
 	l.ops.Unlock()
@@ -90,7 +98,7 @@ func (l *queryLease) connect(ctx context.Context) error {
 	}
 	if !l.slot {
 		select {
-		case l.s.sqlSlots <- struct{}{}:
+		case l.pool <- struct{}{}:
 			l.slot = true
 		case <-ctx.Done():
 			return ctx.Err()
@@ -101,7 +109,7 @@ func (l *queryLease) connect(ctx context.Context) error {
 		// No SQL has been dispatched and no physical session was obtained.
 		// Failed or cancelled handshakes release capacity without retiring
 		// the reserved document or replaying a request.
-		<-l.s.sqlSlots
+		<-l.pool
 		l.slot = false
 		return safeError(err, l.s.profileSecret())
 	}

@@ -299,14 +299,21 @@ func (s *State) typedEditorChoice(c *ui.Context, d *Document, e *mysqlCellEditor
 	mysqlDataRuleSelect(c, &e.Kind, choices, locales.Text).Label(locales.Text("值类型")).Width(150)
 }
 
+func appendOptionalColumns(columns []string) []string {
+	if columns == nil {
+		return nil
+	}
+	return append([]string{}, columns...)
+}
 func (s *State) filterColumns(d *Document, columns []string) []string {
 	allowed := s.runtimeFor(d).FilterColumns
-	if allowed == nil {
-		return columns
+	var pageAllowed []string
+	if d != nil && d.page != nil {
+		pageAllowed = d.page.FilterColumns
 	}
 	out := []string{}
 	for _, name := range columns {
-		if slices.Contains(allowed, name) {
+		if (allowed == nil || slices.Contains(allowed, name)) && (pageAllowed == nil || slices.Contains(pageAllowed, name)) {
 			out = append(out, name)
 		}
 	}
@@ -314,7 +321,7 @@ func (s *State) filterColumns(d *Document, columns []string) []string {
 }
 func (s *State) sortable(d *Document, name string) bool {
 	allowed := s.runtimeFor(d).SortColumns
-	return allowed == nil || slices.Contains(allowed, name)
+	return (allowed == nil || slices.Contains(allowed, name)) && (d == nil || d.page == nil || d.page.SortColumns == nil || slices.Contains(d.page.SortColumns, name))
 }
 
 // Reopen requests a fresh document only after the original page executor has

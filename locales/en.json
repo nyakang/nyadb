@@ -4476,5 +4476,6 @@
   "prestoPublic45": "Extra credentials:",
   "prestoPublic46": "The package does not contain a PrestoSQL driver.",
   "prestoPublic47": "The driver package is in use. Close its connections first.",
-  "prestoPublic48": "Driver package removed."
+  "prestoPublic48": "Driver package removed.",
+  "manticoreDataReadScope": "Manticore pages and exports read currently visible data without a consistent snapshot across requests. Full-text fields do not support ordinary attribute filters."
 }

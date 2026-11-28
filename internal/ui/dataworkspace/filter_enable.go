@@ -7,6 +7,10 @@ import (
 )
 
 func dataRuleProblem(t *Document, r contract.DataFilterRule) string {
+	if t != nil && t.page != nil && t.page.FilterColumns != nil && !slices.Contains(t.page.FilterColumns, r.Column) {
+		return locales.Text("此字段不支持筛选")
+	}
+
 	if t != nil && t.boundRuntime != nil && t.boundRuntime.FilterColumns != nil && !slices.Contains(t.boundRuntime.FilterColumns, r.Column) {
 		return locales.Text("此字段不支持筛选")
 	}

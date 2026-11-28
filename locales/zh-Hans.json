@@ -4476,5 +4476,6 @@
   "prestoPublic45": "附加凭据：",
   "prestoPublic46": "驱动包不包含 PrestoSQL 驱动。",
   "prestoPublic47": "驱动包仍在使用，请先关闭相关连接。",
-  "prestoPublic48": "驱动包已移除。"
+  "prestoPublic48": "驱动包已移除。",
+  "manticoreDataReadScope": "Manticore 分页和导出读取当前可见数据；跨次读取不提供一致快照。全文字段不支持普通属性筛选。"
 }

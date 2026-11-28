@@ -45591,3 +45591,13 @@ func PrestoPublic48() string { return In(i18n.Locale()).PrestoPublic48() }
 func (msgs Messages) PrestoPublic48() string {
 	return Catalog.Format(msgs.locale, "prestoPublic48", nil)
 }
+
+// ManticoreDataReadScope says "Manticore …"
+// in the language the app shows.
+func ManticoreDataReadScope() string { return In(i18n.Locale()).ManticoreDataReadScope() }
+
+// ManticoreDataReadScope says "Manticore …"
+// in the language of msgs.
+func (msgs Messages) ManticoreDataReadScope() string {
+	return Catalog.Format(msgs.locale, "manticoreDataReadScope", nil)
+}

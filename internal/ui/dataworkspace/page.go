@@ -268,6 +268,8 @@ func (s *State) consumePages(services ui.Services) {
 			clearDraftHistory(t)
 			t.page = result.page
 			t.page.ColumnEditKinds = contract.CloneDataColumnEditKinds(result.page.ColumnEditKinds)
+			t.page.FilterColumns = appendOptionalColumns(result.page.FilterColumns)
+			t.page.SortColumns = appendOptionalColumns(result.page.SortColumns)
 			if result.page.CurrentCursor != nil {
 				if t.cursorHistory == nil {
 					t.cursorHistory = map[int64]*contract.DataCursor{}
