@@ -3,6 +3,7 @@ package manticore
 import (
 	"encoding/json"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -92,7 +93,11 @@ func writeLiteral(c contract.StructureColumn, v contract.DataValue) (string, err
 func writeKinds(m *contract.TableStructure) []string {
 	switch m.Engine {
 	case "rt":
-		return []string{"insert", "update", "delete"}
+		kinds := []string{"insert", "update", "delete"}
+		if rtReplacementSupported(m) {
+			kinds = append(kinds, "replace")
+		}
+		return kinds
 	case "local":
 		return []string{"update"}
 	case "percolate":
@@ -103,6 +108,7 @@ func writeKinds(m *contract.TableStructure) []string {
 }
 func writePermissions(m *contract.TableStructure) map[string][]string {
 	out := map[string][]string{}
+	replaceRT := rtReplacementSupported(m)
 	for _, c := range m.Columns {
 		if m.Engine == "local" {
 			// Plain uint attributes have verified conditional native updates.
@@ -125,10 +131,68 @@ func writePermissions(m *contract.TableStructure) map[string][]string {
 		switch c.DataType {
 		case "text", "string", "json", "mva", "mva64", "bool", "float", "double", "bigint", "uint", "integer", "timestamp":
 			out[c.Name] = []string{"insert"}
+			if c.Name != "id" && replaceRT {
+				out[c.Name] = append(out[c.Name], "replace")
+			}
 			if c.Name != "id" && c.DataType != "text" {
 				out[c.Name] = append(out[c.Name], "update")
 			}
 		}
 	}
 	return out
+}
+
+// Complete RT replacement is possible only when every source field is readable
+// and every captured native type has an accepted lossless write encoding.
+func rtReplacementSupported(m *contract.TableStructure) bool {
+	if m.Engine != "rt" || len(m.Columns) == 0 || m.Columns[0].Name != "id" || m.Columns[0].DataType != "bigint" {
+		return false
+	}
+	for _, c := range m.Columns {
+		switch c.DataType {
+		case "text":
+			if !slices.Contains(strings.Fields(c.Extra), "stored") {
+				return false
+			}
+		case "string", "json", "mva", "mva64", "bool", "float", "double", "bigint", "uint", "integer", "timestamp":
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+func editValueLiteral(m *contract.TableStructure, kind string, c contract.StructureColumn, v contract.DataValue) (string, error) {
+	if kind == "replace" && c.Name == "id" && c.DataType == "bigint" {
+		literal, err := writeLiteral(c, v)
+		if err != nil {
+			return "", err
+		}
+		return replacementIDLiteral(literal)
+	}
+
+	// Native JSON null is preserved through quoted JSON null; SQL NULL is not
+	// accepted by the original RT wire grammar. All other operations keep their
+	// existing strict typed input validation.
+	if kind == "replace" && m.Engine == "rt" && c.DataType == "json" && v.Kind == contract.Null && v.Null && v.Text == "" && len(v.Bytes) == 0 && !v.Default && !v.Binary {
+		return "'null'", nil
+	}
+	return writeLiteral(c, v)
+}
+
+// The native BIGINT row preserves the signed wire representation; REPLACE
+// requires the corresponding unsigned document id literal.
+func replacementIDLiteral(value string) (string, error) {
+	if strings.HasPrefix(value, "-") {
+		n, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			return "", connections.ErrInvalid
+		}
+		return strconv.FormatUint(uint64(n), 10), nil
+	}
+	n, err := strconv.ParseUint(value, 10, 64)
+	if err != nil {
+		return "", connections.ErrInvalid
+	}
+	return strconv.FormatUint(n, 10), nil
 }

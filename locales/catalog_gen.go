@@ -46003,3 +46003,53 @@ func ManticorePercolateReplaceItem() string { return In(i18n.Locale()).Manticore
 func (msgs Messages) ManticorePercolateReplaceItem() string {
 	return Catalog.Format(msgs.locale, "manticorePercolateReplaceItem", nil)
 }
+
+// ManticoreRTReplaceTitle says "确认 Manticore RT 整条替换"
+// in the language the app shows.
+func ManticoreRTReplaceTitle() string { return In(i18n.Locale()).ManticoreRTReplaceTitle() }
+
+// ManticoreRTReplaceTitle says "确认 Manticore RT 整条替换"
+// in the language of msgs.
+func (msgs Messages) ManticoreRTReplaceTitle() string {
+	return Catalog.Format(msgs.locale, "manticoreRTReplaceTitle", nil)
+}
+
+// ManticoreRTReplaceHint says "替换会提交原 id…"
+// in the language the app shows.
+func ManticoreRTReplaceHint() string { return In(i18n.Locale()).ManticoreRTReplaceHint() }
+
+// ManticoreRTReplaceHint says "替换会提交原 id…"
+// in the language of msgs.
+func (msgs Messages) ManticoreRTReplaceHint() string {
+	return Catalog.Format(msgs.locale, "manticoreRTReplaceHint", nil)
+}
+
+// ManticoreRTReplacePreview says "Manticore RT 整条替换完整预览"
+// in the language the app shows.
+func ManticoreRTReplacePreview() string { return In(i18n.Locale()).ManticoreRTReplacePreview() }
+
+// ManticoreRTReplacePreview says "Manticore RT 整条替换完整预览"
+// in the language of msgs.
+func (msgs Messages) ManticoreRTReplacePreview() string {
+	return Catalog.Format(msgs.locale, "manticoreRTReplacePreview", nil)
+}
+
+// ManticoreRTReplaceHistory says "已确认的 Manticore RT 整条替换"
+// in the language the app shows.
+func ManticoreRTReplaceHistory() string { return In(i18n.Locale()).ManticoreRTReplaceHistory() }
+
+// ManticoreRTReplaceHistory says "已确认的 Manticore RT 整条替换"
+// in the language of msgs.
+func (msgs Messages) ManticoreRTReplaceHistory() string {
+	return Catalog.Format(msgs.locale, "manticoreRTReplaceHistory", nil)
+}
+
+// ManticoreRTReplaceItem says "替换整条 RT 记录"
+// in the language the app shows.
+func ManticoreRTReplaceItem() string { return In(i18n.Locale()).ManticoreRTReplaceItem() }
+
+// ManticoreRTReplaceItem says "替换整条 RT 记录"
+// in the language of msgs.
+func (msgs Messages) ManticoreRTReplaceItem() string {
+	return Catalog.Format(msgs.locale, "manticoreRTReplaceItem", nil)
+}

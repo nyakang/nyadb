@@ -78,7 +78,7 @@ func (d *dataLease) prepareStatement(ctx context.Context, m *contract.TableStruc
 		if size > contract.DataEditMaxBytes {
 			return s, contract.ErrDataEditLimit
 		}
-		literal, err := writeLiteral(c, v)
+		literal, err := editValueLiteral(m, e.Kind, c, v)
 		if err != nil {
 			return s, err
 		}
@@ -119,8 +119,9 @@ func (d *dataLease) prepareStatement(ctx context.Context, m *contract.TableStruc
 			if total > contract.DataEditMaxBytes {
 				return s, contract.ErrDataEditLimit
 			}
-			id, err := writeLiteral(contract.StructureColumn{Name: "id", DataType: "bigint"}, e.Values["id"])
-			if err != nil || id != g.id {
+			id, err := editValueLiteral(m, "replace", contract.StructureColumn{Name: "id", DataType: "bigint"}, e.Values["id"])
+			originalID, originalErr := replacementIDLiteral(g.id)
+			if err != nil || originalErr != nil || id != originalID {
 				return s, connections.ErrInvalid
 			}
 		}
@@ -211,10 +212,15 @@ func (d *dataLease) previewEdits(ctx context.Context, id int64, db, table string
 		scope = "Independent native statements without a batch transaction. Percolate deletion uses only the native id predicate. The complete stored record is checked before each statement, without atomic compare-and-delete; a change after that check may still be deleted. Omitted insert fields use native defaults. UPDATE is unsupported and is never replaced with REPLACE."
 		snapshot.Presentation = &contract.DataMutationPresentation{Title: "确认 Manticore 存储查询写入", Hint: "各语句独立执行，不提供批次事务。删除仅以原生 id 为条件；完整存储记录仅在提交前检查，不保证原子比较删除，检查后发生的更改仍可能被删除。新增时省略的字段使用原生默认值。未知或不完整回执保留草稿并禁止重放。", PreviewLabel: "Manticore 存储查询写入完整预览", HistoryLabel: "已确认的 Manticore 存储查询写入", CreateLabel: "新增存储查询", DeleteLabel: "删除存储查询"}
 	}
-	if slices.ContainsFunc(snapshot.Edits, func(e contract.DataEdit) bool { return e.Kind == "replace" }) {
+	if m.Engine == "percolate" && slices.ContainsFunc(snapshot.Edits, func(e contract.DataEdit) bool { return e.Kind == "replace" }) {
 		scope = "Independent native statements without a batch transaction. Explicit REPLACE sends every stored field with the original id. The complete original record is checked before dispatch, without atomic compare-and-replace: a later change may be overwritten and a deleted record may be recreated. DELETE remains id-only without atomic compare-and-delete. Omitted INSERT fields use native defaults. UPDATE is unsupported."
 		snapshot.Presentation = &contract.DataMutationPresentation{Title: "确认 Manticore 存储查询替换", Hint: "替换会提交原 id 和全部存储字段。完整原记录仅在提交前检查，不保证原子比较替换；检查后的更改可能被覆盖，已删除的记录可能被重新创建。各语句独立执行，无批次事务；删除仅以 id 为条件，新增省略字段使用原生默认值。未知或不完整回执保留草稿并禁止重放。", PreviewLabel: "Manticore 存储查询替换完整预览", HistoryLabel: "已确认的 Manticore 存储查询替换", CreateLabel: "新增存储查询", DeleteLabel: "删除存储查询", ReplaceLabel: "替换整条存储查询"}
 	}
+	if m.Engine == "rt" && slices.ContainsFunc(snapshot.Edits, func(e contract.DataEdit) bool { return e.Kind == "replace" }) {
+		scope = "Independent native statements without a batch transaction. Explicit RT REPLACE sends every stored field and attribute with the original id and rebuilds its full-text index. Complete original data is checked before dispatch, without atomic compare-and-replace; later changes may be overwritten and deleted documents recreated. Native JSON null is encoded as quoted JSON null, distinct from an empty object. Existing UPDATE and DELETE retain their native attribute predicates. Omitted INSERT fields use native defaults."
+		snapshot.Presentation = &contract.DataMutationPresentation{Title: "确认 Manticore RT 整条替换", Hint: "替换会提交原 id、全部存储字段和属性，并重建全文索引。完整原记录仅在提交前检查，不保证原子比较替换；检查后的更改可能被覆盖，已删除的记录可能被重新创建。原生 JSON 空值使用 JSON null 字面量保留，不会变成空对象。各语句独立执行，无批次事务；未知或不完整回执保留草稿并禁止重放。", PreviewLabel: "Manticore RT 整条替换完整预览", HistoryLabel: "已确认的 Manticore RT 整条替换", CreateLabel: "新增记录", UpdateLabel: "更新记录", DeleteLabel: "删除记录", ReplaceLabel: "替换整条 RT 记录"}
+	}
+
 	var statements []dataStatement
 	seen := map[string]bool{}
 	for _, edit := range snapshot.Edits {

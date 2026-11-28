@@ -4516,5 +4516,10 @@
   "manticorePercolateReplaceHint": "Replacement sends the original id and every stored field. The complete original record is checked before dispatch, without atomic compare-and-replace; later changes may be overwritten and a deleted record may be recreated. Statements run independently without a batch transaction. Deletion uses only id; omitted insert fields use native defaults. Unknown or incomplete receipts retain drafts and block replay.",
   "manticorePercolateReplacePreview": "Complete Manticore stored-query replacement preview",
   "manticorePercolateReplaceHistory": "Confirmed Manticore stored-query replacement",
-  "manticorePercolateReplaceItem": "Replace entire stored query"
+  "manticorePercolateReplaceItem": "Replace entire stored query",
+  "manticoreRTReplaceTitle": "Confirm Manticore RT whole-record replacement",
+  "manticoreRTReplaceHint": "Replacement sends the original id, every stored field and attribute, and rebuilds the full-text index. The complete original record is checked before dispatch, without atomic compare-and-replace; later changes may be overwritten and deleted records recreated. Native JSON null is preserved with a JSON null literal, not an empty object. Statements run independently without a batch transaction. Unknown or incomplete receipts retain drafts and block replay.",
+  "manticoreRTReplacePreview": "Complete Manticore RT replacement preview",
+  "manticoreRTReplaceHistory": "Confirmed Manticore RT replacement",
+  "manticoreRTReplaceItem": "Replace entire RT record"
 }
