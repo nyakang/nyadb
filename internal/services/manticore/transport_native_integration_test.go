@@ -424,6 +424,9 @@ func TestNativeSSHTransportRejectsHostIdentityAndAuthenticationWithoutAffectingS
 	q := nativeLease(t, sibling, 8460)
 	for _, mode := range []string{"unknown-host", "rejected-host", "changed-host", "wrong-password", "wrong-key"} {
 		t.Run(mode, func(t *testing.T) {
+			if os.Getenv("NYADB_SSH_AUTH_METHOD") == connections.MySQLSSHNone && (mode == "wrong-password" || mode == "wrong-key") {
+				t.Skip("none-accepting SSH server does not enforce credential methods")
+			}
 			var hosts *credentials.MemoryHostStore
 			confirmations := 0
 			cfg, password, owned := nativeSSHTransportOptions(t, func(opts *connections.TransportOptions, security *transport.Options) {

@@ -83,3 +83,26 @@ func TestMySQLSSHValidationAndLegacyDefaults(t *testing.T) {
 		t.Fatalf("legacy MySQL SSH defaults incorrect: %+v (%v)", legacy.MySQLAdvanced.SSH, err)
 	}
 }
+
+func TestSSHNoneProfileRoundTripPreservesExplicitMethod(t *testing.T) {
+	store, _, _ := openStore(t)
+	a := connections.DefaultMySQLAdvanced()
+	a.SSH = connections.MySQLSSH{Enabled: true, Host: "none.example.test", Port: 22, Username: "fixture", AuthMethod: connections.MySQLSSHNone, PrivateKey: "/inactive/old-key"}
+	p, err := store.Create(context.Background(), connections.Profile{Name: "SSH none", Kind: connections.MySQL, Host: "database.example.test", Port: 3306, MySQLAdvanced: a})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := store.Get(context.Background(), p.ID)
+	if err != nil || got.MySQLAdvanced.SSH != a.SSH || got.MySQLAdvanced.SSH.UsesPassword() || got.MySQLAdvanced.SSH.UsesPrivateKey() {
+		t.Fatal("none mode changed on read", got, err)
+	}
+	dup, err := connections.NewService(store).Duplicate(context.Background(), p.ID, "SSH none copy")
+	if err != nil || dup.MySQLAdvanced.SSH != a.SSH {
+		t.Fatal("none mode changed on copy", dup, err)
+	}
+	got.MySQLAdvanced.SSH.AuthMethod = connections.MySQLSSHPasswordAndKey
+	updated, err := store.Update(context.Background(), got)
+	if err != nil || !updated.MySQLAdvanced.SSH.UsesPassword() || !updated.MySQLAdvanced.SSH.UsesPrivateKey() || updated.MySQLAdvanced.SSH.PrivateKey != a.SSH.PrivateKey {
+		t.Fatal("switching back lost explicit credential method", updated, err)
+	}
+}

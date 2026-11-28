@@ -22,7 +22,7 @@ func newSSHDial(a connections.MySQLSSH, o Options, onLost func()) (func(context.
 		return nil, nil, errors.New("SSH host and username required")
 	}
 	var auth []ssh.AuthMethod
-	if a.AuthMethod != connections.MySQLSSHPassword {
+	if a.UsesPrivateKey() {
 		f, err := os.Open(a.PrivateKey)
 		if err != nil {
 			return nil, nil, fmt.Errorf("open SSH private key: %w", err)
@@ -52,7 +52,7 @@ func newSSHDial(a connections.MySQLSSH, o Options, onLost func()) (func(context.
 	}
 	// Combined authentication prefers the key. The SSH client tries password
 	// only when the server still offers it, including partial key authentication.
-	if a.AuthMethod != connections.MySQLSSHPublicKey {
+	if a.UsesPassword() {
 		if o.Secrets.SSHPassword == "" {
 			return nil, nil, errors.New("SSH password required")
 		}

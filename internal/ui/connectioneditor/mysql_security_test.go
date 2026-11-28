@@ -272,3 +272,29 @@ func TestMySQLSSHProfileSaveDoesNotPersistSecrets(t *testing.T) {
 		t.Fatal("OS window close failed to clear SSH credentials")
 	}
 }
+
+func TestSSHNoneHidesCredentialFieldsAndRejectsLateKeyPicker(t *testing.T) {
+	s, _ := mysqlSSHTester(t)
+	ssh := &s.connectionDraft.MySQLAdvanced.SSH
+	ssh.Enabled = true
+	ssh.AuthMethod = connections.MySQLSSHPublicKey
+	version := s.MySQLSSHSessionVersion()
+	ssh.AuthMethod = connections.MySQLSSHNone
+	s.mysqlSSHPassword, s.mysqlSSHPassphrase = "inactive-password", "inactive-passphrase"
+	tt := ui.NewTester(s.ConnectionWindowView, 900, 700)
+	if !tt.HasText("验证方法：") || tt.HasText("密码：") || tt.HasText("Private Key:") || tt.HasText("Passphrase:") {
+		t.Fatal("none displays credential fields")
+	}
+	s.SelectMySQLSSHPrivateKey(version, "/late/key")
+	if ssh.PrivateKey != "" {
+		t.Fatal("late file picker changed none method")
+	}
+	p, err := s.draftProfile()
+	if err != nil || p.MySQLAdvanced.SSH.AuthMethod != connections.MySQLSSHNone {
+		t.Fatal("none profile rejected", err)
+	}
+	s.ConnectionWindowClosed()
+	if s.mysqlSSHPassword != "" || s.mysqlSSHPassphrase != "" {
+		t.Fatal("none retained inactive secrets after close")
+	}
+}

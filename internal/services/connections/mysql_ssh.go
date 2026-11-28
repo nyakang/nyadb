@@ -24,10 +24,11 @@ const (
 	MySQLSSHPassword       = "密码"
 	MySQLSSHPublicKey      = "公钥"
 	MySQLSSHPasswordAndKey = "密码和公钥"
+	MySQLSSHNone           = "无"
 )
 
 var MySQLSSHAuthMethods = []string{
-	MySQLSSHPassword, MySQLSSHPublicKey, MySQLSSHPasswordAndKey,
+	MySQLSSHPassword, MySQLSSHPublicKey, MySQLSSHPasswordAndKey, MySQLSSHNone,
 }
 
 func DefaultMySQLSSH() MySQLSSH {
@@ -59,4 +60,15 @@ func normalizeMySQLSSH(cfg MySQLSSH) (MySQLSSH, error) {
 		}
 	}
 	return cfg, nil
+}
+
+// UsesPassword identifies methods that may send an SSH password after the
+// standard none probe. Saved, inactive method fields never select a method.
+func (s SSHOptions) UsesPassword() bool {
+	return s.AuthMethod == MySQLSSHPassword || s.AuthMethod == MySQLSSHPasswordAndKey
+}
+
+// UsesPrivateKey identifies methods that load a local private key.
+func (s SSHOptions) UsesPrivateKey() bool {
+	return s.AuthMethod == MySQLSSHPublicKey || s.AuthMethod == MySQLSSHPasswordAndKey
 }

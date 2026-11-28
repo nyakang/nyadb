@@ -163,7 +163,7 @@ func (s *State) SelectMySQLSSHPrivateKey(version uint64, path string) {
 	if version != s.mysqlSSHSessionVersion ||
 		!s.active || !s.connectionDraft.Kind.IsMySQLFamily() ||
 		!s.connectionDraft.MySQLAdvanced.SSH.Enabled ||
-		s.connectionDraft.MySQLAdvanced.SSH.AuthMethod == connections.MySQLSSHPassword ||
+		!s.connectionDraft.MySQLAdvanced.SSH.UsesPrivateKey() ||
 		path == "" {
 		return
 	}
@@ -202,8 +202,8 @@ func (s *State) connectionMySQLSSH(c *ui.Context, width float32) {
 
 			connectionFormSelect(c, &ssh.AuthMethod, connections.MySQLSSHAuthMethods, "SSH 验证方法", 200, !active)
 		})
-		passwordMode := ssh.AuthMethod != connections.MySQLSSHPublicKey
-		keyMode := ssh.AuthMethod != connections.MySQLSSHPassword
+		passwordMode := ssh.UsesPassword()
+		keyMode := ssh.UsesPrivateKey()
 		if passwordMode {
 			theme.Field(c, locales.Text("密码："), func() {
 
