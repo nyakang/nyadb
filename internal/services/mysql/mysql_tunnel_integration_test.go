@@ -51,7 +51,11 @@ func TestMySQLGatewayDisposablePhysicalLeasesTransactionsAndRevocation(t *testin
 	manager := NewMySQLSessionManager()
 	defer manager.Close()
 	manager.TransportProvider = func(context.Context, connections.ActiveSettings) (transport.Dialer, error) {
-		return transport.New(settings, transport.Options{Secrets: transport.Secrets{HTTPToken: "ephemeral-fixture-token"}})
+		d, err := transport.New(settings, transport.Options{Secrets: transport.Secrets{HTTPToken: "ephemeral-fixture-token"}})
+		if err != nil {
+			return nil, err
+		}
+		return &scheduledGatewayQuitDialer{Dialer: d}, nil
 	}
 	if e = manager.Connect(ctx, settings, ""); e != nil {
 		t.Fatal(e)
@@ -98,6 +102,23 @@ func TestMySQLGatewayDisposablePhysicalLeasesTransactionsAndRevocation(t *testin
 	}
 	if _, e = manager.ExecuteSQLTabToken(ctx, token, "nyadb_core_it", "DROP TABLE tunnel_tx"); e != nil {
 		t.Fatal(e)
+	}
+
+	// Closing freshly reserved SQL channels must not retire an active sibling.
+	for i := 0; i < 8; i++ {
+		transient, err := manager.ReserveSQLTabToken(904, uint64(1000+i))
+		if err != nil {
+			t.Fatal(err)
+		}
+		result, err := manager.ExecuteSQLTabToken(ctx, transient, "nyadb_core_it", "SELECT CONNECTION_ID()")
+		if err != nil || len(result.Rows) != 1 {
+			t.Fatal("transient channel failed", err)
+		}
+		manager.ReleaseSQLTabToken(transient)
+		retained, err := manager.ExecuteSQLTabToken(ctx, token, "nyadb_core_it", "SELECT id,@tunnel_state FROM tunnel_tmp")
+		if err != nil || len(retained.Rows) != 1 || retained.Rows[0][0] != "41" || retained.Rows[0][1] != "42" {
+			t.Fatal("closing another channel revoked original sibling", err)
+		}
 	}
 	slow, cancelSlow := context.WithCancel(ctx)
 	done := make(chan error, 1)
@@ -269,4 +290,35 @@ func TestMySQLSSHDisposablePhysicalLeaseAndTransaction(t *testing.T) {
 	if _, e = manager.ExecuteSQLTabToken(ctx, token, "nyadb_core_it", "SELECT 1"); e == nil {
 		t.Fatal("SSH lease recreated automatically")
 	}
+}
+
+// Delay only the return of a real COM_QUIT write so the real server can close
+// before database/sql calls net.Conn.Close. No response is manufactured.
+type scheduledGatewayQuitDialer struct{ transport.Dialer }
+
+func (d *scheduledGatewayQuitDialer) Done() <-chan struct{} {
+	return d.Dialer.(interface{ Done() <-chan struct{} }).Done()
+}
+func (d *scheduledGatewayQuitDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	c, err := d.Dialer.DialContext(ctx, network, address)
+	if err != nil {
+		return nil, err
+	}
+	return &scheduledGatewayQuitConn{Conn: c, done: d.Done()}, nil
+}
+
+type scheduledGatewayQuitConn struct {
+	net.Conn
+	done <-chan struct{}
+}
+
+func (c *scheduledGatewayQuitConn) Write(p []byte) (int, error) {
+	n, err := c.Conn.Write(p)
+	if err == nil && n == len(p) && len(p) == 5 && p[0] == 1 && p[4] == 1 {
+		select {
+		case <-c.done:
+		case <-time.After(300 * time.Millisecond):
+		}
+	}
+	return n, err
 }

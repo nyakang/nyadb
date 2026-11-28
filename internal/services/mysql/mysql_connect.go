@@ -194,8 +194,11 @@ func openMySQLPools(ctx context.Context, s connections.ActiveSettings, password 
 		return nil, nil, nil, err
 	}
 	var initialized driver.Connector = connector
+	if dialer != nil {
+		initialized = &mysqlTransportConnector{Connector: connector, config: cfg.Clone()}
+	}
 	if initialSQL != "" {
-		initialized = WrapMySQLInitialSQL(connector, initialSQL)
+		initialized = WrapMySQLInitialSQL(initialized, initialSQL)
 	}
 	metadata := sql.OpenDB(initialized)
 	metadata.SetMaxOpenConns(4)
