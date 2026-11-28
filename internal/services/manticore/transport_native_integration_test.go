@@ -8,6 +8,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -61,6 +62,37 @@ func gatedNativeSSH(t *testing.T) (*Session, *countedNativeSSH, *packetGate) {
 	return s, owned, gate
 }
 
+func closeNativeSSHTransport(t *testing.T, owned *countedNativeSSH) {
+	t.Helper()
+	err := owned.SessionTransport.Close()
+	// The SSH peer and the session cancellation watcher can finish a channel
+	// before the scope's physical-close loop reaches it. Only already-closed
+	// channel errors are acceptable; terminal admission is still mandatory.
+	var closedError func(error) bool
+	closedError = func(e error) bool {
+		if joined, ok := e.(interface{ Unwrap() []error }); ok {
+			for _, child := range joined.Unwrap() {
+				if !closedError(child) {
+					return false
+				}
+			}
+			return true
+		}
+		return e == nil || errors.Is(e, io.EOF) || errors.Is(e, net.ErrClosed)
+	}
+	if !closedError(err) {
+		t.Fatal(err)
+	}
+	select {
+	case <-owned.Done():
+	default:
+		t.Fatal("explicit transport close did not revoke original owner")
+	}
+	if err != nil {
+		t.Logf("original transport terminal after close: %v", err)
+	}
+}
+
 func stopNativeSSHOperation(t *testing.T, mode string, s *Session, owned *countedNativeSSH, cancel context.CancelFunc) <-chan struct{} {
 	t.Helper()
 	closed := make(chan struct{})
@@ -69,9 +101,7 @@ func stopNativeSSHOperation(t *testing.T, mode string, s *Session, owned *counte
 		cancel()
 		close(closed)
 	case "transport-close":
-		if err := owned.SessionTransport.Close(); err != nil {
-			t.Fatal(err)
-		}
+		closeNativeSSHTransport(t, owned)
 		close(closed)
 	case "session-close":
 		go func() { s.Close(); close(closed) }()
@@ -98,7 +128,7 @@ func TestNativeSSHTransportOriginalSQLLossCancellationAndNoReplay(t *testing.T) 
 			table := fmt.Sprintf("nyadb_ssh_sql84_%d", time.Now().UnixNano())
 			runNative(t, q, "CREATE TABLE "+table+" (qty integer)")
 			runNative(t, q, "INSERT INTO "+table+" (id,qty) VALUES (1,7)")
-			cfg, password := authNativeConfig(t)
+			cfg, password := sshNativeDatabaseConfig(t)
 			control := authOpen(t, cfg, password)
 			reader := nativeLease(t, control, 8421)
 			t.Cleanup(func() { runNative(t, reader, "DROP TABLE IF EXISTS "+table) })
@@ -159,7 +189,7 @@ func TestNativeSSHTransportOriginalDataLossCancellationAndNoReplay(t *testing.T)
 			table := fmt.Sprintf("nyadb_ssh_data84_%d", time.Now().UnixNano())
 			runNative(t, q, "CREATE TABLE "+table+" (qty integer)")
 			runNative(t, q, "INSERT INTO "+table+" (id,qty) VALUES (1,7)")
-			cfg, password := authNativeConfig(t)
+			cfg, password := sshNativeDatabaseConfig(t)
 			control := authOpen(t, cfg, password)
 			reader := nativeLease(t, control, 8431)
 			t.Cleanup(func() { runNative(t, reader, "DROP TABLE IF EXISTS "+table) })
@@ -226,7 +256,7 @@ func TestNativeSSHTransportOriginalSchemaLossCancellationAndRetainedReceipt(t *t
 			q := nativeLease(t, s, 8440)
 			table := fmt.Sprintf("nyadb_ssh_schema84_%d", time.Now().UnixNano())
 			runNative(t, q, "CREATE TABLE "+table+" (qty integer)")
-			cfg, password := authNativeConfig(t)
+			cfg, password := sshNativeDatabaseConfig(t)
 			control := authOpen(t, cfg, password)
 			reader := nativeLease(t, control, 8441)
 			t.Cleanup(func() { runNative(t, reader, "DROP TABLE IF EXISTS "+table) })
@@ -304,7 +334,7 @@ func TestNativeSSHTransportCanceledAndLostOpenNeverPublishesOrClosesSibling(t *t
 			if mode == "cancel" {
 				cancel()
 			} else {
-				owned.SessionTransport.Close()
+				closeNativeSSHTransport(t, owned)
 			}
 			var out result
 			select {
@@ -332,6 +362,16 @@ func (c *countedNativeSSH) Close() error {
 	return c.SessionTransport.Close()
 }
 
+// SSH authentication is independent of native database authentication. Older
+// anonymous fixtures still require a real SSH handshake and original wire work.
+func sshNativeDatabaseConfig(t *testing.T) (connections.ManticoreConfig, string) {
+	t.Helper()
+	if os.Getenv("NYADB_MANTICORE_AUTH_IT") == "1" {
+		return authNativeConfig(t)
+	}
+	return nativeConfig(t), ""
+}
+
 func nativeSSHTransport(t *testing.T) (connections.ManticoreConfig, string, *countedNativeSSH) {
 	return nativeSSHTransportOptions(t, nil)
 }
@@ -341,7 +381,7 @@ func nativeSSHTransportOptions(t *testing.T, configure func(*connections.Transpo
 	if os.Getenv("NYADB_MANTICORE_SSH_IT") != "1" {
 		t.Skip("requires owned native database and isolated OpenSSH fixture")
 	}
-	cfg, password := authNativeConfig(t)
+	cfg, password := sshNativeDatabaseConfig(t)
 	host, port, err := net.SplitHostPort(os.Getenv("NYADB_SSH_ENDPOINT"))
 	if err != nil {
 		t.Fatal(err)
@@ -538,7 +578,7 @@ func TestNativeSSHTransportOriginalFeaturesReceiptsAndOwnerClose(t *testing.T) {
 	table := fmt.Sprintf("nyadb_ssh84_%d", time.Now().UnixNano())
 	runNative(t, q, "CREATE TABLE "+table+" (title text, qty integer)")
 	runNative(t, q, "INSERT INTO "+table+" (id,title,qty) VALUES (1,'original',7)")
-	cfg, password := authNativeConfig(t)
+	cfg, password := sshNativeDatabaseConfig(t)
 	control := authOpen(t, cfg, password)
 	reader := nativeLease(t, control, 8402)
 	t.Cleanup(func() { runNative(t, reader, "DROP TABLE IF EXISTS "+table) })
@@ -562,9 +602,7 @@ func TestNativeSSHTransportOriginalFeaturesReceiptsAndOwnerClose(t *testing.T) {
 	retained := d.OriginalOutcome()
 	// Real SSH and all channels terminate together. Receipt ownership remains
 	// with the original document until its explicit close.
-	if err = owned.SessionTransport.Close(); err != nil {
-		t.Fatal(err)
-	}
+	closeNativeSSHTransport(t, owned)
 	if s.Alive() {
 		t.Fatal("terminal idle transport remains alive")
 	}
@@ -613,6 +651,9 @@ func TestNativeSSHTransportFailedAttemptsCloseOnlyOriginalOwner(t *testing.T) {
 	q := nativeLease(t, s, 8410)
 	for _, mode := range []string{"invalid", "canceled", "credential", "revoked"} {
 		t.Run(mode, func(t *testing.T) {
+			if mode == "credential" && os.Getenv("NYADB_MANTICORE_AUTH_IT") != "1" {
+				t.Skip("anonymous native fixture does not enforce database credentials")
+			}
 			cfg, password, owned := nativeSSHTransport(t)
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -625,7 +666,7 @@ func TestNativeSSHTransportFailedAttemptsCloseOnlyOriginalOwner(t *testing.T) {
 			case "credential":
 				password = "wrong_fixture_password"
 			case "revoked":
-				owned.SessionTransport.Close()
+				closeNativeSSHTransport(t, owned)
 			}
 			failed, err := OpenWithTransport(ctx, id, cfg, password, owned)
 			if failed != nil || err == nil || owned.closes.Load() != 1 {
@@ -643,4 +684,181 @@ func TestNativeSSHTransportFailedAttemptsCloseOnlyOriginalOwner(t *testing.T) {
 			objectEvidence(t, "ssh-attempt-"+mode+".json", map[string]any{"published": false, "dials": owned.dials.Load(), "closes": owned.closes.Load(), "error": err.Error()})
 		})
 	}
+}
+
+func TestNativeSSHTransportAnonymousDatabaseCredentialsDoNotEstablishAuthentication(t *testing.T) {
+	if os.Getenv("NYADB_MANTICORE_AUTH_IT") == "1" {
+		t.Skip("requires anonymous native fixture with independent SSH authentication")
+	}
+	cfg, _, owned := nativeSSHTransport(t)
+	cfg.Username = "unprovisioned_native_fixture_user"
+	s, err := OpenWithTransport(context.Background(), 69, cfg, "unprovisioned_native_fixture_password", owned)
+	if err != nil || s == nil {
+		t.Fatal("anonymous native fixture did not ignore credentials", err)
+	}
+	t.Cleanup(func() { s.Close() })
+	q := nativeLease(t, s, 8504)
+	actual := runNative(t, q, "SELECT 1")
+	if fmt.Sprint(actual.Rows) != "[[1]]" || !s.Alive() {
+		t.Fatal(actual)
+	}
+	objectEvidence(t, "ssh-anonymous-credentials.json", map[string]any{"credentials_ignored": true, "native_authentication_enforced": false, "ssh_authenticated": true, "actual": actual, "version": os.Getenv("NYADB_MANTICORE_VERSION")})
+}
+
+func TestNativeSSHTransportExternalServerLossAndExplicitRecovery(t *testing.T) {
+	if os.Getenv("NYADB_MANTICORE_SSH_SERVER_CONTROL_IT") != "1" {
+		t.Skip("requires supervisor owning the disposable SSH server")
+	}
+	cfg, password := sshNativeDatabaseConfig(t)
+	control := authOpen(t, cfg, password)
+	reader := nativeLease(t, control, 8500)
+	table := fmt.Sprintf("nyadb_ssh_loss85_%d", time.Now().UnixNano())
+	runNative(t, reader, "CREATE TABLE "+table+" (qty integer)")
+	runNative(t, reader, "INSERT INTO "+table+" (id,qty) VALUES (1,7),(2,7)")
+	t.Cleanup(func() { runNative(t, reader, "DROP TABLE IF EXISTS "+table) })
+
+	sqlSession, sqlOwner, sqlGate := gatedNativeSSH(t)
+	dataSession, dataOwner, dataGate := gatedNativeSSH(t)
+	schemaSession, schemaOwner, schemaGate := gatedNativeSSH(t)
+	idleSession, idleOwner := openNativeSSH(t)
+	query := nativeLease(t, sqlSession, 8501)
+	idleQuery := nativeLease(t, idleSession, 8502)
+	runNative(t, idleQuery, "SELECT 1")
+	_, data := nativeData(t, dataSession, table)
+	page, err := data.Loader(context.Background(), 69, "Manticore", table, 0, 10)
+	if err != nil || len(page.RowSnapshots) != 2 {
+		t.Fatal(page, err)
+	}
+	// Each original write has a distinct row/schema target. The real server
+	// acknowledgement is held at its gate, after native mutation dispatch.
+	plan := previewNative(t, data, table, contract.DataEdit{Kind: "update", Original: page.RowSnapshots[1], Values: map[string]contract.DataValue{"qty": {Kind: contract.Integer, Text: "9"}}})
+	doc, target := nativeSchema(t, schemaSession, table, "ssh-external-loss")
+	request := schemaAddRequest(schemaOriginal(t, doc, target), "added", "integer")
+	schemaPlan, err := doc.Operations().Plan(request)
+	if err != nil || len(schemaPlan.SQL) != 1 {
+		t.Fatal(schemaPlan, err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	type sqlResult struct {
+		value contract.SQLResult
+		err   error
+	}
+	type dataResult struct {
+		value *contract.DataEditResult
+		err   error
+	}
+	sqlDone := make(chan sqlResult, 1)
+	dataDone := make(chan dataResult, 1)
+	schemaDone := make(chan contract.SchemaDesignOutcome, 1)
+	sqlSource := "UPDATE " + table + " SET qty=8 WHERE id=1"
+	observed := sqlGate.arm(sqlSource, "hold")
+	go func() { r, e := query.Execute(ctx, "Manticore", sqlSource); sqlDone <- sqlResult{r, e} }()
+	observedPacket(t, sqlGate, observed)
+	observed = dataGate.arm(plan.(*dataWritePlan).statements[0].SQL, "hold")
+	go func() { r, e := data.SubmitEdits(ctx, 69, "Manticore", table, plan); dataDone <- dataResult{r, e} }()
+	observedPacket(t, dataGate, observed)
+	observed = schemaGate.arm(schemaPlan.SQL[0], "hold")
+	go func() { schemaDone <- doc.Operations().Apply(ctx, request) }()
+	observedPacket(t, schemaGate, observed)
+	owners := []*countedNativeSSH{sqlOwner, dataOwner, schemaOwner, idleOwner}
+	sessions := []*Session{sqlSession, dataSession, schemaSession, idleSession}
+	dials := make([]int32, len(owners))
+	for i, owner := range owners {
+		dials[i] = owner.dials.Load()
+	}
+	objectEvidence(t, "stop-ssh.json", map[string]any{"reason": "withheld three real native acknowledgements; terminate only supervisor-owned SSH container"})
+	for i, owner := range owners {
+		select {
+		case <-owner.Done():
+		case <-time.After(15 * time.Second):
+			t.Fatal("external server loss did not terminate original transport", i)
+		}
+		if sessions[i].Alive() || owner.closes.Load() != 0 {
+			t.Fatal("external loss must revoke without caller Close", i)
+		}
+	}
+	var sqlOut sqlResult
+	var dataOut dataResult
+	var schemaOut contract.SchemaDesignOutcome
+	select {
+	case sqlOut = <-sqlDone:
+	case <-time.After(10 * time.Second):
+		t.Fatal("SQL loss did not settle")
+	}
+	select {
+	case dataOut = <-dataDone:
+	case <-time.After(10 * time.Second):
+		t.Fatal("data loss did not settle")
+	}
+	select {
+	case schemaOut = <-schemaDone:
+	case <-time.After(10 * time.Second):
+		t.Fatal("schema loss did not settle")
+	}
+	var sqlReceipt nativeSQLReceipt
+	if err = json.Unmarshal([]byte(sqlOut.value.NativeJSON), &sqlReceipt); err != nil || sqlOut.err == nil || len(sqlReceipt.Statements) != 1 || sqlReceipt.Statements[0].State != "uncertain" || !sqlReceipt.Statements[0].Dispatched || sqlReceipt.Statements[0].Acknowledged {
+		t.Fatal("external loss synthesized SQL receipt", sqlOut, err)
+	}
+	if dataOut.err == nil || dataOut.value == nil || !dataOut.value.CommitUncertain || !dataOut.value.Incomplete || dataOut.value.Applied != 0 || len(dataOut.value.Sequential.Statements) != 1 || dataOut.value.Sequential.Statements[0].State != "unknown" {
+		t.Fatal("external loss synthesized data receipt", dataOut)
+	}
+	if schemaOut.Error == nil || schemaOut.State != "uncertain" || schemaOut.Verified || schemaOut.Actual != nil || schemaOut.Receipt == nil || !reflect.DeepEqual(&schemaOut, doc.OriginalOutcome()) {
+		t.Fatal("external loss synthesized or discarded schema receipt", schemaOut)
+	}
+	if _, err = query.Execute(context.Background(), "Manticore", sqlSource); !errors.Is(err, contract.ErrRevoked) {
+		t.Fatal(err)
+	}
+	if _, err = idleQuery.Execute(context.Background(), "Manticore", "SELECT 1"); !errors.Is(err, contract.ErrRevoked) {
+		t.Fatal(err)
+	}
+	if again, err := data.SubmitEdits(context.Background(), 69, "Manticore", table, plan); err == nil {
+		t.Fatal("external loss replayed data", again, err)
+	}
+	if again := doc.Operations().Apply(context.Background(), request); again.Error == nil || again.Receipt != nil {
+		t.Fatal("external loss replayed schema", again)
+	}
+	actual := runNative(t, reader, "SELECT id,qty FROM "+table+" ORDER BY id ASC")
+	if fmt.Sprint(actual.Rows) != "[[1 8] [2 9]]" {
+		t.Fatal("actual native commits absent", actual)
+	}
+	objectEvidence(t, "start-ssh.json", map[string]any{"reason": "original receipts settled; explicit fresh transport only"})
+	var ready struct {
+		Endpoint    string `json:"endpoint"`
+		Fingerprint string `json:"fingerprint"`
+	}
+	deadline := time.Now().Add(15 * time.Second)
+	for {
+		b, e := os.ReadFile(filepath.Join(os.Getenv("NYADB_MANTICORE_EVIDENCE"), "restart-ready.json"))
+		if e == nil && json.Unmarshal(b, &ready) == nil {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("owned SSH server did not restart")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	if ready.Fingerprint != os.Getenv("NYADB_SSH_FINGERPRINT") || ready.Endpoint == "" {
+		t.Fatal("restarted server changed original host identity")
+	}
+	t.Setenv("NYADB_SSH_ENDPOINT", ready.Endpoint)
+	fresh, _ := openNativeSSH(t)
+	freshQuery := nativeLease(t, fresh, 8503)
+	recovered := runNative(t, freshQuery, "SELECT id,qty FROM "+table+" ORDER BY id ASC")
+	newDoc, newTarget := nativeSchema(t, fresh, table, "ssh-external-recovered")
+	snapshot := schemaOriginal(t, newDoc, newTarget)
+	if !reflect.DeepEqual(actual.Rows, recovered.Rows) || len(snapshot.Schema.Table.Clauses) != 3 || snapshot.Schema.Table.Clauses[2].Name != "added" || !reflect.DeepEqual(&schemaOut, doc.OriginalOutcome()) {
+		t.Fatal("explicit recovery replaced receipt or replayed write", recovered, snapshot)
+	}
+	for i, owner := range owners {
+		if sessions[i].Alive() || owner.dials.Load() != dials[i] || owner.closes.Load() != 0 {
+			t.Fatal("server restart resurrected original owner", i)
+		}
+	}
+	for _, gate := range []*packetGate{sqlGate, dataGate, schemaGate} {
+		if gate.calls.Load() != 1 {
+			t.Fatal("original mutation replayed")
+		}
+	}
+	objectEvidence(t, "ssh-external-server-loss.json", map[string]any{"sql": sqlOut.value, "data": dataOut.value, "schema": schemaOut.Receipt, "actual": actual, "recovered": recovered, "schema_recovered": snapshot, "original_dials": dials, "mutation_calls": []int64{sqlGate.calls.Load(), dataGate.calls.Load(), schemaGate.calls.Load()}, "receipt_retained": reflect.DeepEqual(&schemaOut, doc.OriginalOutcome()), "original_owner_closes": []int32{sqlOwner.closes.Load(), dataOwner.closes.Load(), schemaOwner.closes.Load(), idleOwner.closes.Load()}, "version": os.Getenv("NYADB_MANTICORE_VERSION")})
 }
